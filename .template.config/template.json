@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Zander Chuang",
+  "classifications": ["Web", "API", "Base"],
+  "identity": "zander.v3.admin.webapi",
+  "version": "1.0.0",
+  "name": "Zander V3 WebAPI Base (MIT)",
+  "shortName": "zv3webapi",
+  "sourceName": "V3.Admin.Backend",
+  "preferNameDirectory": true,
+
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "defaultName": "MyV3WebApi",
+
+  "symbols": {
+    "org": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Zander Studio",
+      "description": "Company or organization name",
+      "replaces": "{{org}}"
+    },
+    "product": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Sample",
+      "description": "Product or project name",
+      "replaces": "{{product}}"
+    },
+    "useSwagger": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "description": "Include Swagger/OpenAPI support"
+    }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/[Bb]in/**",
+            "**/[Oo]bj/**",
+            ".git/**",
+            ".template.config/**",
+            "*.sln",
+            "v3-admin-dot-net-backend.csproj"
+          ]
+        }
+      ]
+    }
+  ],
+
+  "primaryOutputs": [
+    { "path": "V3.Admin.Backend.csproj" }
+  ],
+
+  "postActions": [
+    {
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "description": "Restore NuGet packages",
+      "manualInstructions": [{ "text": "dotnet restore" }],
+      "args": { "restore": true },
+      "continueOnError": true
+    }
+  ]
+}

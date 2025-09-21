@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>useSwagger</DefineConstants>
+
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <PackageId>$(MSBuildProjectName)</PackageId>
+
+    <Company>{{org}}</Company>
+    <Product>{{product}}</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--#if (useSwagger)-->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
+    <!--#endif-->
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "591a/aWBybv5YCfQg9bkuwoOxFE7MaprAs2UYlrnKAY=",
+  "Source": "V3.Admin.Backend",
+  "BasePath": "_content/V3.Admin.Backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
