@@ -128,12 +128,12 @@ applyTo: '**/*.cs'
 - DON'T forget to dependency inject the services and repositories in the `Program.cs`.
 
 ## Interface File Guidelines
-- Interface files should be placed in the same folder as their implementation class. For example, `IUserService.cs` should be in the `Services` folder alongside `UserService.cs`.
+- All interface files should be placed in the `Interfaces` folder.
 - Use PascalCase for file names and prefix with "I", for example: `IUserService.cs`.
-- The namespace should match the folder structure. For example:
+- Add a namespace declaration at the top of the file, for example:
 
 ```csharp
-namespace V3.Admin.Backend.Services;
+namespace V3.Admin.Backend.Interfaces;
 
 public interface IUserService
 {
@@ -141,7 +141,7 @@ public interface IUserService
 }
 ```
 
-- This helps keep related files together and the project structure clear.
+- This helps keep the project structure clear and maintainable.
 
 ## Coding style
 - Use namespace declarations at the top of the file. using xxx.yyy to replace use full namespace in the code.
