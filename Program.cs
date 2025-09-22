@@ -27,8 +27,6 @@ public class Program
         }
 #endif
 
-        app.MapGet("/", () => "Hello from {{org}} - {{product}} API!");
-
         app.Run();
     }
 }
