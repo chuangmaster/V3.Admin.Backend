@@ -7,7 +7,7 @@ applyTo: '**/*.cs'
 
 ## C# Instructions
 - Always use the latest version C#, currently C# 13 features.
-- Write clear and concise comments for each function.
+- Write clear and concise comments for each function in Traditional Chinese.
 
 ## General Instructions
 - Make only high confidence suggestions when reviewing code changes.
@@ -128,7 +128,7 @@ applyTo: '**/*.cs'
 - DON'T forget to dependency inject the services and repositories in the `Program.cs`.
 
 ## Interface File Guidelines
-- All interface files should be placed in the `Interfaces` folder.
+- All interface files should be placed in the `Interfaces` folder. Such as `Services/Interfaces` or `Repositories/Interfaces`.
 - Use PascalCase for file names and prefix with "I", for example: `IUserService.cs`.
 - Add a namespace declaration at the top of the file, for example:
 
