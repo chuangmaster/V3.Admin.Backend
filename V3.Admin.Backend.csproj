@@ -15,9 +15,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!--#if (useSwagger)-->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
-    <!--#endif-->
   </ItemGroup>
 
 </Project>
