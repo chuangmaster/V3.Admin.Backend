@@ -7,6 +7,7 @@ description: "Task list template for feature implementation"
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Language**: Tasks and descriptions MUST be written in Traditional Chinese (zh-TW) per constitution requirements
 
 **Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
@@ -20,10 +21,10 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+- **C# ASP.NET Core Project**: `Controllers/`, `Services/`, `Repositories/`, `Models/` at repository root
+- **Tests**: `Tests/Unit/`, `Tests/Integration/`, `Tests/Contract/` 
+- **Interfaces**: `Services/Interfaces/`, `Repositories/Interfaces/`
+- Paths shown below assume C# project structure - adjust based on plan.md structure
 
 <!-- 
   ============================================================================
@@ -58,16 +59,20 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete. All foundational tasks must follow constitution principles:
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T004 Setup Entity Framework Core or Dapper with database schema and migrations
+- [ ] T005 [P] Implement JWT authentication middleware per constitution security requirements  
+- [ ] T006 [P] Setup Controller base classes with BaseResponseModel wrapper standardization
+- [ ] T007 Create base entity models and DTOs following three-layer architecture (User, Role, Permission entities)
+- [ ] T008 Configure global exception handling middleware with Traditional Chinese error messages
+- [ ] T009 Setup environment configuration management with proper secrets handling
+- [ ] T010 [P] Configure dependency injection for Services and Repositories in Program.cs
+- [ ] T011 [P] Setup XML documentation generation and Swagger/OpenAPI documentation
+- [ ] T012 [P] Implement role-based authorization framework and permission validation infrastructure
+- [ ] T013 [P] Setup audit logging for user management operations per security requirements
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -83,17 +88,18 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Contract test for [endpoint] in Tests/Contract/[ControllerName]ControllerTests.cs
+- [ ] T011 [P] [US1] Integration test for [user journey] in Tests/Integration/[Feature]IntegrationTests.cs
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T012 [P] [US1] Create [Entity1] model in Models/[Entity1].cs following constitution naming conventions
+- [ ] T013 [P] [US1] Create [Entity2] model in Models/[Entity2].cs with XML documentation
+- [ ] T014 [US1] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T015 [US1] Implement [Service] in Services/[Service].cs with dependency injection (depends on T012, T013, T014)
+- [ ] T016 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs with BaseResponseModel wrapper
+- [ ] T017 [US1] Add FluentValidation or data annotations for input validation
+- [ ] T018 [US1] Add Traditional Chinese error handling and logging
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -107,15 +113,16 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T019 [P] [US2] Contract test for [endpoint] in Tests/Contract/[ControllerName]ControllerTests.cs
+- [ ] T020 [P] [US2] Integration test for [user journey] in Tests/Integration/[Feature]IntegrationTests.cs
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T021 [P] [US2] Create [Entity] model in Models/[Entity].cs with XML documentation
+- [ ] T022 [US2] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T023 [US2] Implement [Service] in Services/[Service].cs following three-layer architecture
+- [ ] T024 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs with BaseResponseModel
+- [ ] T025 [US2] Integrate with User Story 1 components following dependency injection patterns
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -129,14 +136,15 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T026 [P] [US3] Contract test for [endpoint] in Tests/Contract/[ControllerName]ControllerTests.cs
+- [ ] T027 [P] [US3] Integration test for [user journey] in Tests/Integration/[Feature]IntegrationTests.cs
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T028 [P] [US3] Create [Entity] model in Models/[Entity].cs with proper nullable annotations
+- [ ] T029 [US3] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T030 [US3] Implement [Service] in Services/[Service].cs with async/await patterns
+- [ ] T031 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -150,12 +158,13 @@ Examples of foundational tasks (adjust based on your project):
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] TXXX [P] Documentation updates in docs/
-- [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
-- [ ] TXXX Run quickstart.md validation
+- [ ] TXXX [P] Update XML documentation and README.md files
+- [ ] TXXX Code cleanup and refactoring following C# 13 best practices
+- [ ] TXXX Performance optimization with async/await patterns and database query optimization
+- [ ] TXXX [P] Additional unit tests (if requested) in Tests/Unit/ following constitution test standards
+- [ ] TXXX Security hardening - JWT token validation, input sanitization
+- [ ] TXXX Constitution compliance verification across all implemented features
+- [ ] TXXX Run quickstart.md validation and update Swagger documentation
 
 ---
 
@@ -199,12 +208,12 @@ Examples of foundational tasks (adjust based on your project):
 
 ```bash
 # Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+Task: "Contract test for [endpoint] in Tests/Contract/[ControllerName]ControllerTests.cs"
+Task: "Integration test for [user journey] in Tests/Integration/[Feature]IntegrationTests.cs"
 
 # Launch all models for User Story 1 together:
-Task: "Create [Entity1] model in src/models/[entity1].py"
-Task: "Create [Entity2] model in src/models/[entity2].py"
+Task: "Create [Entity1] model in Models/[Entity1].cs"
+Task: "Create [Entity2] model in Models/[Entity2].cs"
 ```
 
 ---
