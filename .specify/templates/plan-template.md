@@ -25,7 +25,7 @@
 **Target Platform**: Cross-platform (Windows/Linux/macOS)
 **Project Type**: Web API - ASP.NET Core backend service for v3-admin-frontend
 **Performance Goals**: <200ms simple operations, <2000ms complex user/role/permission operations
-**Constraints**: JWT authentication required, BaseResponseModel for all responses, Traditional Chinese error messages, role-based authorization
+**Constraints**: JWT authentication required, ApiResponseModel for all responses with HTTP status + business codes, Traditional Chinese error messages, role-based authorization, TraceId for distributed tracing
 **Scale/Scope**: User account management system with role and permission management capabilities
 
 ## Constitution Check
@@ -35,9 +35,10 @@
 **Code Quality Excellence**: ✅ C# 13 best practices, XML documentation, Traditional Chinese comments
 **Three-Layer Architecture**: ✅ Controllers/Services/Repositories separation maintained
 **Test-First Development**: ✅ Tests written before implementation, critical path coverage
-**User Experience Consistency**: ✅ BaseResponseModel usage, standardized error handling, Traditional Chinese messages
+**User Experience Consistency**: ✅ ApiResponseModel usage with HTTP status + business codes, standardized error handling, Traditional Chinese messages
 **Performance & Security**: ✅ <200ms simple operations, JWT authentication, role/permission validation, input validation
 **User Management Context**: ✅ Role-based access control, permission management, admin interface standards
+**API Response Design**: ✅ Dual-layer design (HTTP status + business code), TraceId for distributed tracing
 
 ## Project Structure
 

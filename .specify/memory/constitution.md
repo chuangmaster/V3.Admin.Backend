@@ -1,9 +1,10 @@
 <!--
 Sync Impact Report:
-Version change: 1.0.0 → 1.1.0 (Project Context Addition)
-Added sections: Project Background section
-Modified principles: Enhanced principle IV and V to include role/permission management context
-Templates requiring updates: ✅ All templates aligned with updated constitution
+Version change: 1.2.0 → 1.2.1 (Multi-factor Authentication Requirement Removal)
+Added sections: None
+Modified principles: None
+Removed requirements: Multi-factor authentication from Security Requirements section
+Templates requiring updates: ✅ All templates remain aligned with updated constitution
 Follow-up TODOs: None - all placeholders filled
 -->
 
@@ -35,18 +36,38 @@ Tests MUST be written before implementation. Critical paths MUST have unit tests
 **Rationale**: Prevents regressions, ensures reliability, and documents expected behavior for future maintainers in security-critical user management operations.
 
 ### IV. User Experience Consistency & Admin Interface Standards
-All API responses MUST use BaseResponseModel wrapper with consistent Success, Message, and Data properties. Error responses MUST follow standardized format with appropriate HTTP status codes. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses. Role and permission management operations MUST provide detailed feedback on access violations or configuration conflicts. Response times MUST be predictable and documented. Admin interface operations MUST maintain consistent patterns across all user, role, and permission management endpoints.
+All API responses MUST use ApiResponseModel wrapper with consistent Success, Code, Message, Data, Timestamp, and TraceId properties. The dual-layer design combining HTTP status codes (reflecting request processing state) and business logic codes (providing fine-grained business scenarios) is MANDATORY. Error responses MUST follow standardized format with appropriate HTTP status codes AND meaningful business codes from ResponseCodes constants. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses using appropriate business codes (e.g., VALIDATION_ERROR, INVALID_CREDENTIALS). Role and permission management operations MUST provide detailed feedback on access violations or configuration conflicts using specific business codes. Response times MUST be predictable and documented. Admin interface operations MUST maintain consistent patterns across all user, role, and permission management endpoints. TraceId MUST be included for distributed tracing and troubleshooting.
 
-**Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration and positive administrative user experience across all management functions.
+**Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration, fine-grained error handling, and positive administrative user experience across all management functions while supporting monitoring and debugging capabilities.
 
 ### V. Performance & Security Standards for User Management
 API endpoints MUST respond within 200ms for simple operations and 2000ms for complex operations including role lookups and permission validations. Asynchronous programming patterns are mandatory for I/O operations. JWT authentication MUST be properly implemented with secure token generation and validation. Role-based authorization MUST be enforced at the API level with proper claim validation. All user inputs MUST be validated and sanitized. Sensitive information (passwords, tokens, personal data) MUST NOT be logged or exposed in error messages. Database queries MUST be optimized to prevent N+1 problems, especially for role/permission hierarchies. Permission checks MUST be cached appropriately to ensure performance under load.
 
 **Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for user management and access control systems.
 
+## API Response Design Standards
+
+**Dual-Layer Response Model**: All endpoints MUST return ApiResponseModel<T> combining HTTP status codes with business logic codes. HTTP status codes reflect request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes provide fine-grained scenario information using ResponseCodes constants.
+
+**Success Responses**: Use ApiResponseModel<T>.CreateSuccess() with appropriate data, message, and business code (SUCCESS, CREATED, UPDATED, DELETED). HTTP status codes MUST match the operation (200 OK, 201 Created, etc.).
+
+**Error Responses**: Use ApiResponseModel<T>.CreateFailure() with descriptive Traditional Chinese messages and specific business codes. Examples:
+- 400 Bad Request + VALIDATION_ERROR for input validation failures
+- 401 Unauthorized + INVALID_CREDENTIALS for authentication failures
+- 403 Forbidden + FORBIDDEN for authorization failures
+- 404 Not Found + NOT_FOUND for missing resources
+- 422 Unprocessable Entity + business-specific codes (INSUFFICIENT_BALANCE, EXCEEDED_LIMIT)
+- 500 Internal Server Error + INTERNAL_ERROR for system failures
+
+**Required Fields**: All responses MUST include Success (bool), Code (string), Message (string), Timestamp (DateTime), and TraceId (string) for request tracking. Data field uses JsonIgnoreCondition.WhenWritingNull.
+
+**Controller Helper Methods**: Controllers SHOULD implement helper methods (Success, Created, ValidationError, NotFound, Conflict, BusinessError, InternalError) that return IActionResult with properly configured ApiResponseModel and HTTP status codes.
+
+**Frontend Integration**: Frontend applications can rely on both HTTP status codes (for API gateway/monitoring) and business codes (for fine-grained error handling and user experience customization).
+
 ## Security Requirements
 
-**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within reasonable timeframes (default: 1 hour). Refresh token mechanism MUST be implemented for production use. Multi-factor authentication SHOULD be supported for administrative accounts.
+**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within reasonable timeframes (default: 1 hour). Refresh token mechanism MUST be implemented for production use.
 
 **Authorization**: Role-based and policy-based authorization MUST be implemented using ASP.NET Core authorization framework. All endpoints MUST explicitly declare their authorization requirements. Permission inheritance and role hierarchies MUST be properly validated. Administrative functions require elevated permissions with audit logging.
 
@@ -76,4 +97,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-10-25
+**Version**: 1.2.1 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-10-25

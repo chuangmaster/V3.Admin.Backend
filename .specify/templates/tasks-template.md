@@ -65,14 +65,15 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T004 Setup Entity Framework Core or Dapper with database schema and migrations
 - [ ] T005 [P] Implement JWT authentication middleware per constitution security requirements  
-- [ ] T006 [P] Setup Controller base classes with BaseResponseModel wrapper standardization
+- [ ] T006 [P] Setup Controller base classes with ApiResponseModel wrapper and helper methods (Success, Created, ValidationError, NotFound, etc.)
 - [ ] T007 Create base entity models and DTOs following three-layer architecture (User, Role, Permission entities)
-- [ ] T008 Configure global exception handling middleware with Traditional Chinese error messages
+- [ ] T008 Configure global exception handling middleware with Traditional Chinese error messages and ApiResponseModel responses
 - [ ] T009 Setup environment configuration management with proper secrets handling
 - [ ] T010 [P] Configure dependency injection for Services and Repositories in Program.cs
 - [ ] T011 [P] Setup XML documentation generation and Swagger/OpenAPI documentation
 - [ ] T012 [P] Implement role-based authorization framework and permission validation infrastructure
 - [ ] T013 [P] Setup audit logging for user management operations per security requirements
+- [ ] T014 [P] Implement TraceId middleware for distributed tracing and request tracking
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -97,9 +98,9 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T013 [P] [US1] Create [Entity2] model in Models/[Entity2].cs with XML documentation
 - [ ] T014 [US1] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T015 [US1] Implement [Service] in Services/[Service].cs with dependency injection (depends on T012, T013, T014)
-- [ ] T016 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs with BaseResponseModel wrapper
+- [ ] T016 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel wrapper and appropriate HTTP status + business codes
 - [ ] T017 [US1] Add FluentValidation or data annotations for input validation
-- [ ] T018 [US1] Add Traditional Chinese error handling and logging
+- [ ] T018 [US1] Add Traditional Chinese error handling with proper ResponseCodes and TraceId logging
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -121,7 +122,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T021 [P] [US2] Create [Entity] model in Models/[Entity].cs with XML documentation
 - [ ] T022 [US2] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T023 [US2] Implement [Service] in Services/[Service].cs following three-layer architecture
-- [ ] T024 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs with BaseResponseModel
+- [ ] T024 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel and proper business codes
 - [ ] T025 [US2] Integrate with User Story 1 components following dependency injection patterns
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
@@ -144,7 +145,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T028 [P] [US3] Create [Entity] model in Models/[Entity].cs with proper nullable annotations
 - [ ] T029 [US3] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T030 [US3] Implement [Service] in Services/[Service].cs with async/await patterns
-- [ ] T031 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs
+- [ ] T031 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel dual-layer design
 
 **Checkpoint**: All user stories should now be independently functional
 
