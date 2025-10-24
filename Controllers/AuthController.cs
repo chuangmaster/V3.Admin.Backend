@@ -8,9 +8,8 @@ using V3.Admin.Backend.Models;
 
 namespace V3.Admin.Backend.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController : BaseApiController
 {
     private readonly IAuthService authService;
     private readonly IConfiguration configuration;
@@ -30,7 +29,7 @@ public class AuthController : ControllerBase
     /// 登入並取得 JWT Token。
     /// </summary>
     /// <param name="loginRequest">登入請求資料</param>
-    /// <returns>JWT Token 包裝於 BaseResponseModel</returns>
+    /// <returns>JWT Token 或錯誤響應</returns>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
     {
@@ -43,21 +42,16 @@ public class AuthController : ControllerBase
 
             if (!isValid)
             {
-                return Unauthorized(
-                    new BaseResponseModel { Success = false, Message = "帳號或密碼錯誤" }
-                );
+                return Unauthorized("帳號或密碼錯誤", ResponseCodes.InvalidCredentials);
             }
 
             var token = GenerateJwtToken(loginRequest.Id);
-            return Ok(new BaseResponseModel { Success = true, Data = new { token } });
+            return Success(new { token }, "登入成功");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // TODO: 可整合 Serilog 等記錄例外
-            return StatusCode(
-                500,
-                new BaseResponseModel { Success = false, Message = "伺服器發生錯誤" }
-            );
+            return InternalError("伺服器發生錯誤");
         }
     }
 
