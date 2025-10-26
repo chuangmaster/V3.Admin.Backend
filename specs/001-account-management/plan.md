@@ -105,13 +105,21 @@ Repositories/                     # 資料存取層
     └── IUserRepository.cs       # (已存在,需擴充)
 
 Models/                           # 資料模型與 DTO
-├── User.cs                      # 使用者實體 (已存在,需擴充)
-├── LoginRequest.cs              # 登入請求 DTO (已存在)
-├── ApiResponseModel.cs          # API 回應模型 (已存在)
-├── CreateAccountRequest.cs      # 新增帳號請求 DTO (新增)
-├── UpdateAccountRequest.cs      # 更新帳號請求 DTO (新增)
-├── ChangePasswordRequest.cs     # 變更密碼請求 DTO (新增)
-├── AccountResponse.cs           # 帳號回應 DTO (新增)
+├── Entities/                    # 資料庫實體 (新增資料夾)
+│   └── User.cs                 # 使用者實體 (單一表格映射)
+├── Requests/                    # API 請求 DTOs (新增資料夾)
+│   ├── LoginRequest.cs         # 登入請求
+│   ├── CreateAccountRequest.cs # 新增帳號請求
+│   ├── UpdateAccountRequest.cs # 更新帳號請求
+│   ├── ChangePasswordRequest.cs # 變更密碼請求
+│   └── DeleteAccountRequest.cs # 刪除帳號請求
+├── Responses/                   # API 回應 DTOs (新增資料夾)
+│   ├── LoginResponse.cs        # 登入回應
+│   ├── AccountResponse.cs      # 帳號回應
+│   └── AccountListResponse.cs  # 帳號列表回應
+├── Views/                       # Join 查詢視圖 DTOs (新增資料夾,未來擴充用)
+│   └── (未來角色權限功能時新增)
+└── ApiResponseModel.cs          # API 統一回應模型 (已存在)
 └── ResponseCodes.cs             # 回應代碼常數 (新增)
 
 Configuration/                    # 組態設定 (新增)

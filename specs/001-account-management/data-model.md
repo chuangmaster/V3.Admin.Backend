@@ -8,6 +8,20 @@
 
 本文件定義帳號管理系統的資料模型,包含資料庫實體、DTO (Data Transfer Objects)、驗證規則與狀態轉換。所有設計符合三層架構原則與專案憲法要求。
 
+## 命名規則
+
+本專案遵循以下命名規則:
+
+- **Entity (實體)**: 單一資料表映射,直接對應資料庫表格結構 (例如: `User`, `Role`)
+- **Request (請求 DTO)**: API 層的輸入模型,用於接收客戶端請求 (例如: `LoginRequest`, `CreateAccountRequest`)
+- **Response (回應 DTO)**: API 層的輸出模型,用於回傳給客戶端 (例如: `LoginResponse`, `AccountResponse`)
+- **View (視圖 DTO)**: Join 查詢結果的複合模型,包含多表關聯資料 (例如: `UserRoleView`, `AccountDetailView`)
+
+**分層對應**:
+- **Repository 層**: 使用 `Entity` (資料庫實體)
+- **Service 層**: `Entity` ↔ `Request`/`Response`/`View` 轉換
+- **Controller 層**: 使用 `Request`/`Response` DTO
+
 ---
 
 ## 1. 資料庫實體 (Entity)
@@ -242,6 +256,8 @@ public class DeleteAccountRequest
 
 ## 3. Response DTOs (API 回應物件)
 
+**說明**: Response DTO 用於 API 層回傳資料給客戶端,不包含敏感資訊 (如密碼雜湊、內部欄位)。
+
 ### 3.1 LoginResponse
 
 **用途**: 登入成功回應
@@ -348,6 +364,30 @@ public class AccountListResponse
     public int TotalPages { get; set; }
 }
 ```
+
+---
+
+## 3.4 View DTOs (視圖物件)
+
+**說明**: View DTO 用於表示 Join 查詢結果的複合模型。本功能目前無 Join 查詢需求,未來擴充角色權限管理時可能需要以下 View:
+
+**未來範例** (角色權限功能):
+```csharp
+/// <summary>
+/// 使用者角色視圖 (User JOIN UserRole JOIN Role)
+/// </summary>
+public class UserRoleView
+{
+    public Guid UserId { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public Guid RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
+    public DateTime AssignedAt { get; set; }
+}
+```
+
+**注意**: 目前帳號管理功能僅操作單一 `users` 表格,因此僅使用 `User` Entity 與 `AccountResponse` DTO,無需 View DTO。
 
 ---
 
@@ -552,11 +592,21 @@ public async Task<bool> UpdateAsync(User user, int expectedVersion)
 
 ## 6. 資料映射 (Mapping)
 
+**說明**: 資料映射在 Service 層執行,負責 Entity ↔ Request/Response/View DTO 之間的轉換。
+
 ### 6.1 Entity → Response DTO
 
+**用途**: Repository 返回 Entity 後,Service 層轉換為 Response DTO 回傳給 Controller。
+
 ```csharp
+/// <summary>
+/// User Entity 擴充方法
+/// </summary>
 public static class UserExtensions
 {
+    /// <summary>
+    /// 將 User Entity 轉換為 AccountResponse DTO
+    /// </summary>
     public static AccountResponse ToResponse(this User user)
     {
         return new AccountResponse
@@ -575,9 +625,17 @@ public static class UserExtensions
 
 ### 6.2 Request DTO → Entity
 
+**用途**: Controller 接收 Request DTO 後,Service 層轉換為 Entity 傳給 Repository。
+
 ```csharp
+/// <summary>
+/// Account Request DTO 擴充方法
+/// </summary>
 public static class AccountRequestExtensions
 {
+    /// <summary>
+    /// 將 CreateAccountRequest 轉換為 User Entity
+    /// </summary>
     public static User ToEntity(this CreateAccountRequest request, string passwordHash)
     {
         return new User
@@ -593,6 +651,51 @@ public static class AccountRequestExtensions
     }
 }
 ```
+
+**注意**: 
+- 密碼雜湊在 Service 層完成,不在 DTO 轉換時處理
+- 系統欄位 (Id, CreatedAt, Version) 由系統自動設定
+
+---
+
+### 6.3 View DTO 映射 (未來擴充)
+
+**用途**: 當有 Join 查詢需求時,Repository 直接返回 View DTO。
+
+**範例** (未來角色權限功能):
+```csharp
+// Repository 層: 執行 Join 查詢並返回 View DTO
+public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
+{
+    const string sql = @"
+        SELECT 
+            u.id AS UserId,
+            u.username AS Username,
+            u.display_name AS DisplayName,
+            r.id AS RoleId,
+            r.name AS RoleName,
+            ur.assigned_at AS AssignedAt
+        FROM users u
+        INNER JOIN user_roles ur ON u.id = ur.user_id
+        INNER JOIN roles r ON ur.role_id = r.id
+        WHERE u.id = @UserId AND u.is_deleted = false
+    ";
+    
+    return await _connection.QueryAsync<UserRoleView>(sql, new { UserId = userId });
+}
+
+// Service 層: 直接使用 View DTO,無需額外轉換
+public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
+{
+    return await _userRepository.GetUserRolesAsync(userId);
+}
+```
+
+**命名規則總結**:
+- **Entity**: 單一表格映射,用於 Repository ↔ Database
+- **Request**: API 輸入,用於 Controller → Service
+- **Response**: API 輸出,用於 Service → Controller
+- **View**: Join 查詢結果,用於 Repository → Service (多表關聯時)
 
 ---
 
@@ -764,14 +867,21 @@ SELECT COUNT(*) FROM users WHERE is_deleted = false;
 ## 總結
 
 本資料模型涵蓋:
-- ✅ **1 個核心實體** (User)
-- ✅ **5 個 Request DTOs** (Login, CreateAccount, UpdateAccount, ChangePassword, DeleteAccount)
-- ✅ **3 個 Response DTOs** (Login, Account, AccountList)
-- ✅ **5 個驗證器** (FluentValidation)
-- ✅ **完整的業務規則** (生命週期、狀態轉換、並發控制)
-- ✅ **資料庫遷移腳本** (建表、索引、初始資料)
-- ✅ **效能與安全性考量**
+- ✅ **1 個核心實體 (Entity)**: User (單一表格映射)
+- ✅ **5 個 Request DTOs**: Login, CreateAccount, UpdateAccount, ChangePassword, DeleteAccount (API 輸入)
+- ✅ **3 個 Response DTOs**: Login, Account, AccountList (API 輸出)
+- ✅ **0 個 View DTOs**: 目前無 Join 查詢需求 (未來角色權限功能時新增)
+- ✅ **5 個驗證器**: FluentValidation (輸入驗證)
+- ✅ **完整的業務規則**: 生命週期、狀態轉換、並發控制
+- ✅ **資料庫遷移腳本**: 建表、索引、初始資料
+- ✅ **效能與安全性考量**: 索引策略、參數化查詢、敏感資訊保護
 
-所有設計符合專案憲法與三層架構原則,可進入 API 合約設計階段。
+**命名規則遵循**:
+- ✅ Entity: 單一表格映射 (User)
+- ✅ Request: API 輸入模型 (LoginRequest, CreateAccountRequest 等)
+- ✅ Response: API 輸出模型 (LoginResponse, AccountResponse 等)
+- ✅ View: Join 查詢結果 (未來擴充時使用)
 
-**下一步**: 建立 `contracts/api-spec.yaml` 定義 OpenAPI 3.0 規格。
+所有設計符合專案憲法與三層架構原則,可進入實作階段。
+
+**下一步**: 執行 `/speckit.tasks` 指令建立詳細的實作任務清單。

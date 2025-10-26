@@ -307,35 +307,38 @@ WHERE Username = @username AND IsDeleted = false;
 - 呼叫 Service 層執行業務邏輯
 - 將結果包裝為 ApiResponseModel 回應
 - 不包含業務邏輯
+- 使用 Request/Response DTO
 
 **Service (業務邏輯層)**:
 - 實作商業邏輯與規則驗證
 - 協調多個 Repository 操作
 - 處理交易管理
-- 使用 DTO 與 Controller 層溝通
+- 使用 Request/Response DTO 與 Controller 層溝通
 - 使用 Entity 與 Repository 層溝通
+- Entity ↔ DTO 轉換在此層完成
 
 **Repository (資料存取層)**:
 - 封裝資料庫操作 (CRUD)
 - 使用 Dapper 執行 SQL 查詢
-- 返回 Entity 物件
+- 返回 Entity 物件 (單一表格映射)
+- 返回 View 物件 (Join 查詢結果)
 - 不包含業務邏輯
 
-**DTO 使用**:
-- Request DTO: 接收 API 請求資料
-- Response DTO: 回傳 API 回應資料  
-- Entity: 資料庫實體,不直接暴露給前端
-- Mapping: 使用手動 mapping 或 AutoMapper
+**DTO 命名規則**:
+- **Entity**: 單一資料表映射 (例如: `User`, `Role`)
+- **Request**: API 輸入模型 (例如: `CreateAccountRequest`)
+- **Response**: API 輸出模型 (例如: `AccountResponse`)
+- **View**: Join 查詢結果 (例如: `UserRoleView`)
 
 **範例流程**:
 ```
 Client → Controller (Request DTO) 
        → Validator (驗證)
-       → Service (業務邏輯, DTO ↔ Entity)
-       → Repository (Entity, SQL)
+       → Service (業務邏輯, Request → Entity)
+       → Repository (Entity/View, SQL)
        → Database
-       ← Repository (Entity)
-       ← Service (DTO)
+       ← Repository (Entity/View)
+       ← Service (Entity/View → Response)
        ← Controller (ApiResponseModel<Response DTO>)
        ← Client
 ```
