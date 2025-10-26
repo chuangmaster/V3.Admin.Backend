@@ -1,0 +1,927 @@
+openapi: 3.0.3
+info:
+  title: V3 Admin Backend - 帳號管理 API
+  description: |
+    V3 管理後台帳號管理系統 API 規格
+    
+    ## 功能特性
+    - 帳號密碼登入 (JWT Bearer Token)
+    - 新增帳號
+    - 修改個人資料 (顯示名稱)
+    - 變更密碼
+    - 刪除帳號 (軟刪除)
+    - 查詢帳號列表 (分頁)
+    
+    ## 身份驗證
+    除了 `/api/auth/login` 端點外,所有端點都需要 JWT Bearer Token 驗證。
+    在請求標頭加入: `Authorization: Bearer <token>`
+    
+    ## 回應格式
+    所有 API 回應都遵循 `ApiResponseModel<T>` 格式:
+    - `success`: 操作是否成功 (boolean)
+    - `code`: 業務邏輯代碼 (string)
+    - `message`: 繁體中文訊息 (string)
+    - `data`: 回應資料 (T, 可為 null)
+    - `timestamp`: 回應時間戳記 (ISO 8601)
+    - `traceId`: 分散式追蹤 ID (string)
+    
+    ## 業務邏輯代碼
+    - `SUCCESS`: 操作成功
+    - `CREATED`: 資源建立成功
+    - `VALIDATION_ERROR`: 輸入驗證錯誤
+    - `INVALID_CREDENTIALS`: 登入憑證錯誤
+    - `UNAUTHORIZED`: 未授權
+    - `FORBIDDEN`: 禁止操作
+    - `NOT_FOUND`: 資源不存在
+    - `USERNAME_EXISTS`: 帳號已存在
+    - `PASSWORD_SAME_AS_OLD`: 新密碼與舊密碼相同
+    - `CANNOT_DELETE_SELF`: 無法刪除當前登入帳號
+    - `LAST_ACCOUNT_CANNOT_DELETE`: 無法刪除最後一個帳號
+    - `CONCURRENT_UPDATE_CONFLICT`: 並發更新衝突
+    - `INTERNAL_ERROR`: 系統內部錯誤
+    
+  version: 1.0.0
+  contact:
+    name: V3 Admin Backend Team
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.v3admin.example.com
+    description: 生產環境
+  - url: https://staging-api.v3admin.example.com
+    description: 測試環境
+  - url: http://localhost:5000
+    description: 本機開發環境
+
+tags:
+  - name: Authentication
+    description: 身份驗證相關端點
+  - name: Accounts
+    description: 帳號管理相關端點
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 使用者登入
+      description: |
+        使用帳號密碼進行身份驗證,成功後回傳 JWT Token。
+        Token 有效期為 1 小時,支援多裝置同時登入。
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              validLogin:
+                summary: 有效的登入請求
+                value:
+                  username: admin
+                  password: Admin@123
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  summary: 登入成功
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 登入成功
+                    data:
+                      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expiresAt: '2025-10-26T15:30:00Z'
+                      user:
+                        id: 00000000-0000-0000-0000-000000000001
+                        username: admin
+                        displayName: 系統管理員
+                        createdAt: '2025-10-26T08:00:00Z'
+                        updatedAt: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '400':
+          description: 驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                validationError:
+                  summary: 輸入驗證錯誤
+                  value:
+                    success: false
+                    code: VALIDATION_ERROR
+                    message: 帳號長度必須為 3-20 字元
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '401':
+          description: 登入失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                invalidCredentials:
+                  summary: 帳號或密碼錯誤
+                  value:
+                    success: false
+                    code: INVALID_CREDENTIALS
+                    message: 帳號或密碼錯誤
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts:
+    get:
+      tags:
+        - Accounts
+      summary: 查詢帳號列表
+      description: |
+        查詢所有有效 (未刪除) 的帳號列表,支援分頁。
+        需要 JWT 身份驗證。
+      operationId: listAccounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageNumber
+          in: query
+          description: 頁碼 (從 1 開始)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每頁數量
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AccountListResponse'
+              examples:
+                success:
+                  summary: 查詢成功
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 查詢成功
+                    data:
+                      items:
+                        - id: 00000000-0000-0000-0000-000000000001
+                          username: admin
+                          displayName: 系統管理員
+                          createdAt: '2025-10-26T08:00:00Z'
+                          updatedAt: null
+                        - id: 00000000-0000-0000-0000-000000000002
+                          username: testuser
+                          displayName: 測試使用者
+                          createdAt: '2025-10-26T09:00:00Z'
+                          updatedAt: null
+                      totalCount: 2
+                      pageNumber: 1
+                      pageSize: 10
+                      totalPages: 1
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    post:
+      tags:
+        - Accounts
+      summary: 新增帳號
+      description: |
+        建立新的使用者帳號。
+        帳號名稱必須唯一,僅允許英數字與底線。
+        密碼最少 8 字元,支援所有 Unicode 字元。
+        需要 JWT 身份驗證。
+      operationId: createAccount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+            examples:
+              validRequest:
+                summary: 有效的新增請求
+                value:
+                  username: newuser
+                  password: SecureP@ss123
+                  displayName: 新使用者
+      responses:
+        '201':
+          description: 帳號建立成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AccountResponse'
+              examples:
+                success:
+                  summary: 建立成功
+                  value:
+                    success: true
+                    code: CREATED
+                    message: 帳號建立成功
+                    data:
+                      id: 00000000-0000-0000-0000-000000000003
+                      username: newuser
+                      displayName: 新使用者
+                      createdAt: '2025-10-26T14:30:00Z'
+                      updatedAt: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '400':
+          description: 驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                validationError:
+                  summary: 輸入驗證錯誤
+                  value:
+                    success: false
+                    code: VALIDATION_ERROR
+                    message: 帳號僅允許英數字與底線
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: 業務邏輯錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                usernameExists:
+                  summary: 帳號已存在
+                  value:
+                    success: false
+                    code: USERNAME_EXISTS
+                    message: 帳號已存在
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: 查詢帳號詳細資訊
+      description: |
+        根據帳號 ID 查詢詳細資訊。
+        需要 JWT 身份驗證。
+      operationId: getAccount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 帳號 ID (GUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AccountResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 帳號不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                notFound:
+                  summary: 帳號不存在
+                  value:
+                    success: false
+                    code: NOT_FOUND
+                    message: 帳號不存在
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    put:
+      tags:
+        - Accounts
+      summary: 更新帳號資訊
+      description: |
+        更新指定帳號的顯示名稱。
+        使用者只能更新自己的資訊。
+        需要 JWT 身份驗證。
+      operationId: updateAccount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 帳號 ID (GUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+            examples:
+              validRequest:
+                summary: 有效的更新請求
+                value:
+                  displayName: 新的顯示名稱
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AccountResponse'
+        '400':
+          description: 驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 禁止操作
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                forbidden:
+                  summary: 只能更新自己的資訊
+                  value:
+                    success: false
+                    code: FORBIDDEN
+                    message: 您只能更新自己的資訊
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '404':
+          description: 帳號不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '409':
+          description: 並發衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                conflict:
+                  summary: 並發更新衝突
+                  value:
+                    success: false
+                    code: CONCURRENT_UPDATE_CONFLICT
+                    message: 資料已被其他使用者更新,請重新載入後再試
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    delete:
+      tags:
+        - Accounts
+      summary: 刪除帳號
+      description: |
+        軟刪除指定帳號 (標記為已刪除但保留資料)。
+        不可刪除當前登入的帳號。
+        不可刪除最後一個有效帳號。
+        需要 JWT 身份驗證與確認訊息。
+      operationId: deleteAccount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 帳號 ID (GUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+            examples:
+              validRequest:
+                summary: 有效的刪除請求
+                value:
+                  confirmation: CONFIRM
+      responses:
+        '200':
+          description: 刪除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  summary: 刪除成功
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 帳號刪除成功
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '400':
+          description: 驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 禁止操作
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                cannotDeleteSelf:
+                  summary: 無法刪除當前帳號
+                  value:
+                    success: false
+                    code: CANNOT_DELETE_SELF
+                    message: 無法刪除當前登入的帳號
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '404':
+          description: 帳號不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '422':
+          description: 業務邏輯錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                lastAccount:
+                  summary: 無法刪除最後一個帳號
+                  value:
+                    success: false
+                    code: LAST_ACCOUNT_CANNOT_DELETE
+                    message: 無法刪除最後一個有效帳號
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts/{id}/password:
+    put:
+      tags:
+        - Accounts
+      summary: 變更密碼
+      description: |
+        變更指定帳號的密碼。
+        使用者只能變更自己的密碼。
+        必須驗證舊密碼正確。
+        新密碼不可與舊密碼相同。
+        需要 JWT 身份驗證。
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 帳號 ID (GUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            examples:
+              validRequest:
+                summary: 有效的變更密碼請求
+                value:
+                  oldPassword: OldP@ss123
+                  newPassword: NewSecureP@ss456
+      responses:
+        '200':
+          description: 密碼變更成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  summary: 變更成功
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 密碼變更成功
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '400':
+          description: 驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                validationError:
+                  summary: 新密碼與舊密碼相同
+                  value:
+                    success: false
+                    code: VALIDATION_ERROR
+                    message: 新密碼不可與舊密碼相同
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '401':
+          description: 舊密碼錯誤或未授權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                invalidOldPassword:
+                  summary: 舊密碼錯誤
+                  value:
+                    success: false
+                    code: INVALID_CREDENTIALS
+                    message: 舊密碼錯誤
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '403':
+          description: 禁止操作
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                forbidden:
+                  summary: 只能變更自己的密碼
+                  value:
+                    success: false
+                    code: FORBIDDEN
+                    message: 您只能變更自己的密碼
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '404':
+          description: 帳號不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '422':
+          description: 業務邏輯錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                passwordSameAsOld:
+                  summary: 新密碼與舊密碼相同
+                  value:
+                    success: false
+                    code: PASSWORD_SAME_AS_OLD
+                    message: 新密碼不可與舊密碼相同
+                    data: null
+                    timestamp: '2025-10-26T14:30:00Z'
+                    traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        使用 JWT Bearer Token 進行身份驗證。
+        在 Authorization 標頭加入: `Bearer <token>`
+        
+        Token 透過 `/api/auth/login` 端點取得,有效期為 1 小時。
+
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        code:
+          type: string
+          description: 業務邏輯代碼
+          example: SUCCESS
+        message:
+          type: string
+          description: 繁體中文訊息
+          example: 操作成功
+        data:
+          type: object
+          description: 回應資料 (可為 null)
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          description: 回應時間戳記 (ISO 8601, UTC)
+          example: '2025-10-26T14:30:00Z'
+        traceId:
+          type: string
+          format: uuid
+          description: 分散式追蹤 ID
+          example: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          description: 帳號名稱
+          example: admin
+        password:
+          type: string
+          minLength: 8
+          description: 密碼
+          format: password
+          example: Admin@123
+
+    LoginResponse:
+      type: object
+      required:
+        - token
+        - expiresAt
+        - user
+      properties:
+        token:
+          type: string
+          description: JWT Access Token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token 過期時間 (ISO 8601, UTC)
+          example: '2025-10-26T15:30:00Z'
+        user:
+          $ref: '#/components/schemas/AccountResponse'
+
+    CreateAccountRequest:
+      type: object
+      required:
+        - username
+        - password
+        - displayName
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: 帳號名稱 (僅英數字與底線)
+          example: newuser
+        password:
+          type: string
+          minLength: 8
+          description: 密碼 (支援所有 Unicode 字元)
+          format: password
+          example: SecureP@ss123
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 顯示名稱
+          example: 新使用者
+
+    UpdateAccountRequest:
+      type: object
+      required:
+        - displayName
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 顯示名稱
+          example: 新的顯示名稱
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          minLength: 8
+          description: 舊密碼
+          format: password
+          example: OldP@ss123
+        newPassword:
+          type: string
+          minLength: 8
+          description: 新密碼 (不可與舊密碼相同)
+          format: password
+          example: NewSecureP@ss456
+
+    DeleteAccountRequest:
+      type: object
+      required:
+        - confirmation
+      properties:
+        confirmation:
+          type: string
+          enum:
+            - CONFIRM
+          description: 確認訊息 (必須為 "CONFIRM")
+          example: CONFIRM
+
+    AccountResponse:
+      type: object
+      required:
+        - id
+        - username
+        - displayName
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 使用者 ID
+          example: 00000000-0000-0000-0000-000000000001
+        username:
+          type: string
+          description: 帳號名稱
+          example: admin
+        displayName:
+          type: string
+          description: 顯示名稱
+          example: 系統管理員
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間 (ISO 8601, UTC)
+          example: '2025-10-26T08:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: 最後更新時間 (ISO 8601, UTC)
+          nullable: true
+          example: null
+
+    AccountListResponse:
+      type: object
+      required:
+        - items
+        - totalCount
+        - pageNumber
+        - pageSize
+        - totalPages
+      properties:
+        items:
+          type: array
+          description: 帳號清單
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        totalCount:
+          type: integer
+          description: 總數量
+          example: 2
+        pageNumber:
+          type: integer
+          minimum: 1
+          description: 當前頁碼 (從 1 開始)
+          example: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: 每頁數量
+          example: 10
+        totalPages:
+          type: integer
+          minimum: 0
+          description: 總頁數
+          example: 1
+
+  responses:
+    Unauthorized:
+      description: 未授權 - 缺少或無效的 JWT Token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+          example:
+            success: false
+            code: UNAUTHORIZED
+            message: 未授權,請先登入
+            data: null
+            timestamp: '2025-10-26T14:30:00Z'
+            traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
+
+    InternalError:
+      description: 系統內部錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+          example:
+            success: false
+            code: INTERNAL_ERROR
+            message: 系統內部錯誤,請稍後再試
+            data: null
+            timestamp: '2025-10-26T14:30:00Z'
+            traceId: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b
