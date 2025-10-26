@@ -13,14 +13,21 @@
 本專案遵循以下命名規則:
 
 - **Entity (實體)**: 單一資料表映射,直接對應資料庫表格結構 (例如: `User`, `Role`)
-- **Request (請求 DTO)**: API 層的輸入模型,用於接收客戶端請求 (例如: `LoginRequest`, `CreateAccountRequest`)
-- **Response (回應 DTO)**: API 層的輸出模型,用於回傳給客戶端 (例如: `LoginResponse`, `AccountResponse`)
-- **View (視圖 DTO)**: Join 查詢結果的複合模型,包含多表關聯資料 (例如: `UserRoleView`, `AccountDetailView`)
+- **Request (請求模型)**: API 層 (Controller) 的輸入模型,用於接收客戶端請求 (例如: `LoginRequest`, `CreateAccountRequest`)
+- **Response (回應模型)**: API 層 (Controller) 的輸出模型,用於回傳給客戶端 (例如: `LoginResponse`, `AccountResponse`)
+- **Dto (資料傳輸物件)**: Service 層的資料傳輸物件,用於業務邏輯處理 (例如: `LoginDto`, `AccountDto`, `CreateAccountDto`)
+- **View (視圖模型)**: Join 查詢結果的複合模型,包含多表關聯資料 (例如: `UserRoleView`, `AccountDetailView`)
 
 **分層對應**:
-- **Repository 層**: 使用 `Entity` (資料庫實體)
-- **Service 層**: `Entity` ↔ `Request`/`Response`/`View` 轉換
-- **Controller 層**: 使用 `Request`/`Response` DTO
+- **Controller 層**: 使用 `Request` (接收) 與 `Response` (回傳),負責 Request ↔ Dto 與 Dto ↔ Response 轉換
+- **Service 層**: 使用 `Dto` (參數與返回值),負責 Dto ↔ Entity/View 轉換與業務邏輯
+- **Repository 層**: 使用 `Entity` (單表) 與 `View` (Join 查詢),負責資料庫操作
+
+**資料流向**:
+```
+Client → Request → Controller → Dto → Service → Entity → Repository → Database
+Client ← Response ← Controller ← Dto ← Service ← Entity/View ← Repository ← Database
+```
 
 ---
 
@@ -117,7 +124,9 @@ CREATE INDEX idx_users_createdat ON users(CreatedAt DESC);
 
 ---
 
-## 2. Request DTOs (API 請求物件)
+## 2. Request Models (API 請求模型)
+
+**說明**: Request 模型用於 Controller 層接收客戶端 HTTP 請求,經過 FluentValidation 驗證後轉換為 Dto 傳給 Service 層。
 
 ### 2.1 LoginRequest
 
@@ -254,9 +263,9 @@ public class DeleteAccountRequest
 
 ---
 
-## 3. Response DTOs (API 回應物件)
+## 3. Response Models (API 回應模型)
 
-**說明**: Response DTO 用於 API 層回傳資料給客戶端,不包含敏感資訊 (如密碼雜湊、內部欄位)。
+**說明**: Response 模型用於 Controller 層回傳資料給客戶端。Service 層返回 Dto 後,Controller 轉換為 Response 包裝於 ApiResponseModel 回傳,不包含敏感資訊。
 
 ### 3.1 LoginResponse
 
@@ -367,9 +376,9 @@ public class AccountListResponse
 
 ---
 
-## 3.4 View DTOs (視圖物件)
+## 3.4 View Models (視圖模型)
 
-**說明**: View DTO 用於表示 Join 查詢結果的複合模型。本功能目前無 Join 查詢需求,未來擴充角色權限管理時可能需要以下 View:
+**說明**: View 模型用於表示 Join 查詢結果的複合模型。本功能目前無 Join 查詢需求,未來擴充角色權限管理時可能需要以下 View:
 
 **未來範例** (角色權限功能):
 ```csharp
@@ -387,11 +396,238 @@ public class UserRoleView
 }
 ```
 
-**注意**: 目前帳號管理功能僅操作單一 `users` 表格,因此僅使用 `User` Entity 與 `AccountResponse` DTO,無需 View DTO。
+**注意**: 目前帳號管理功能僅操作單一 `users` 表格,因此僅使用 `User` Entity 與 `AccountResponse` Response,無需 View。
 
 ---
 
-## 4. 驗證器 (FluentValidation)
+## 4. Dto Models (Service 層資料傳輸物件)
+
+**說明**: Dto 模型用於 Service 層的資料傳輸,作為方法參數與返回值。Controller 層將 Request 轉換為 Dto 傳給 Service,Service 返回 Dto 給 Controller 轉換為 Response。
+
+### 4.1 LoginDto
+
+**用途**: Service 層登入處理的輸入參數
+
+```csharp
+/// <summary>
+/// 登入 DTO
+/// </summary>
+public class LoginDto
+{
+    /// <summary>
+    /// 帳號名稱
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 密碼
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
+}
+```
+
+---
+
+### 4.2 LoginResultDto
+
+**用途**: Service 層登入處理的返回結果
+
+```csharp
+/// <summary>
+/// 登入結果 DTO
+/// </summary>
+public class LoginResultDto
+{
+    /// <summary>
+    /// JWT Access Token
+    /// </summary>
+    public string Token { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Token 過期時間 (UTC)
+    /// </summary>
+    public DateTime ExpiresAt { get; set; }
+    
+    /// <summary>
+    /// 使用者 ID
+    /// </summary>
+    public Guid UserId { get; set; }
+    
+    /// <summary>
+    /// 使用者帳號
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 顯示名稱
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
+}
+```
+
+---
+
+### 4.3 CreateAccountDto
+
+**用途**: Service 層新增帳號的輸入參數
+
+```csharp
+/// <summary>
+/// 新增帳號 DTO
+/// </summary>
+public class CreateAccountDto
+{
+    /// <summary>
+    /// 帳號名稱
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 密碼
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 顯示名稱
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
+}
+```
+
+---
+
+### 4.4 UpdateAccountDto
+
+**用途**: Service 層更新帳號的輸入參數
+
+```csharp
+/// <summary>
+/// 更新帳號 DTO
+/// </summary>
+public class UpdateAccountDto
+{
+    /// <summary>
+    /// 帳號 ID
+    /// </summary>
+    public Guid Id { get; set; }
+    
+    /// <summary>
+    /// 顯示名稱
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 當前版本號 (樂觀並發控制)
+    /// </summary>
+    public int Version { get; set; }
+}
+```
+
+---
+
+### 4.5 ChangePasswordDto
+
+**用途**: Service 層變更密碼的輸入參數
+
+```csharp
+/// <summary>
+/// 變更密碼 DTO
+/// </summary>
+public class ChangePasswordDto
+{
+    /// <summary>
+    /// 帳號 ID
+    /// </summary>
+    public Guid Id { get; set; }
+    
+    /// <summary>
+    /// 舊密碼
+    /// </summary>
+    public string OldPassword { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 新密碼
+    /// </summary>
+    public string NewPassword { get; set; } = string.Empty;
+}
+```
+
+---
+
+### 4.6 AccountDto
+
+**用途**: Service 層通用的帳號資料傳輸
+
+```csharp
+/// <summary>
+/// 帳號 DTO
+/// </summary>
+public class AccountDto
+{
+    /// <summary>
+    /// 使用者 ID
+    /// </summary>
+    public Guid Id { get; set; }
+    
+    /// <summary>
+    /// 帳號名稱
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 顯示名稱
+    /// </summary>
+    public string DisplayName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 建立時間 (UTC)
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+    
+    /// <summary>
+    /// 最後更新時間 (UTC)
+    /// </summary>
+    public DateTime? UpdatedAt { get; set; }
+}
+```
+
+---
+
+### 4.7 AccountListDto
+
+**用途**: Service 層帳號列表查詢結果
+
+```csharp
+/// <summary>
+/// 帳號列表 DTO
+/// </summary>
+public class AccountListDto
+{
+    /// <summary>
+    /// 帳號清單
+    /// </summary>
+    public List<AccountDto> Items { get; set; } = new();
+    
+    /// <summary>
+    /// 總數量
+    /// </summary>
+    public int TotalCount { get; set; }
+    
+    /// <summary>
+    /// 當前頁碼
+    /// </summary>
+    public int PageNumber { get; set; }
+    
+    /// <summary>
+    /// 每頁數量
+    /// </summary>
+    public int PageSize { get; set; }
+}
+```
+
+---
+
+## 5. 驗證器 (FluentValidation)
 
 ### 4.1 LoginRequestValidator
 
@@ -495,7 +731,7 @@ public class DeleteAccountRequestValidator : AbstractValidator<DeleteAccountRequ
 
 ---
 
-## 5. 業務規則與狀態轉換
+## 6. 業務規則與狀態轉換
 
 ### 5.1 帳號生命週期
 
@@ -590,32 +826,88 @@ public async Task<bool> UpdateAsync(User user, int expectedVersion)
 
 ---
 
-## 6. 資料映射 (Mapping)
+## 7. 資料映射 (Mapping)
 
-**說明**: 資料映射在 Service 層執行,負責 Entity ↔ Request/Response/View DTO 之間的轉換。
+**說明**: 資料映射在各層執行,負責不同模型類型之間的轉換。
 
-### 6.1 Entity → Response DTO
+### 7.1 資料流向圖
 
-**用途**: Repository 返回 Entity 後,Service 層轉換為 Response DTO 回傳給 Controller。
+```
+Client Request
+      ↓
+[Controller 層] Request Model → Dto Model
+      ↓
+[Service 層] Dto Model → Entity / Entity → Dto Model
+      ↓
+[Repository 層] Entity ↔ Database
+      ↓
+[Service 層] Entity → Dto Model
+      ↓
+[Controller 層] Dto Model → Response Model
+      ↓
+Client Response
+```
+
+---
+
+### 7.2 Controller 層轉換
+
+#### Request Model → Dto Model
+
+**用途**: Controller 接收 Request 後,轉換為 Dto 傳給 Service。
 
 ```csharp
 /// <summary>
-/// User Entity 擴充方法
+/// LoginRequest 轉換為 LoginDto
 /// </summary>
-public static class UserExtensions
+public static class LoginRequestExtensions
 {
-    /// <summary>
-    /// 將 User Entity 轉換為 AccountResponse DTO
-    /// </summary>
-    public static AccountResponse ToResponse(this User user)
+    public static LoginDto ToDto(this LoginRequest request)
+    {
+        return new LoginDto
+        {
+            Username = request.Username,
+            Password = request.Password
+        };
+    }
+}
+```
+
+#### Dto Model → Response Model
+
+**用途**: Service 返回 Dto 後,Controller 轉換為 Response 回傳給 Client。
+
+```csharp
+/// <summary>
+/// LoginResultDto 轉換為 LoginResponse
+/// </summary>
+public static class LoginResultDtoExtensions
+{
+    public static LoginResponse ToResponse(this LoginResultDto dto)
+    {
+        return new LoginResponse
+        {
+            Token = dto.Token,
+            ExpiresAt = dto.ExpiresAt,
+            User = dto.User.ToResponse() // AccountDto → AccountResponse
+        };
+    }
+}
+
+/// <summary>
+/// AccountDto 轉換為 AccountResponse
+/// </summary>
+public static class AccountDtoExtensions
+{
+    public static AccountResponse ToResponse(this AccountDto dto)
     {
         return new AccountResponse
         {
-            Id = user.Id,
-            Username = user.Username,
-            DisplayName = user.DisplayName,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
+            Id = dto.Id,
+            Username = dto.Username,
+            DisplayName = dto.DisplayName,
+            CreatedAt = dto.CreatedAt,
+            UpdatedAt = dto.UpdatedAt
         };
     }
 }
@@ -623,27 +915,26 @@ public static class UserExtensions
 
 ---
 
-### 6.2 Request DTO → Entity
+### 7.3 Service 層轉換
 
-**用途**: Controller 接收 Request DTO 後,Service 層轉換為 Entity 傳給 Repository。
+#### Dto Model → Entity
+
+**用途**: Service 接收 Dto 後,轉換為 Entity 傳給 Repository。
 
 ```csharp
 /// <summary>
-/// Account Request DTO 擴充方法
+/// CreateAccountDto 轉換為 User Entity
 /// </summary>
-public static class AccountRequestExtensions
+public static class CreateAccountDtoExtensions
 {
-    /// <summary>
-    /// 將 CreateAccountRequest 轉換為 User Entity
-    /// </summary>
-    public static User ToEntity(this CreateAccountRequest request, string passwordHash)
+    public static User ToEntity(this CreateAccountDto dto, string passwordHash)
     {
         return new User
         {
             Id = Guid.NewGuid(),
-            Username = request.Username.ToLowerInvariant(), // 不區分大小寫
+            Username = dto.Username.ToLowerInvariant(), // 不區分大小寫
             PasswordHash = passwordHash,
-            DisplayName = request.DisplayName,
+            DisplayName = dto.DisplayName,
             CreatedAt = DateTime.UtcNow,
             IsDeleted = false,
             Version = 1
@@ -653,18 +944,43 @@ public static class AccountRequestExtensions
 ```
 
 **注意**: 
-- 密碼雜湊在 Service 層完成,不在 DTO 轉換時處理
+- 密碼雜湊在 Service 層完成,不在 Dto 轉換時處理
 - 系統欄位 (Id, CreatedAt, Version) 由系統自動設定
+
+#### Entity → Dto Model
+
+**用途**: Repository 返回 Entity 後,Service 層轉換為 Dto。
+
+```csharp
+/// <summary>
+/// User Entity 轉換為 AccountDto
+/// </summary>
+public static class UserExtensions
+{
+    public static AccountDto ToDto(this User user)
+    {
+        return new AccountDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            DisplayName = user.DisplayName,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            Version = user.Version
+        };
+    }
+}
+```
 
 ---
 
-### 6.3 View DTO 映射 (未來擴充)
+### 7.4 View Model 映射 (未來擴充)
 
-**用途**: 當有 Join 查詢需求時,Repository 直接返回 View DTO。
+**用途**: 當有 Join 查詢需求時,Repository 直接返回 View Model。
 
 **範例** (未來角色權限功能):
 ```csharp
-// Repository 層: 執行 Join 查詢並返回 View DTO
+// Repository 層: 執行 Join 查詢並返回 View Model
 public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
 {
     const string sql = @"
@@ -684,7 +1000,7 @@ public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
     return await _connection.QueryAsync<UserRoleView>(sql, new { UserId = userId });
 }
 
-// Service 層: 直接使用 View DTO,無需額外轉換
+// Service 層: 直接使用 View Model,無需額外轉換
 public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
 {
     return await _userRepository.GetUserRolesAsync(userId);
@@ -699,7 +1015,7 @@ public async Task<IEnumerable<UserRoleView>> GetUserRolesAsync(Guid userId)
 
 ---
 
-## 7. 資料庫遷移腳本
+## 8. 資料庫遷移腳本
 
 ### 7.1 001_CreateUsersTable.sql
 
@@ -769,7 +1085,7 @@ VALUES (
 
 ---
 
-## 8. 資料完整性約束
+## 9. 資料完整性約束
 
 ### 8.1 約束清單
 
@@ -805,7 +1121,7 @@ ALTER TABLE users ADD CONSTRAINT chk_version_positive
 
 ---
 
-## 9. 效能考量
+## 10. 效能考量
 
 ### 9.1 索引策略
 
@@ -844,7 +1160,7 @@ SELECT COUNT(*) FROM users WHERE is_deleted = false;
 
 ---
 
-## 10. 安全性考量
+## 11. 安全性考量
 
 ### 10.1 敏感資訊保護
 
@@ -868,9 +1184,10 @@ SELECT COUNT(*) FROM users WHERE is_deleted = false;
 
 本資料模型涵蓋:
 - ✅ **1 個核心實體 (Entity)**: User (單一表格映射)
-- ✅ **5 個 Request DTOs**: Login, CreateAccount, UpdateAccount, ChangePassword, DeleteAccount (API 輸入)
-- ✅ **3 個 Response DTOs**: Login, Account, AccountList (API 輸出)
-- ✅ **0 個 View DTOs**: 目前無 Join 查詢需求 (未來角色權限功能時新增)
+- ✅ **5 個 Request Models**: Login, CreateAccount, UpdateAccount, ChangePassword, DeleteAccount (Controller 輸入)
+- ✅ **3 個 Response Models**: Login, Account, AccountList (Controller 輸出)
+- ✅ **7 個 Dto Models**: Login, LoginResult, CreateAccount, UpdateAccount, ChangePassword, Account, AccountList (Service 層資料傳輸)
+- ✅ **0 個 View Models**: 目前無 Join 查詢需求 (未來角色權限功能時新增)
 - ✅ **5 個驗證器**: FluentValidation (輸入驗證)
 - ✅ **完整的業務規則**: 生命週期、狀態轉換、並發控制
 - ✅ **資料庫遷移腳本**: 建表、索引、初始資料
@@ -878,8 +1195,9 @@ SELECT COUNT(*) FROM users WHERE is_deleted = false;
 
 **命名規則遵循**:
 - ✅ Entity: 單一表格映射 (User)
-- ✅ Request: API 輸入模型 (LoginRequest, CreateAccountRequest 等)
-- ✅ Response: API 輸出模型 (LoginResponse, AccountResponse 等)
+- ✅ Request: Controller 輸入模型 (LoginRequest, CreateAccountRequest 等)
+- ✅ Response: Controller 輸出模型 (LoginResponse, AccountResponse 等)
+- ✅ Dto: Service 層資料傳輸物件 (LoginDto, AccountDto 等)
 - ✅ View: Join 查詢結果 (未來擴充時使用)
 
 所有設計符合專案憲法與三層架構原則,可進入實作階段。
