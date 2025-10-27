@@ -20,10 +20,10 @@
 
 **目的**: 建立專案基礎結構與必要的資料夾
 
-- [ ] T001 建立資料夾結構 - 在專案根目錄建立 Models/Entities/, Models/Requests/, Models/Responses/, Models/Dtos/, Models/Views/, Configuration/, Validators/, Middleware/, Database/Migrations/, Database/Scripts/
-- [ ] T002 安裝必要的 NuGet 套件 - Npgsql, Dapper, BCrypt.Net-Next, Microsoft.AspNetCore.Authentication.JwtBearer, FluentValidation, FluentValidation.AspNetCore
-- [ ] T003 [P] 建立 .editorconfig 檔案,設定 C# 13 程式碼風格與繁體中文註解規範
-- [ ] T004 [P] 更新 appsettings.json 與 appsettings.Development.json,加入 ConnectionStrings (PostgreSQL) 與 JwtSettings 組態區段
+- [X] T001 建立資料夾結構 - 在專案根目錄建立 Models/Entities/, Models/Requests/, Models/Responses/, Models/Dtos/, Models/Views/, Configuration/, Validators/, Middleware/, Database/Migrations/, Database/Scripts/
+- [X] T002 安裝必要的 NuGet 套件 - Npgsql, Dapper, BCrypt.Net-Next, Microsoft.AspNetCore.Authentication.JwtBearer, FluentValidation, FluentValidation.AspNetCore
+- [X] T003 [P] 建立 .editorconfig 檔案,設定 C# 13 程式碼風格與繁體中文註解規範
+- [X] T004 [P] 更新 appsettings.json 與 appsettings.Development.json,加入 ConnectionStrings (PostgreSQL) 與 JwtSettings 組態區段
 
 ---
 

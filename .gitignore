@@ -5,6 +5,12 @@
 
 # dotenv files
 .env
+.env.*
+
+# ASP.NET Core sensitive configuration files
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.*.Local.json
 
 # User-specific files
 *.rsuser
