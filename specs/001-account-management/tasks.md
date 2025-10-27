@@ -35,40 +35,40 @@
 
 ### 資料庫與資料存取
 
-- [ ] T005 建立 Database/Migrations/001_CreateUsersTable.sql - PostgreSQL 建表腳本,包含 users 資料表定義、索引、約束 (參考 data-model.md 的 User Entity 定義)
-- [ ] T006 [P] 建立 Database/Scripts/seed.sql - 初始資料腳本,建立預設管理員帳號 (admin/Admin@123)
-- [ ] T007 建立 Models/Entities/User.cs - User 實體類別,對應 users 資料表,包含 Id, Username, PasswordHash, DisplayName, CreatedAt, UpdatedAt, IsDeleted, DeletedAt, DeletedBy, Version 屬性
+- [X] T005 建立 Database/Migrations/001_CreateUsersTable.sql - PostgreSQL 建表腳本,包含 users 資料表定義、索引、約束 (參考 data-model.md 的 User Entity 定義)
+- [X] T006 [P] 建立 Database/Scripts/seed.sql - 初始資料腳本,建立預設管理員帳號 (admin/Admin@123)
+- [X] T007 建立 Models/Entities/User.cs - User 實體類別,對應 users 資料表,包含 Id, Username, PasswordHash, DisplayName, CreatedAt, UpdatedAt, IsDeleted, DeletedAt, DeletedBy, Version 屬性
 
 ### 組態管理
 
-- [ ] T008 [P] 建立 Configuration/DatabaseSettings.cs - 資料庫連線設定模型
-- [ ] T009 [P] 建立 Configuration/JwtSettings.cs - JWT 組態模型,包含 SecretKey, Issuer, Audience, ExpirationMinutes
+- [X] T008 [P] 建立 Configuration/DatabaseSettings.cs - 資料庫連線設定模型
+- [X] T009 [P] 建立 Configuration/JwtSettings.cs - JWT 組態模型,包含 SecretKey, Issuer, Audience, ExpirationMinutes
 
 ### 回應模型與錯誤處理
 
-- [ ] T010 建立 Models/ResponseCodes.cs - 業務邏輯代碼常數類別,定義 SUCCESS, CREATED, VALIDATION_ERROR, INVALID_CREDENTIALS, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, USERNAME_EXISTS, PASSWORD_SAME_AS_OLD, CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE, CONCURRENT_UPDATE_CONFLICT, INTERNAL_ERROR
-- [ ] T011 更新 Models/ApiResponseModel.cs - 確保包含 Success, Code, Message, Data, Timestamp, TraceId 屬性,並提供靜態工廠方法 (Success, Created, Error, ValidationError, NotFound 等)
+- [X] T010 建立 Models/ResponseCodes.cs - 業務邏輯代碼常數類別,定義 SUCCESS, CREATED, VALIDATION_ERROR, INVALID_CREDENTIALS, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, USERNAME_EXISTS, PASSWORD_SAME_AS_OLD, CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE, CONCURRENT_UPDATE_CONFLICT, INTERNAL_ERROR
+- [X] T011 更新 Models/ApiResponseModel.cs - 確保包含 Success, Code, Message, Data, Timestamp, TraceId 屬性,並提供靜態工廠方法 (Success, Created, Error, ValidationError, NotFound 等)
 
 ### 中介軟體
 
-- [ ] T012 [P] 建立 Middleware/TraceIdMiddleware.cs - 自動產生 TraceId 並注入到 HttpContext.Items 與回應標頭
-- [ ] T013 [P] 建立 Middleware/ExceptionHandlingMiddleware.cs - 全域異常處理,捕捉所有未處理的例外並包裝為 ApiResponseModel 回應 (繁體中文錯誤訊息)
+- [X] T012 [P] 建立 Middleware/TraceIdMiddleware.cs - 自動產生 TraceId 並注入到 HttpContext.Items 與回應標頭
+- [X] T013 [P] 建立 Middleware/ExceptionHandlingMiddleware.cs - 全域異常處理,捕捉所有未處理的例外並包裝為 ApiResponseModel 回應 (繁體中文錯誤訊息)
 
 ### JWT 驗證
 
-- [ ] T014 在 Program.cs 中設定 JWT Bearer Authentication - 註冊 JwtSettings 組態、設定 Authentication 與 Authorization 中介軟體
-- [ ] T015 建立 Services/Interfaces/IJwtService.cs - JWT 服務介面,定義 GenerateToken(User user) 方法
-- [ ] T016 建立 Services/JwtService.cs - 實作 IJwtService,使用 System.IdentityModel.Tokens.Jwt 產生 JWT Token (包含 sub, unique_name, name, jti, iat, exp, nbf claims)
+- [X] T014 在 Program.cs 中設定 JWT Bearer Authentication - 註冊 JwtSettings 組態、設定 Authentication 與 Authorization 中介軟體
+- [X] T015 建立 Services/Interfaces/IJwtService.cs - JWT 服務介面,定義 GenerateToken(User user) 方法
+- [X] T016 建立 Services/JwtService.cs - 實作 IJwtService,使用 System.IdentityModel.Tokens.Jwt 產生 JWT Token (包含 sub, unique_name, name, jti, iat, exp, nbf claims)
 
 ### Repository 基礎設施
 
-- [ ] T017 建立 Repositories/Interfaces/IUserRepository.cs - User Repository 介面,定義 GetByIdAsync, GetByUsernameAsync, ExistsAsync, GetAllAsync, CreateAsync, UpdateAsync, DeleteAsync (軟刪除), CountActiveAsync 方法
-- [ ] T018 建立 Repositories/UserRepository.cs - 實作 IUserRepository,使用 Dapper 進行 PostgreSQL 資料存取 (注入 IDbConnection,使用參數化查詢)
+- [X] T017 建立 Repositories/Interfaces/IUserRepository.cs - User Repository 介面,定義 GetByIdAsync, GetByUsernameAsync, ExistsAsync, GetAllAsync, CreateAsync, UpdateAsync, DeleteAsync (軟刪除), CountActiveAsync 方法
+- [X] T018 建立 Repositories/UserRepository.cs - 實作 IUserRepository,使用 Dapper 進行 PostgreSQL 資料存取 (注入 IDbConnection,使用參數化查詢)
 
 ### 依賴注入設定
 
-- [ ] T019 在 Program.cs 中註冊服務 - 使用 AddScoped 註冊 IDbConnection (Npgsql), IUserRepository, IJwtService,設定 FluentValidation (AddValidatorsFromAssemblyContaining<Program>())
-- [ ] T020 [P] 設定 Swagger/OpenAPI - 加入 JWT Bearer 認證支援、設定 XML 文件註解路徑、啟用繁體中文描述
+- [X] T019 在 Program.cs 中註冊服務 - 使用 AddScoped 註冊 IDbConnection (Npgsql), IUserRepository, IJwtService,設定 FluentValidation (AddValidatorsFromAssemblyContaining<Program>())
+- [X] T020 [P] 設定 Swagger/OpenAPI - 加入 JWT Bearer 認證支援、設定 XML 文件註解路徑、啟用繁體中文描述
 
 **Checkpoint**: 基礎建設完成 - 使用者故事實作現在可以並行開始
 
@@ -82,25 +82,25 @@
 
 ### US1 - 資料模型
 
-- [ ] T021 [P] [US1] 建立 Models/Requests/LoginRequest.cs - 登入請求模型,包含 Username, Password 屬性
-- [ ] T022 [P] [US1] 建立 Models/Responses/LoginResponse.cs - 登入回應模型,包含 Token, ExpiresAt, User (AccountResponse) 屬性
-- [ ] T023 [P] [US1] 建立 Models/Responses/AccountResponse.cs - 帳號回應模型,包含 Id, Username, DisplayName, CreatedAt, UpdatedAt 屬性
-- [ ] T024 [P] [US1] 建立 Models/Dtos/LoginDto.cs - 登入 Dto,包含 Username, Password 屬性
-- [ ] T025 [P] [US1] 建立 Models/Dtos/LoginResultDto.cs - 登入結果 Dto,包含 Token, ExpiresAt, User (AccountDto) 屬性
-- [ ] T026 [P] [US1] 建立 Models/Dtos/AccountDto.cs - 帳號 Dto,包含 Id, Username, DisplayName, CreatedAt, UpdatedAt, Version 屬性
+- [X] T021 [P] [US1] 建立 Models/Requests/LoginRequest.cs - 登入請求模型,包含 Username, Password 屬性
+- [X] T022 [P] [US1] 建立 Models/Responses/LoginResponse.cs - 登入回應模型,包含 Token, ExpiresAt, User (AccountResponse) 屬性
+- [X] T023 [P] [US1] 建立 Models/Responses/AccountResponse.cs - 帳號回應模型,包含 Id, Username, DisplayName, CreatedAt, UpdatedAt 屬性
+- [X] T024 [P] [US1] 建立 Models/Dtos/LoginDto.cs - 登入 Dto,包含 Username, Password 屬性
+- [X] T025 [P] [US1] 建立 Models/Dtos/LoginResultDto.cs - 登入結果 Dto,包含 Token, ExpiresAt, User (AccountDto) 屬性
+- [X] T026 [P] [US1] 建立 Models/Dtos/AccountDto.cs - 帳號 Dto,包含 Id, Username, DisplayName, CreatedAt, UpdatedAt, Version 屬性
 
 ### US1 - 驗證器
 
-- [ ] T027 [US1] 建立 Validators/LoginRequestValidator.cs - LoginRequest 驗證器,使用 FluentValidation,驗證 Username (必填, 3-20 字元) 與 Password (必填, 最少 8 字元),錯誤訊息使用繁體中文
+- [X] T027 [US1] 建立 Validators/LoginRequestValidator.cs - LoginRequest 驗證器,使用 FluentValidation,驗證 Username (必填, 3-20 字元) 與 Password (必填, 最少 8 字元),錯誤訊息使用繁體中文
 
 ### US1 - 服務層
 
-- [ ] T028 建立 Services/Interfaces/IAuthService.cs - 身份驗證服務介面,定義 LoginAsync(LoginDto loginDto) 方法,回傳 LoginResultDto
-- [ ] T029 建立 Services/AuthService.cs - 實作 IAuthService,注入 IUserRepository, IJwtService,實作登入邏輯 (查詢使用者、驗證密碼 BCrypt.Verify、產生 Token、記錄登入失敗嘗試)
+- [X] T028 建立 Services/Interfaces/IAuthService.cs - 身份驗證服務介面,定義 LoginAsync(LoginDto loginDto) 方法,回傳 LoginResultDto
+- [X] T029 建立 Services/AuthService.cs - 實作 IAuthService,注入 IUserRepository, IJwtService,實作登入邏輯 (查詢使用者、驗證密碼 BCrypt.Verify、產生 Token、記錄登入失敗嘗試)
 
 ### US1 - 控制器
 
-- [ ] T030 [US1] 更新 Controllers/AuthController.cs - 實作 POST /api/auth/login 端點,注入 IAuthService,接收 LoginRequest,轉換為 LoginDto,呼叫 AuthService.LoginAsync,將 LoginResultDto 轉換為 LoginResponse,包裝為 ApiResponseModel<LoginResponse> 回傳 (處理 INVALID_CREDENTIALS, VALIDATION_ERROR, INTERNAL_ERROR 錯誤碼)
+- [X] T030 [US1] 更新 Controllers/AuthController.cs - 實作 POST /api/auth/login 端點,注入 IAuthService,接收 LoginRequest,轉換為 LoginDto,呼叫 AuthService.LoginAsync,將 LoginResultDto 轉換為 LoginResponse,包裝為 ApiResponseModel<LoginResponse> 回傳 (處理 INVALID_CREDENTIALS, VALIDATION_ERROR, INTERNAL_ERROR 錯誤碼)
 
 **Checkpoint**: 此時 User Story 1 應該完全功能正常且可獨立測試
 
@@ -114,22 +114,22 @@
 
 ### US2 - 資料模型
 
-- [ ] T031 [P] [US2] 建立 Models/Requests/CreateAccountRequest.cs - 新增帳號請求模型,包含 Username, Password, DisplayName 屬性
-- [ ] T032 [P] [US2] 建立 Models/Dtos/CreateAccountDto.cs - 新增帳號 Dto,包含 Username, Password, DisplayName 屬性
+- [X] T031 [P] [US2] 建立 Models/Requests/CreateAccountRequest.cs - 新增帳號請求模型,包含 Username, Password, DisplayName 屬性
+- [X] T032 [P] [US2] 建立 Models/Dtos/CreateAccountDto.cs - 新增帳號 Dto,包含 Username, Password, DisplayName 屬性
 
 ### US2 - 驗證器
 
-- [ ] T033 [US2] 建立 Validators/CreateAccountRequestValidator.cs - CreateAccountRequest 驗證器,驗證 Username (必填, 3-20 字元, 正規表示式 ^[a-zA-Z0-9_]+$), Password (必填, 最少 8 字元), DisplayName (必填, 最大 100 字元),繁體中文錯誤訊息
+- [X] T033 [US2] 建立 Validators/CreateAccountRequestValidator.cs - CreateAccountRequest 驗證器,驗證 Username (必填, 3-20 字元, 正規表示式 ^[a-zA-Z0-9_]+$), Password (必填, 最少 8 字元), DisplayName (必填, 最大 100 字元),繁體中文錯誤訊息
 
 ### US2 - 服務層
 
-- [ ] T034 建立 Services/Interfaces/IAccountService.cs - 帳號管理服務介面,定義 CreateAccountAsync(CreateAccountDto dto) 方法,回傳 AccountDto
-- [ ] T035 建立 Services/AccountService.cs - 實作 IAccountService,注入 IUserRepository,實作 CreateAccountAsync (檢查帳號唯一性、BCrypt 雜湊密碼、建立 User Entity、呼叫 Repository.CreateAsync、轉換為 AccountDto)
-- [ ] T036 在 Program.cs 中註冊 IAccountService - 使用 AddScoped<IAccountService, AccountService>()
+- [X] T034 建立 Services/Interfaces/IAccountService.cs - 帳號管理服務介面,定義 CreateAccountAsync(CreateAccountDto dto) 方法,回傳 AccountDto
+- [X] T035 建立 Services/AccountService.cs - 實作 IAccountService,注入 IUserRepository,實作 CreateAccountAsync (檢查帳號唯一性、BCrypt 雜湊密碼、建立 User Entity、呼叫 Repository.CreateAsync、轉換為 AccountDto)
+- [X] T036 在 Program.cs 中註冊 IAccountService - 使用 AddScoped<IAccountService, AccountService>()
 
 ### US2 - 控制器
 
-- [ ] T037 [US2] 建立 Controllers/AccountController.cs - 繼承 BaseApiController,加入 [Authorize] 屬性,實作 POST /api/accounts 端點,接收 CreateAccountRequest,轉換為 CreateAccountDto,呼叫 AccountService.CreateAccountAsync,將 AccountDto 轉換為 AccountResponse,包裝為 ApiResponseModel<AccountResponse> 回傳 201 Created (處理 USERNAME_EXISTS, VALIDATION_ERROR, INTERNAL_ERROR 錯誤碼)
+- [X] T037 [US2] 建立 Controllers/AccountController.cs - 繼承 BaseApiController,加入 [Authorize] 屬性,實作 POST /api/accounts 端點,接收 CreateAccountRequest,轉換為 CreateAccountDto,呼叫 AccountService.CreateAccountAsync,將 AccountDto 轉換為 AccountResponse,包裝為 ApiResponseModel<AccountResponse> 回傳 201 Created (處理 USERNAME_EXISTS, VALIDATION_ERROR, INTERNAL_ERROR 錯誤碼)
 
 **Checkpoint**: 此時 User Stories 1 與 2 應該都能獨立運作
 
@@ -175,24 +175,24 @@
 
 ### US4 - 資料模型
 
-- [ ] T048 [P] [US4] 建立 Models/Requests/DeleteAccountRequest.cs - 刪除帳號請求模型,包含 ConfirmText 屬性 (必須為 "CONFIRM")
-- [ ] T049 [P] [US4] 建立 Models/Responses/AccountListResponse.cs - 帳號列表回應模型,包含 Items (List<AccountResponse>), TotalCount, PageNumber, PageSize 屬性
-- [ ] T050 [P] [US4] 建立 Models/Dtos/AccountListDto.cs - 帳號列表 Dto,包含 Items (List<AccountDto>), TotalCount, PageNumber, PageSize 屬性
+- [X] T048 [P] [US4] 建立 Models/Requests/DeleteAccountRequest.cs - 刪除帳號請求模型,包含 ConfirmText 屬性 (必須為 "CONFIRM")
+- [X] T049 [P] [US4] 建立 Models/Responses/AccountListResponse.cs - 帳號列表回應模型,包含 Items (List<AccountResponse>), TotalCount, PageNumber, PageSize 屬性
+- [X] T050 [P] [US4] 建立 Models/Dtos/AccountListDto.cs - 帳號列表 Dto,包含 Items (List<AccountDto>), TotalCount, PageNumber, PageSize 屬性
 
 ### US4 - 驗證器
 
-- [ ] T051 [US4] 建立 Validators/DeleteAccountRequestValidator.cs - DeleteAccountRequest 驗證器,驗證 ConfirmText (必填, 必須等於 "CONFIRM"),繁體中文錯誤訊息
+- [X] T051 [US4] 建立 Validators/DeleteAccountRequestValidator.cs - DeleteAccountRequest 驗證器,驗證 ConfirmText (必填, 必須等於 "CONFIRM"),繁體中文錯誤訊息
 
 ### US4 - 服務層
 
-- [ ] T052 更新 Services/Interfaces/IAccountService.cs - 加入 GetAccountByIdAsync(Guid id), GetAccountsAsync(int pageNumber, int pageSize), DeleteAccountAsync(Guid id, Guid operatorId) 方法
-- [ ] T053 更新 Services/AccountService.cs - 實作 GetAccountByIdAsync (查詢單一使用者並轉換為 AccountDto),實作 GetAccountsAsync (分頁查詢有效帳號並轉換為 AccountListDto),實作 DeleteAccountAsync (軟刪除邏輯: 檢查不可刪除自己、檢查至少保留一個有效帳號、設定 IsDeleted, DeletedAt, DeletedBy)
+- [X] T052 更新 Services/Interfaces/IAccountService.cs - 加入 GetAccountByIdAsync(Guid id), GetAccountsAsync(int pageNumber, int pageSize), DeleteAccountAsync(Guid id, Guid operatorId) 方法
+- [X] T053 更新 Services/AccountService.cs - 實作 GetAccountByIdAsync (查詢單一使用者並轉換為 AccountDto),實作 GetAccountsAsync (分頁查詢有效帳號並轉換為 AccountListDto),實作 DeleteAccountAsync (軟刪除邏輯: 檢查不可刪除自己、檢查至少保留一個有效帳號、設定 IsDeleted, DeletedAt, DeletedBy)
 
 ### US4 - 控制器
 
-- [ ] T054 [US4] 更新 Controllers/AccountController.cs - 實作 GET /api/accounts 端點 (查詢帳號列表),接收 pageNumber, pageSize 查詢參數,呼叫 AccountService.GetAccountsAsync,將 AccountListDto 轉換為 AccountListResponse,包裝為 ApiResponseModel<AccountListResponse> 回傳
-- [ ] T055 [US4] 更新 Controllers/AccountController.cs - 實作 GET /api/accounts/{id} 端點 (查詢單一帳號),呼叫 AccountService.GetAccountByIdAsync,將 AccountDto 轉換為 AccountResponse,包裝為 ApiResponseModel<AccountResponse> 回傳 (處理 NOT_FOUND 錯誤碼)
-- [ ] T056 [US4] 更新 Controllers/AccountController.cs - 實作 DELETE /api/accounts/{id} 端點,接收 DeleteAccountRequest,驗證 ConfirmText,從 JWT Claims 取得當前使用者 ID,呼叫 AccountService.DeleteAccountAsync,回傳 ApiResponseModel (處理 CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE, NOT_FOUND 錯誤碼)
+- [X] T054 [US4] 更新 Controllers/AccountController.cs - 實作 GET /api/accounts 端點 (查詢帳號列表),接收 pageNumber, pageSize 查詢參數,呼叫 AccountService.GetAccountsAsync,將 AccountListDto 轉換為 AccountListResponse,包裝為 ApiResponseModel<AccountListResponse> 回傳
+- [X] T055 [US4] 更新 Controllers/AccountController.cs - 實作 GET /api/accounts/{id} 端點 (查詢單一帳號),呼叫 AccountService.GetAccountByIdAsync,將 AccountDto 轉換為 AccountResponse,包裝為 ApiResponseModel<AccountResponse> 回傳 (處理 NOT_FOUND 錯誤碼)
+- [X] T056 [US4] 更新 Controllers/AccountController.cs - 實作 DELETE /api/accounts/{id} 端點,接收 DeleteAccountRequest,驗證 ConfirmText,從 JWT Claims 取得當前使用者 ID,呼叫 AccountService.DeleteAccountAsync,回傳 ApiResponseModel (處理 CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE, NOT_FOUND 錯誤碼)
 
 **Checkpoint**: 所有使用者故事現在應該都能獨立運作
 
