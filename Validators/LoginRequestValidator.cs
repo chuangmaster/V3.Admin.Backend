@@ -22,6 +22,6 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("密碼不可為空")
-            .MinimumLength(8).WithMessage("密碼長度至少 8 字元");
+            .MinimumLength(8).WithMessage("密碼至少 8 個字元");
     }
 }

@@ -62,7 +62,7 @@ public class AuthService : IAuthService
                 "登入失敗: 帳號 {Username} 已被刪除",
                 loginDto.Username
             );
-            throw new InvalidOperationException("此帳號已被刪除,無法登入");
+            throw new UnauthorizedAccessException("帳號或密碼錯誤");
         }
 
         // 產生 JWT Token

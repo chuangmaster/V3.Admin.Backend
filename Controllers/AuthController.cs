@@ -78,7 +78,7 @@ public class AuthController : BaseApiController
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "登入失敗: {Message}", ex.Message);
-            return BusinessError(ex.Message, ResponseCodes.INVALID_CREDENTIALS);
+            return UnauthorizedResponse(ex.Message, ResponseCodes.INVALID_CREDENTIALS);
         }
         catch (InvalidOperationException ex)
         {

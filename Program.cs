@@ -14,7 +14,7 @@ using V3.Admin.Backend.Services.Interfaces;
 
 namespace V3.Admin.Backend;
 
-public class Program
+public partial class Program
 {
     public static void Main(string[] args)
     {
@@ -147,3 +147,6 @@ public class Program
         app.Run();
     }
 }
+
+// Make Program class accessible to test project
+public partial class Program { }

@@ -18,6 +18,6 @@ public class DeleteAccountRequestValidator : AbstractValidator<DeleteAccountRequ
     {
         RuleFor(x => x.Confirmation)
             .NotEmpty().WithMessage("確認訊息不可為空")
-            .Equal("CONFIRM").WithMessage("確認訊息必須為 CONFIRM");
+            .Equal("CONFIRM").WithMessage("確認訊息必須輸入 'CONFIRM'");
     }
 }

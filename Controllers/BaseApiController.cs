@@ -57,9 +57,9 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// 回傳未授權響應 (401 Unauthorized)
     /// </summary>
-    protected IActionResult UnauthorizedResponse(string message = "未授權,請先登入")
+    protected IActionResult UnauthorizedResponse(string message = "未授權,請先登入", string code = ResponseCodes.UNAUTHORIZED)
     {
-        var response = ApiResponseModel.CreateFailure(message, ResponseCodes.UNAUTHORIZED);
+        var response = ApiResponseModel.CreateFailure(message, code);
         response.TraceId = TraceId;
         return StatusCode(401, response);
     }

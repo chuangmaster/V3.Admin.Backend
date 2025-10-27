@@ -22,7 +22,7 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
 
         RuleFor(x => x.NewPassword)
             .NotEmpty().WithMessage("新密碼不可為空")
-            .MinimumLength(8).WithMessage("新密碼長度至少 8 字元");
+            .MinimumLength(8).WithMessage("新密碼至少 8 個字元");
 
         RuleFor(x => x)
             .Must(x => x.NewPassword != x.OldPassword)
