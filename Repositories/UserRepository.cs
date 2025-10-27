@@ -13,12 +13,18 @@ public class UserRepository : IUserRepository
     private readonly IDbConnection _connection;
     private readonly ILogger<UserRepository> _logger;
 
+    /// <summary>
+    /// 建構函式
+    /// </summary>
+    /// <param name="connection">資料庫連線</param>
+    /// <param name="logger">日誌記錄器</param>
     public UserRepository(IDbConnection connection, ILogger<UserRepository> logger)
     {
         _connection = connection;
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<User?> GetByIdAsync(Guid id)
     {
         const string sql = @"
@@ -30,6 +36,7 @@ public class UserRepository : IUserRepository
         return await _connection.QuerySingleOrDefaultAsync<User>(sql, new { Id = id });
     }
 
+    /// <inheritdoc />
     public async Task<User?> GetByUsernameAsync(string username)
     {
         const string sql = @"
@@ -41,12 +48,14 @@ public class UserRepository : IUserRepository
         return await _connection.QuerySingleOrDefaultAsync<User>(sql, new { Username = username });
     }
 
+    /// <inheritdoc />
     public async Task<bool> ExistsAsync(string username)
     {
         const string sql = "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(username) = LOWER(@Username) AND is_deleted = false)";
         return await _connection.ExecuteScalarAsync<bool>(sql, new { Username = username });
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<User>> GetAllAsync(int pageNumber, int pageSize)
     {
         const string sql = @"
@@ -59,6 +68,7 @@ public class UserRepository : IUserRepository
         return await _connection.QueryAsync<User>(sql, new { PageSize = pageSize, Offset = offset });
     }
 
+    /// <inheritdoc />
     public async Task<bool> CreateAsync(User user)
     {
         const string sql = @"
@@ -69,6 +79,7 @@ public class UserRepository : IUserRepository
         return affected > 0;
     }
 
+    /// <inheritdoc />
     public async Task<bool> UpdateAsync(User user, int expectedVersion)
     {
         const string sql = @"
@@ -88,6 +99,7 @@ public class UserRepository : IUserRepository
         return affected > 0;
     }
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(Guid id, Guid operatorId)
     {
         const string sql = @"
@@ -104,6 +116,7 @@ public class UserRepository : IUserRepository
         return affected > 0;
     }
 
+    /// <inheritdoc />
     public async Task<int> CountActiveAsync()
     {
         const string sql = "SELECT COUNT(*) FROM users WHERE is_deleted = false";

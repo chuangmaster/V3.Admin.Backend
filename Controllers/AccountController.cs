@@ -176,6 +176,7 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="id">帳號 ID</param>
     /// <param name="request">更新帳號請求</param>
+    /// <param name="version">版本號 (用於樂觀並發控制)</param>
     /// <returns>更新後的帳號資訊</returns>
     /// <response code="200">更新成功</response>
     /// <response code="400">輸入驗證錯誤</response>
@@ -237,6 +238,7 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="id">帳號 ID</param>
     /// <param name="request">變更密碼請求</param>
+    /// <param name="version">版本號 (用於樂觀並發控制)</param>
     /// <returns>無內容</returns>
     /// <response code="200">變更成功</response>
     /// <response code="400">輸入驗證錯誤</response>
