@@ -8,12 +8,12 @@
 -- 插入預設管理員帳號
 -- 帳號: admin
 -- 密碼: Admin@123
--- BCrypt Hash (work factor 12): $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIpYBFeXiu
+-- BCrypt Hash (work factor 12): $2a$12$XHvy84E7twXPVs0WwzqWBuxj1Sp2yb46QW2xsLN3lrHUlibMg.a1G
 INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
 VALUES (
     '00000000-0000-0000-0000-000000000001'::UUID,
     'admin',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIpYBFeXiu',
+    '$2a$12$XHvy84E7twXPVs0WwzqWBuxj1Sp2yb46QW2xsLN3lrHUlibMg.a1G',
     '系統管理員',
     CURRENT_TIMESTAMP,
     false,
@@ -24,12 +24,12 @@ ON CONFLICT (id) DO NOTHING;
 -- 插入測試帳號
 -- 帳號: testuser
 -- 密碼: Test@123
--- BCrypt Hash (work factor 12): $2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- BCrypt Hash (work factor 12): $2a$12$v/27awEJ7xYNetSX0YshdOkkLS9EUwLpmj3rNLqp6JSPOG2R.r5k.
 INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
 VALUES (
     '00000000-0000-0000-0000-000000000002'::UUID,
     'testuser',
-    '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+    '$2a$12$v/27awEJ7xYNetSX0YshdOkkLS9EUwLpmj3rNLqp6JSPOG2R.r5k.',
     '測試使用者',
     CURRENT_TIMESTAMP,
     false,
