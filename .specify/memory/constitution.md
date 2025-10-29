@@ -1,11 +1,17 @@
 <!--
 Sync Impact Report:
-Version change: 1.2.0 → 1.2.1 (Multi-factor Authentication Requirement Removal)
-Added sections: None
-Modified principles: None
-Removed requirements: Multi-factor authentication from Security Requirements section
-Templates requiring updates: ✅ All templates remain aligned with updated constitution
-Follow-up TODOs: None - all placeholders filled
+Version change: 1.2.1 → 1.3.0 (Account Management API Specification Alignment)
+Added sections: Account Management Context clarification
+Modified principles: 
+  - Principle IV: Enhanced with account management specific examples and business codes
+  - Security Requirements: Added account-specific security considerations
+Removed sections: None
+Templates requiring updates:
+  ✅ plan-template.md - Already aligned with three-layer architecture and constitution checks
+  ✅ spec-template.md - Already aligned with user story prioritization and requirements
+  ✅ tasks-template.md - Already aligned with user story-based task organization
+  ⚠ Command files - No command directory found, skipping validation
+Follow-up TODOs: None - all placeholders filled, constitution now explicitly aligned with account management API specification
 -->
 
 # V3.Admin.Backend Constitution
@@ -36,14 +42,14 @@ Tests MUST be written before implementation. Critical paths MUST have unit tests
 **Rationale**: Prevents regressions, ensures reliability, and documents expected behavior for future maintainers in security-critical user management operations.
 
 ### IV. User Experience Consistency & Admin Interface Standards
-All API responses MUST use ApiResponseModel wrapper with consistent Success, Code, Message, Data, Timestamp, and TraceId properties. The dual-layer design combining HTTP status codes (reflecting request processing state) and business logic codes (providing fine-grained business scenarios) is MANDATORY. Error responses MUST follow standardized format with appropriate HTTP status codes AND meaningful business codes from ResponseCodes constants. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses using appropriate business codes (e.g., VALIDATION_ERROR, INVALID_CREDENTIALS). Role and permission management operations MUST provide detailed feedback on access violations or configuration conflicts using specific business codes. Response times MUST be predictable and documented. Admin interface operations MUST maintain consistent patterns across all user, role, and permission management endpoints. TraceId MUST be included for distributed tracing and troubleshooting.
+All API responses MUST use ApiResponseModel wrapper with consistent Success, Code, Message, Data, Timestamp, and TraceId properties. The dual-layer design combining HTTP status codes (reflecting request processing state) and business logic codes (providing fine-grained business scenarios) is MANDATORY. Error responses MUST follow standardized format with appropriate HTTP status codes AND meaningful business codes from ResponseCodes constants. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses using appropriate business codes (e.g., VALIDATION_ERROR, INVALID_CREDENTIALS, USERNAME_EXISTS, PASSWORD_SAME_AS_OLD, CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE). Account management operations MUST provide detailed feedback on business rule violations (e.g., cannot delete last account, cannot delete current logged-in account) using specific business codes. Response times MUST be predictable and documented (<200ms for simple operations like login, <2000ms for complex operations like paginated list queries). Admin interface operations MUST maintain consistent patterns across all account management endpoints (login, create, update, delete, change password, list accounts). TraceId MUST be included in all responses for distributed tracing and troubleshooting.
 
-**Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration, fine-grained error handling, and positive administrative user experience across all management functions while supporting monitoring and debugging capabilities.
+**Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration, fine-grained error handling, and positive administrative user experience across all account management functions while supporting monitoring and debugging capabilities. Specific business codes for account operations enable frontend to provide contextual, user-friendly error messages.
 
-### V. Performance & Security Standards for User Management
-API endpoints MUST respond within 200ms for simple operations and 2000ms for complex operations including role lookups and permission validations. Asynchronous programming patterns are mandatory for I/O operations. JWT authentication MUST be properly implemented with secure token generation and validation. Role-based authorization MUST be enforced at the API level with proper claim validation. All user inputs MUST be validated and sanitized. Sensitive information (passwords, tokens, personal data) MUST NOT be logged or exposed in error messages. Database queries MUST be optimized to prevent N+1 problems, especially for role/permission hierarchies. Permission checks MUST be cached appropriately to ensure performance under load.
+### V. Performance & Security Standards for Account Management
+API endpoints MUST respond within 200ms for simple operations (login, single account query) and 2000ms for complex operations (paginated account lists). Asynchronous programming patterns are mandatory for I/O operations. JWT authentication MUST be properly implemented with secure token generation, validation, and 1-hour expiration. All user inputs MUST be validated using FluentValidation with clear validation rules (username 3-20 chars alphanumeric+underscore, password min 8 chars, displayName 1-100 chars). Sensitive information (passwords, tokens) MUST NOT be logged or exposed in error messages - passwords MUST be hashed with BCrypt (work factor 12) before storage. Database queries MUST be optimized to prevent N+1 problems, especially for account list pagination. Concurrent updates MUST be handled with optimistic locking (RowVersion) to prevent data conflicts. Soft delete mechanism MUST be implemented for account deletion with business rules (cannot delete self, cannot delete last account). Rate limiting SHOULD be considered for authentication endpoints to prevent brute-force attacks.
 
-**Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for user management and access control systems.
+**Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
 
 ## API Response Design Standards
 
@@ -52,12 +58,17 @@ API endpoints MUST respond within 200ms for simple operations and 2000ms for com
 **Success Responses**: Use ApiResponseModel<T>.CreateSuccess() with appropriate data, message, and business code (SUCCESS, CREATED, UPDATED, DELETED). HTTP status codes MUST match the operation (200 OK, 201 Created, etc.).
 
 **Error Responses**: Use ApiResponseModel<T>.CreateFailure() with descriptive Traditional Chinese messages and specific business codes. Examples:
-- 400 Bad Request + VALIDATION_ERROR for input validation failures
-- 401 Unauthorized + INVALID_CREDENTIALS for authentication failures
-- 403 Forbidden + FORBIDDEN for authorization failures
-- 404 Not Found + NOT_FOUND for missing resources
-- 422 Unprocessable Entity + business-specific codes (INSUFFICIENT_BALANCE, EXCEEDED_LIMIT)
-- 500 Internal Server Error + INTERNAL_ERROR for system failures
+- 400 Bad Request + VALIDATION_ERROR for input validation failures (帳號長度必須為 3-20 字元)
+- 401 Unauthorized + INVALID_CREDENTIALS for authentication failures (帳號或密碼錯誤)
+- 401 Unauthorized + UNAUTHORIZED for missing/invalid JWT token (未授權,請先登入)
+- 403 Forbidden + FORBIDDEN for authorization failures (您只能更新自己的資訊)
+- 403 Forbidden + CANNOT_DELETE_SELF for account self-deletion attempts (無法刪除當前登入的帳號)
+- 404 Not Found + NOT_FOUND for missing resources (帳號不存在)
+- 409 Conflict + CONCURRENT_UPDATE_CONFLICT for optimistic locking failures (資料已被其他使用者更新,請重新載入後再試)
+- 422 Unprocessable Entity + USERNAME_EXISTS for duplicate usernames (帳號已存在)
+- 422 Unprocessable Entity + PASSWORD_SAME_AS_OLD for password change validation (新密碼不可與舊密碼相同)
+- 422 Unprocessable Entity + LAST_ACCOUNT_CANNOT_DELETE for business rule violations (無法刪除最後一個有效帳號)
+- 500 Internal Server Error + INTERNAL_ERROR for system failures (系統內部錯誤,請稍後再試)
 
 **Required Fields**: All responses MUST include Success (bool), Code (string), Message (string), Timestamp (DateTime), and TraceId (string) for request tracking. Data field uses JsonIgnoreCondition.WhenWritingNull.
 
@@ -67,15 +78,20 @@ API endpoints MUST respond within 200ms for simple operations and 2000ms for com
 
 ## Security Requirements
 
-**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within reasonable timeframes (default: 1 hour). Refresh token mechanism MUST be implemented for production use.
+**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within 1 hour (per API specification). Token generation MUST include user claims (UserId, Username, DisplayName). Refresh token mechanism SHOULD be implemented for future enhancements but is not required for current account management MVP.
 
-**Authorization**: Role-based and policy-based authorization MUST be implemented using ASP.NET Core authorization framework. All endpoints MUST explicitly declare their authorization requirements. Permission inheritance and role hierarchies MUST be properly validated. Administrative functions require elevated permissions with audit logging.
+**Authorization**: Currently implements single-tier account management without roles. All authenticated users have equal access to account management operations with self-service restrictions (users can only update their own profile and change their own password). Administrative functions (create account, delete account) require authentication. Future role-based authorization MAY be added but is out of scope for current implementation.
 
-**Input Validation**: All user inputs MUST be validated using FluentValidation or data annotations. SQL injection prevention MUST be ensured through parameterized queries or ORM usage. Special attention to user management fields (usernames, emails, role names) for injection attacks.
+**Input Validation**: All user inputs MUST be validated using FluentValidation with explicit rules:
+  - Username: 3-20 characters, alphanumeric + underscore only (^[a-zA-Z0-9_]+$)
+  - Password: Minimum 8 characters, supports all Unicode characters
+  - DisplayName: 1-100 characters
+  - Confirmation: Exact match "CONFIRM" for delete operations
+SQL injection prevention MUST be ensured through parameterized queries (Dapper). Special attention to username uniqueness validation.
 
-**Data Protection**: User personal data MUST be handled according to privacy regulations. Password storage MUST use secure hashing (bcrypt/scrypt/Argon2). Audit logs MUST be maintained for all user, role, and permission changes. Session management MUST prevent concurrent unauthorized access.
+**Data Protection**: Password storage MUST use BCrypt hashing with work factor 12. Audit logs MUST be maintained via CreatedAt/UpdatedAt timestamps and soft delete tracking (IsDeleted, DeletedAt). Concurrent updates MUST be protected via optimistic locking (RowVersion). Passwords MUST NEVER appear in logs, responses, or error messages.
 
-**Error Handling**: Global exception handling middleware MUST be implemented. Sensitive information MUST NOT be exposed in production error responses. All errors MUST be logged with appropriate detail levels including security-relevant events.
+**Error Handling**: Global exception handling middleware (ExceptionHandlingMiddleware) MUST be implemented. Sensitive information MUST NOT be exposed in production error responses. All errors MUST be logged with TraceId for correlation. Security-relevant events (failed login attempts, account deletions) SHOULD be logged at appropriate levels.
 
 ## Development Workflow
 
@@ -97,4 +113,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.2.1 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-10-25
+**Version**: 1.3.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-10-30
