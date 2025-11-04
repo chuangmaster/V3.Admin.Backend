@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS permissions (
     -- 約束條件
     CONSTRAINT chk_permission_type CHECK (permission_type IN ('route', 'function')),
     CONSTRAINT chk_permission_code_format CHECK (
-        (permission_type = 'function' AND permission_code ~ '^[a-z0-9]+(\.[a-z0-9]+)+$') OR
+        (permission_type = 'function' AND permission_code ~ '^[a-z0-9_]+(\.[a-z0-9_]+)*$') OR
         (permission_type = 'route')
     ),
     CONSTRAINT chk_route_path_required CHECK (
