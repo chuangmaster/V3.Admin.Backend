@@ -44,8 +44,8 @@ ON CONFLICT (permission_code) DO NOTHING;
 -- 權限驗證和路由權限
 INSERT INTO permissions (permission_code, name, description, permission_type, route_path) 
 VALUES 
-    ('permissions_management_access', '權限管理頁面訪問', '允許訪問權限管理頁面', 'route', '/admin/permissions'),
-    ('roles_management_access', '角色管理頁面訪問', '允許訪問角色管理頁面', 'route', '/admin/roles'),
-    ('user_roles_management_access', '用戶角色管理頁面訪問', '允許訪問用戶角色指派頁面', 'route', '/admin/user-roles'),
-    ('audit_logs_access', '稽核日誌頁面訪問', '允許訪問稽核日誌查詢頁面', 'route', '/admin/audit-logs')
+    ('route.permissions.access', '權限管理頁面訪問', '允許訪問權限管理頁面', 'route', '/admin/permissions'),
+    ('route.roles.access', '角色管理頁面訪問', '允許訪問角色管理頁面', 'route', '/admin/roles'),
+    ('route.user.roles.access', '用戶角色管理頁面訪問', '允許訪問用戶角色指派頁面', 'route', '/admin/user-roles'),
+    ('route.audit.logs.access', '稽核日誌頁面訪問', '允許訪問稽核日誌查詢頁面', 'route', '/admin/audit-logs')
 ON CONFLICT (permission_code) DO NOTHING;
