@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
+using Serilog;
+using Serilog.Context;
 using V3.Admin.Backend.Configuration;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Repositories;
@@ -20,9 +22,23 @@ public partial class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+        // ===== Serilog 日誌配置 =====
+        builder.Host.UseSerilog((context, services, logger) =>
+            logger
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext()
+                .Enrich.WithProperty("Application", "V3.Admin.Backend")
+                .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+        );
+
         // ===== 組態設定 =====
         builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
         JwtSettings? jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
+
+        // ===== Dapper 配置 =====
+        // 設定 Dapper 的命名規則轉換 (snake_case <-> PascalCase)
+        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         // ===== 資料庫連接 =====
         builder.Services.AddScoped<IDbConnection>(sp =>
@@ -30,11 +46,13 @@ public partial class Program
 
         // ===== Repositories =====
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         // ===== Services =====
         builder.Services.AddScoped<IJwtService, JwtService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAccountService, AccountService>();
+        builder.Services.AddScoped<IPermissionService, PermissionService>();
 
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();

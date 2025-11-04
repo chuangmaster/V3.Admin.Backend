@@ -70,6 +70,48 @@ public static class ResponseCodes
     /// </summary>
     public const string LAST_ACCOUNT_CANNOT_DELETE = "LAST_ACCOUNT_CANNOT_DELETE";
 
+    // ===== 權限管理相關錯誤 (404/422) =====
+
+    /// <summary>
+    /// 權限不存在
+    /// </summary>
+    public const string PERMISSION_NOT_FOUND = "PERMISSION_NOT_FOUND";
+
+    /// <summary>
+    /// 角色不存在
+    /// </summary>
+    public const string ROLE_NOT_FOUND = "ROLE_NOT_FOUND";
+
+    /// <summary>
+    /// 用戶不存在
+    /// </summary>
+    public const string USER_NOT_FOUND = "USER_NOT_FOUND";
+
+    /// <summary>
+    /// 稽核日誌不存在
+    /// </summary>
+    public const string AUDIT_LOG_NOT_FOUND = "AUDIT_LOG_NOT_FOUND";
+
+    /// <summary>
+    /// 權限正被角色使用，無法刪除
+    /// </summary>
+    public const string PERMISSION_IN_USE = "PERMISSION_IN_USE";
+
+    /// <summary>
+    /// 角色正被用戶使用，無法刪除
+    /// </summary>
+    public const string ROLE_IN_USE = "ROLE_IN_USE";
+
+    /// <summary>
+    /// 權限代碼已存在
+    /// </summary>
+    public const string DUPLICATE_PERMISSION_CODE = "DUPLICATE_PERMISSION_CODE";
+
+    /// <summary>
+    /// 角色名稱已存在
+    /// </summary>
+    public const string DUPLICATE_ROLE_NAME = "DUPLICATE_ROLE_NAME";
+
     // ===== 並發控制 (409) =====
 
     /// <summary>

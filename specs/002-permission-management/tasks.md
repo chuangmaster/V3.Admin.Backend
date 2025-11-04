@@ -28,10 +28,10 @@
 
 **Purpose**: 專案結構初始化與基本設定
 
-- [ ] T001 建立專案資料夾結構（Controllers, Services, Repositories, Models, Validators, Middleware, Database, Tests）
-- [ ] T002 [P] 安裝 NuGet 套件：Npgsql 9.0, Dapper 2.1, BCrypt.Net-Next 4.0, Microsoft.AspNetCore.Authentication.JwtBearer 9.0, FluentValidation.AspNetCore 11.3, Serilog.AspNetCore 8.0
-- [ ] T003 [P] 設定 Serilog 結構化日誌記錄（appsettings.json, Program.cs），包含 TraceId 上下文
-- [ ] T004 [P] 設定 PostgreSQL 連線字串與 Dapper 初始化（Configuration/DatabaseSettings.cs, Program.cs）
+- [x] T001 建立專案資料夾結構（Controllers, Services, Repositories, Models, Validators, Middleware, Database, Tests）
+- [x] T002 [P] 安裝 NuGet 套件：Npgsql 9.0, Dapper 2.1, BCrypt.Net-Next 4.0, Microsoft.AspNetCore.Authentication.JwtBearer 9.0, FluentValidation.AspNetCore 11.3, Serilog.AspNetCore 8.0
+- [x] T003 [P] 設定 Serilog 結構化日誌記錄（appsettings.json, Program.cs），包含 TraceId 上下文
+- [x] T004 [P] 設定 PostgreSQL 連線字串與 Dapper 初始化（Configuration/DatabaseSettings.cs, Program.cs）
 
 ---
 
@@ -41,19 +41,19 @@
 
 **⚠️ CRITICAL**: 所有用戶故事實作前必須完成此階段。所有基礎任務必須遵循 constitution 原則。
 
-- [ ] T005 建立資料庫遷移檔案 `Database/Migrations/001_CreateUsersTable.sql`（如尚未存在，否則跳過）
-- [ ] T006 建立資料庫遷移檔案 `Database/Migrations/002_CreatePermissionsTable.sql`（permissions 表，包含索引與約束）
-- [ ] T007 建立資料庫遷移檔案 `Database/Migrations/003_CreateRolesTable.sql`（roles 表，包含索引與約束）
-- [ ] T008 建立資料庫遷移檔案 `Database/Migrations/004_CreateRolePermissionsTable.sql`（role_permissions 表，包含外鍵與唯一約束）
-- [ ] T009 建立資料庫遷移檔案 `Database/Migrations/005_CreateUserRolesTable.sql`（user_roles 表，包含外鍵與軟刪除支援）
-- [ ] T010 建立資料庫遷移檔案 `Database/Migrations/006_CreateAuditLogsTable.sql`（audit_logs 表，包含 JSONB 欄位與索引）
-- [ ] T011 建立資料庫遷移檔案 `Database/Migrations/007_CreatePermissionFailureLogsTable.sql`（permission_failure_logs 表，包含索引）
-- [ ] T012 [P] 建立初始權限種子資料腳本 `Database/Scripts/seed_permissions.sql`（管理員權限：permissions.*, roles.*, user_roles.*, audit_logs.view）
-- [ ] T013 [P] 擴充 ResponseCodes 枚舉 `Models/ResponseCodes.cs`（新增 PERMISSION_NOT_FOUND, ROLE_NOT_FOUND, PERMISSION_IN_USE, ROLE_IN_USE, DUPLICATE_PERMISSION_CODE, DUPLICATE_ROLE_NAME, CONCURRENT_UPDATE_CONFLICT）
-- [ ] T014 [P] 擴充 BaseApiController `Controllers/BaseApiController.cs`（新增 helper methods：Conflict, BusinessError, 優化 TraceId 處理）
-- [ ] T015 [P] 實作 TraceIdMiddleware `Middleware/TraceIdMiddleware.cs`（如尚未實作）確保所有 HTTP 請求包含 TraceId
-- [ ] T016 [P] 實作 ExceptionHandlingMiddleware `Middleware/ExceptionHandlingMiddleware.cs`（如尚未實作）統一錯誤處理與 ApiResponseModel 回應
-- [ ] T017 [P] 設定 XML 文件註解生成與 Swagger 整合 `Program.cs`（啟用 XML 文件註解，設定 Swagger UI）
+- [x] T005 建立資料庫遷移檔案 `Database/Migrations/001_CreateUsersTable.sql`（如尚未存在，否則跳過）
+- [x] T006 建立資料庫遷移檔案 `Database/Migrations/002_CreatePermissionsTable.sql`（permissions 表，包含索引與約束）
+- [x] T007 建立資料庫遷移檔案 `Database/Migrations/003_CreateRolesTable.sql`（roles 表，包含索引與約束）
+- [x] T008 建立資料庫遷移檔案 `Database/Migrations/004_CreateRolePermissionsTable.sql`（role_permissions 表，包含外鍵與唯一約束）
+- [x] T009 建立資料庫遷移檔案 `Database/Migrations/005_CreateUserRolesTable.sql`（user_roles 表，包含外鍵與軟刪除支援）
+- [x] T010 建立資料庫遷移檔案 `Database/Migrations/006_CreateAuditLogsTable.sql`（audit_logs 表，包含 JSONB 欄位與索引）
+- [x] T011 建立資料庫遷移檔案 `Database/Migrations/007_CreatePermissionFailureLogsTable.sql`（permission_failure_logs 表，包含索引）
+- [x] T012 [P] 建立初始權限種子資料腳本 `Database/Scripts/seed_permissions.sql`（管理員權限：permissions.*, roles.*, user_roles.*, audit_logs.view）
+- [x] T013 [P] 擴充 ResponseCodes 枚舉 `Models/ResponseCodes.cs`（新增 PERMISSION_NOT_FOUND, ROLE_NOT_FOUND, PERMISSION_IN_USE, ROLE_IN_USE, DUPLICATE_PERMISSION_CODE, DUPLICATE_ROLE_NAME, CONCURRENT_UPDATE_CONFLICT）
+- [x] T014 [P] 擴充 BaseApiController `Controllers/BaseApiController.cs`（新增 helper methods：Conflict, BusinessError, 優化 TraceId 處理）
+- [x] T015 [P] 實作 TraceIdMiddleware `Middleware/TraceIdMiddleware.cs`（如尚未實作）確保所有 HTTP 請求包含 TraceId
+- [x] T016 [P] 實作 ExceptionHandlingMiddleware `Middleware/ExceptionHandlingMiddleware.cs`（如尚未實作）統一錯誤處理與 ApiResponseModel 回應
+- [x] T017 [P] 設定 XML 文件註解生成與 Swagger 整合 `Program.cs`（啟用 XML 文件註解，設定 Swagger UI）
 
 **Checkpoint**: 基礎設施完成 - 用戶故事實作可以開始並行執行
 
@@ -67,22 +67,22 @@
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] 建立 Permission 實體 `Models/Entities/Permission.cs`（遵循 C# 13 best practices, PascalCase, XML 文件註解）
-- [ ] T019 [P] [US1] 建立 PermissionDto `Models/Dtos/PermissionDto.cs`（用於 API 回應，包含 id, permissionCode, name, description, permissionType, routePath, createdAt, version）
-- [ ] T020 [P] [US1] 建立 CreatePermissionRequest `Models/Requests/CreatePermissionRequest.cs`（包含 permissionCode, name, description, permissionType, routePath）
-- [ ] T021 [P] [US1] 建立 UpdatePermissionRequest `Models/Requests/UpdatePermissionRequest.cs`（包含 name, description, routePath, version）
-- [ ] T022 [P] [US1] 建立 DeletePermissionRequest `Models/Requests/DeletePermissionRequest.cs`（包含 version）
-- [ ] T023 [P] [US1] 建立 PermissionResponse `Models/Responses/PermissionResponse.cs`（繼承 ApiResponseModel<PermissionDto>）
-- [ ] T024 [P] [US1] 建立 PermissionListResponse `Models/Responses/PermissionListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊：items, totalCount, pageNumber, pageSize）
-- [ ] T025 [P] [US1] 建立 CreatePermissionRequestValidator `Validators/CreatePermissionRequestValidator.cs`（FluentValidation，驗證 permissionCode 格式、name 長度、permissionType 值、routePath 必填性）
-- [ ] T026 [P] [US1] 建立 UpdatePermissionRequestValidator `Validators/UpdatePermissionRequestValidator.cs`（FluentValidation，驗證 name 長度、version >= 1）
-- [ ] T027 [US1] 建立 IPermissionRepository 介面 `Repositories/Interfaces/IPermissionRepository.cs`（方法：CreateAsync, GetByIdAsync, GetAllAsync, UpdateAsync, DeleteAsync, ExistsAsync, IsInUseAsync）
-- [ ] T028 [US1] 實作 PermissionRepository `Repositories/PermissionRepository.cs`（使用 Dapper, snake_case 與 PascalCase 映射, 查詢過濾 is_deleted = false, 軟刪除實作, 樂觀並發控制）（依賴 T027）
-- [ ] T029 [US1] 建立 IPermissionService 介面 `Services/Interfaces/IPermissionService.cs`（方法：CreatePermissionAsync, GetPermissionByIdAsync, GetPermissionsAsync, UpdatePermissionAsync, DeletePermissionAsync）
-- [ ] T030 [US1] 實作 PermissionService `Services/PermissionService.cs`（業務邏輯：檢查權限代碼唯一性、防止刪除使用中權限、稽核日誌記錄、併發控制、DTO 轉換）（依賴 T028, T029）
-- [ ] T031 [US1] 實作 PermissionController `Controllers/PermissionController.cs`（API 端點：GET /api/permissions, POST /api/permissions, GET /api/permissions/{id}, PUT /api/permissions/{id}, DELETE /api/permissions/{id}，使用 ApiResponseModel 包裝器，JWT 驗證，權限驗證 [Authorize]）（依賴 T030）
-- [ ] T032 [P] [US1] 整合測試 `Tests/Integration/PermissionControllerIntegrationTests.cs`（測試：建立權限成功、代碼重複失敗、查詢列表分頁、更新權限、刪除使用中權限失敗、併發更新衝突、軟刪除成功）
-- [ ] T033 [P] [US1] 單元測試 `Tests/Unit/Services/PermissionServiceTests.cs`（測試：CreatePermission 業務規則、權限代碼唯一性驗證、刪除使用中權限檢查）
+- [x] T018 [P] [US1] 建立 Permission 實體 `Models/Entities/Permission.cs`（遵循 C# 13 best practices, PascalCase, XML 文件註解）
+- [x] T019 [P] [US1] 建立 PermissionDto `Models/Dtos/PermissionDto.cs`（用於 API 回應，包含 id, permissionCode, name, description, permissionType, routePath, createdAt, version）
+- [x] T020 [P] [US1] 建立 CreatePermissionRequest `Models/Requests/CreatePermissionRequest.cs`（包含 permissionCode, name, description, permissionType, routePath）
+- [x] T021 [P] [US1] 建立 UpdatePermissionRequest `Models/Requests/UpdatePermissionRequest.cs`（包含 name, description, routePath, version）
+- [x] T022 [P] [US1] 建立 DeletePermissionRequest `Models/Requests/DeletePermissionRequest.cs`（包含 version）
+- [x] T023 [P] [US1] 建立 PermissionResponse `Models/Responses/PermissionResponse.cs`（繼承 ApiResponseModel<PermissionDto>）
+- [x] T024 [P] [US1] 建立 PermissionListResponse `Models/Responses/PermissionListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊：items, totalCount, pageNumber, pageSize）
+- [x] T025 [P] [US1] 建立 CreatePermissionRequestValidator `Validators/CreatePermissionRequestValidator.cs`（FluentValidation，驗證 permissionCode 格式、name 長度、permissionType 值、routePath 必填性）
+- [x] T026 [P] [US1] 建立 UpdatePermissionRequestValidator `Validators/UpdatePermissionRequestValidator.cs`（FluentValidation，驗證 name 長度、version >= 1）
+- [x] T027 [US1] 建立 IPermissionRepository 介面 `Repositories/Interfaces/IPermissionRepository.cs`（方法：CreateAsync, GetByIdAsync, GetAllAsync, UpdateAsync, DeleteAsync, ExistsAsync, IsInUseAsync）
+- [x] T028 [US1] 實作 PermissionRepository `Repositories/PermissionRepository.cs`（使用 Dapper, snake_case 與 PascalCase 映射, 查詢過濾 is_deleted = false, 軟刪除實作, 樂觀並發控制）（依賴 T027）
+- [x] T029 [US1] 建立 IPermissionService 介面 `Services/Interfaces/IPermissionService.cs`（方法：CreatePermissionAsync, GetPermissionByIdAsync, GetPermissionsAsync, UpdatePermissionAsync, DeletePermissionAsync）
+- [x] T030 [US1] 實作 PermissionService `Services/PermissionService.cs`（業務邏輯：檢查權限代碼唯一性、防止刪除使用中權限、稽核日誌記錄、併發控制、DTO 轉換）（依賴 T028, T029）
+- [x] T031 [US1] 實作 PermissionController `Controllers/PermissionController.cs`（API 端點：GET /api/permissions, POST /api/permissions, GET /api/permissions/{id}, PUT /api/permissions/{id}, DELETE /api/permissions/{id}，使用 ApiResponseModel 包裝器，JWT 驗證，權限驗證 [Authorize]）（依賴 T030）
+- [x] T032 [P] [US1] 整合測試 `Tests/Integration/PermissionControllerIntegrationTests.cs`（測試：建立權限成功、代碼重複失敗、查詢列表分頁、更新權限、刪除使用中權限失敗、併發更新衝突、軟刪除成功）
+- [x] T033 [P] [US1] 單元測試 `Tests/Unit/Services/PermissionServiceTests.cs`（測試：CreatePermission 業務規則、權限代碼唯一性驗證、刪除使用中權限檢查）
 
 **Checkpoint**: 權限管理功能完全可用且可獨立測試，管理員可以完整管理系統權限
 
