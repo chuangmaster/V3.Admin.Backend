@@ -32,7 +32,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Code Quality Excellence**: ✅ C# 13 best practices, XML documentation, Traditional Chinese comments
+**Code Quality Excellence**: ✅ C# 13 best practices, XML documentation, Traditional Chinese comments, Database naming (snake_case for DB tables/columns, PascalCase for C# entities)
 **Three-Layer Architecture**: ✅ Controllers/Services/Repositories separation maintained
 **Test-First Development**: ✅ Tests written before implementation, critical path coverage
 **User Experience Consistency**: ✅ ApiResponseModel usage with HTTP status + business codes, standardized error handling, Traditional Chinese messages

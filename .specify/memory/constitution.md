@@ -1,17 +1,17 @@
 <!--
 Sync Impact Report:
-Version change: 1.2.1 → 1.3.0 (Account Management API Specification Alignment)
-Added sections: Account Management Context clarification
+Version change: 1.3.0 → 1.4.0 (Database Naming Convention Standardization)
+Added sections: Database Naming Standards section with explicit snake_case requirement
 Modified principles: 
-  - Principle IV: Enhanced with account management specific examples and business codes
-  - Security Requirements: Added account-specific security considerations
+  - Principle I: Enhanced with database naming convention (snake_case for DB, PascalCase for C#)
+  - Added comprehensive naming standards covering tables, columns, indexes, constraints
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Already aligned with three-layer architecture and constitution checks
-  ✅ spec-template.md - Already aligned with user story prioritization and requirements
-  ✅ tasks-template.md - Already aligned with user story-based task organization
-  ⚠ Command files - No command directory found, skipping validation
-Follow-up TODOs: None - all placeholders filled, constitution now explicitly aligned with account management API specification
+  ✅ plan-template.md - Already aligned with database structure expectations
+  ✅ spec-template.md - Already aligned with entity requirements
+  ✅ tasks-template.md - Already aligned with entity and migration task patterns
+  ⚠ Command files - No updates needed for naming conventions
+Follow-up TODOs: None - all naming conventions explicitly documented with examples
 -->
 
 # V3.Admin.Backend Constitution
@@ -29,7 +29,15 @@ This backend project serves as the API foundation for v3-admin-frontend, providi
 ### I. Code Quality Excellence (NON-NEGOTIABLE)
 Code MUST adhere to C# 13 best practices with comprehensive XML documentation for all public APIs. Every public method, class, and property requires Traditional Chinese comments explaining purpose and usage. Code MUST follow PascalCase for public members, camelCase for private fields, and prefix interfaces with "I". Nullable reference types are mandatory - declare variables non-nullable and use `is null`/`is not null` checks. Pattern matching and switch expressions MUST be used wherever applicable. File-scoped namespaces and single-line using directives are required.
 
-**Rationale**: Maintains consistent, readable, and maintainable codebase that supports long-term evolution and team collaboration in an admin system requiring high reliability.
+**Database Naming Standards**: Database objects MUST use snake_case naming convention while C# code uses PascalCase. This separation maintains PostgreSQL best practices while preserving C# conventions:
+- **Tables**: snake_case plural nouns (e.g., `users`, `user_roles`, `permission_assignments`)
+- **Columns**: snake_case (e.g., `id`, `username`, `password_hash`, `created_at`, `is_deleted`)
+- **Indexes**: `idx_tablename_columnname` pattern (e.g., `idx_users_username`, `idx_users_createdat`)
+- **Constraints**: `chk_tablename_description` for checks, `fk_tablename_column` for foreign keys (e.g., `chk_username_length`, `fk_users_deletedrby`)
+- **C# Entities**: PascalCase properties that map to snake_case columns (e.g., `Id` → `id`, `CreatedAt` → `created_at`, `IsDeleted` → `is_deleted`)
+- **ORM Mapping**: Use explicit column name mapping in Dapper queries or Entity Framework configurations to bridge naming conventions
+
+**Rationale**: Maintains consistent, readable, and maintainable codebase that supports long-term evolution and team collaboration in an admin system requiring high reliability. Snake_case database naming follows PostgreSQL community standards and improves SQL readability, while PascalCase C# code follows .NET conventions.
 
 ### II. Three-Layer Architecture Compliance
 All features MUST implement the three-layer architecture: Presentation (Controllers + DTOs), Business Logic (Services), and Data Access (Repositories + Entities). Controllers MUST only handle HTTP concerns and delegate business logic to services. Services MUST use DTOs for data transfer and inject repositories via dependency injection. Repositories MUST work with entity models and handle all data persistence concerns. All dependencies MUST be registered in Program.cs using dependency injection.
@@ -113,4 +121,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.3.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-10-30
+**Version**: 1.4.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-05
