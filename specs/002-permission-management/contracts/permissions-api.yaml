@@ -1,0 +1,460 @@
+openapi: 3.0.3
+info:
+  title: 權限管理 API
+  description: V3 Admin Backend - 權限管理機制 API 契約
+  version: 1.0.0
+  contact:
+    name: V3 Admin Backend Team
+
+servers:
+  - url: https://api.example.com/api
+    description: Production server
+  - url: http://localhost:5000/api
+    description: Development server
+
+tags:
+  - name: Permissions
+    description: 權限管理操作
+
+paths:
+  /permissions:
+    get:
+      tags:
+        - Permissions
+      summary: 查詢權限列表
+      description: 取得所有權限清單，支援分頁和篩選
+      operationId: getPermissions
+      parameters:
+        - name: pageNumber
+          in: query
+          description: 頁碼（從 1 開始）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每頁筆數
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: permissionType
+          in: query
+          description: 權限類型篩選（route 或 function）
+          schema:
+            type: string
+            enum: [route, function]
+        - name: searchKeyword
+          in: query
+          description: 搜尋關鍵字（搜尋權限代碼或名稱）
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功取得權限列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Permissions
+      summary: 建立權限
+      description: 新增一個權限定義
+      operationId: createPermission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermissionRequest'
+      responses:
+        '201':
+          description: 權限建立成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          description: 權限代碼已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                code: "DUPLICATE_PERMISSION_CODE"
+                message: "權限代碼已存在"
+                timestamp: "2025-11-05T10:30:00Z"
+                traceId: "abc123"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+
+  /permissions/{id}:
+    get:
+      tags:
+        - Permissions
+      summary: 查詢單一權限
+      description: 根據 ID 取得權限詳細資訊
+      operationId: getPermissionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功取得權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                code: "PERMISSION_NOT_FOUND"
+                message: "權限不存在"
+                timestamp: "2025-11-05T10:30:00Z"
+                traceId: "abc123"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Permissions
+      summary: 更新權限
+      description: 更新權限的名稱或描述
+      operationId: updatePermission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePermissionRequest'
+      responses:
+        '200':
+          description: 權限更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 併發更新衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                code: "CONCURRENT_UPDATE_CONFLICT"
+                message: "資料已被其他使用者更新，請重新載入後再試"
+                timestamp: "2025-11-05T10:30:00Z"
+                traceId: "abc123"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Permissions
+      summary: 刪除權限
+      description: 刪除一個權限（軟刪除）
+      operationId: deletePermission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 權限刪除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 權限正被角色使用，無法刪除
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                code: "PERMISSION_IN_USE"
+                message: "該權限正被角色使用，無法刪除"
+                timestamp: "2025-11-05T10:30:00Z"
+                traceId: "abc123"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreatePermissionRequest:
+      type: object
+      required:
+        - permissionCode
+        - name
+        - permissionType
+      properties:
+        permissionCode:
+          type: string
+          maxLength: 100
+          description: 權限代碼（功能權限格式為 resource.action，如 inventory.create）
+          example: "inventory.create"
+        name:
+          type: string
+          maxLength: 200
+          description: 權限名稱
+          example: "新增庫存"
+        description:
+          type: string
+          description: 權限描述
+          example: "允許新增庫存項目"
+        permissionType:
+          type: string
+          enum: [route, function]
+          description: 權限類型（route: 路由權限, function: 功能權限）
+          example: "function"
+        routePath:
+          type: string
+          maxLength: 500
+          description: 路由路徑（僅路由權限需要，如 /inventory）
+          example: "/inventory"
+
+    UpdatePermissionRequest:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: 權限名稱
+          example: "新增庫存（更新）"
+        description:
+          type: string
+          description: 權限描述
+          example: "允許新增庫存項目（更新後）"
+        version:
+          type: integer
+          minimum: 1
+          description: 版本號（樂觀並發控制）
+          example: 1
+
+    PermissionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 權限 ID
+        permissionCode:
+          type: string
+          description: 權限代碼
+        name:
+          type: string
+          description: 權限名稱
+        description:
+          type: string
+          nullable: true
+          description: 權限描述
+        permissionType:
+          type: string
+          enum: [route, function]
+          description: 權限類型
+        routePath:
+          type: string
+          nullable: true
+          description: 路由路徑
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 最後更新時間
+        version:
+          type: integer
+          description: 版本號
+
+    PermissionResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PermissionDto'
+
+    PermissionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PermissionDto'
+                totalCount:
+                  type: integer
+                  description: 總筆數
+                pageNumber:
+                  type: integer
+                  description: 當前頁碼
+                pageSize:
+                  type: integer
+                  description: 每頁筆數
+
+    BaseResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+        code:
+          type: string
+          description: 業務邏輯碼
+        message:
+          type: string
+          description: 訊息（繁體中文）
+        timestamp:
+          type: string
+          format: date-time
+          description: 回應時間戳
+        traceId:
+          type: string
+          description: 追蹤 ID
+
+    SuccessResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+
+  responses:
+    UnauthorizedError:
+      description: 未授權（JWT token 缺失或無效）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            code: "UNAUTHORIZED"
+            message: "未授權，請先登入"
+            timestamp: "2025-11-05T10:30:00Z"
+            traceId: "abc123"
+
+    ValidationError:
+      description: 輸入驗證失敗
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            code: "VALIDATION_ERROR"
+            message: "權限代碼格式錯誤，必須為 resource.action 格式（如 inventory.create）"
+            timestamp: "2025-11-05T10:30:00Z"
+            traceId: "abc123"
+
+    InternalServerError:
+      description: 伺服器內部錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            code: "INTERNAL_ERROR"
+            message: "系統內部錯誤，請稍後再試"
+            timestamp: "2025-11-05T10:30:00Z"
+            traceId: "abc123"
