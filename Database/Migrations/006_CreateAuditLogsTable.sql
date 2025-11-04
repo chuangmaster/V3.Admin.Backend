@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     operation_type VARCHAR(50) NOT NULL,               -- 如 '新增權限', '修改角色', '指派角色'
     target_type VARCHAR(50) NOT NULL,                  -- 如 'Permission', 'Role', 'UserRole'
     target_id UUID NOT NULL,                           -- 目標對象 ID
-    before_state TEXT,                                 -- 變更前狀態（JSON 格式）
-    after_state TEXT,                                  -- 變更後狀態（JSON 格式）
+    before_state JSONB,                                -- 變更前狀態（JSONB 格式，新增操作為 null）
+    after_state JSONB,                                 -- 變更後狀態（JSONB 格式，刪除操作後為 null）
     ip_address VARCHAR(45),                            -- 操作者 IP 位址（支援 IPv6）
     user_agent TEXT,                                   -- 操作者 UserAgent
     trace_id VARCHAR(50)                               -- TraceId（關聯分散式追蹤）
@@ -35,6 +35,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_operator_time
 
 -- 表格註解
 COMMENT ON TABLE audit_logs IS '稽核日誌資料表（僅可新增和查詢，不可修改或刪除）';
-COMMENT ON COLUMN audit_logs.before_state IS '變更前狀態（JSON 格式，新增操作為 null）';
-COMMENT ON COLUMN audit_logs.after_state IS '變更後狀態（JSON 格式，刪除操作後為 null）';
+COMMENT ON COLUMN audit_logs.before_state IS '變更前狀態（JSONB 格式，新增操作為 null）';
+COMMENT ON COLUMN audit_logs.after_state IS '變更後狀態（JSONB 格式，刪除操作後為 null）';
 COMMENT ON COLUMN audit_logs.trace_id IS '分散式追蹤 ID';
