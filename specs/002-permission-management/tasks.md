@@ -96,29 +96,29 @@
 
 ### Implementation for User Story 2
 
-- [ ] T034 [P] [US2] 建立 Role 實體 `Models/Entities/Role.cs`（遵循 C# 13 best practices, PascalCase, XML 文件註解）
-- [ ] T035 [P] [US2] 建立 RolePermission 實體 `Models/Entities/RolePermission.cs`（關聯表實體，包含 roleId, permissionId, assignedBy, assignedAt）
-- [ ] T036 [P] [US2] 建立 RoleDto `Models/Dtos/RoleDto.cs`（用於 API 回應，包含 id, roleName, description, createdAt, version）
-- [ ] T037 [P] [US2] 建立 RoleDetailDto `Models/Dtos/RoleDetailDto.cs`（包含 RoleDto 欄位 + permissions 列表）
-- [ ] T038 [P] [US2] 建立 CreateRoleRequest `Models/Requests/CreateRoleRequest.cs`（包含 roleName, description）
-- [ ] T039 [P] [US2] 建立 UpdateRoleRequest `Models/Requests/UpdateRoleRequest.cs`（包含 roleName, description, version）
-- [ ] T040 [P] [US2] 建立 DeleteRoleRequest `Models/Requests/DeleteRoleRequest.cs`（包含 version）
-- [ ] T041 [P] [US2] 建立 AssignRolePermissionsRequest `Models/Requests/AssignRolePermissionsRequest.cs`（包含 permissionIds 陣列）
-- [ ] T042 [P] [US2] 建立 RoleResponse `Models/Responses/RoleResponse.cs`（繼承 ApiResponseModel<RoleDto>）
-- [ ] T043 [P] [US2] 建立 RoleListResponse `Models/Responses/RoleListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊）
-- [ ] T044 [P] [US2] 建立 RoleDetailResponse `Models/Responses/RoleDetailResponse.cs`（繼承 ApiResponseModel<RoleDetailDto>）
-- [ ] T045 [P] [US2] 建立 CreateRoleRequestValidator `Validators/CreateRoleRequestValidator.cs`（FluentValidation，驗證 roleName 長度 1-100 字元）
-- [ ] T046 [P] [US2] 建立 UpdateRoleRequestValidator `Validators/UpdateRoleRequestValidator.cs`（FluentValidation，驗證 roleName 長度、version >= 1）
-- [ ] T047 [P] [US2] 建立 AssignRolePermissionsRequestValidator `Validators/AssignRolePermissionsRequestValidator.cs`（FluentValidation，驗證 permissionIds 非空且每個 ID 格式正確）
-- [ ] T048 [US2] 建立 IRoleRepository 介面 `Repositories/Interfaces/IRoleRepository.cs`（方法：CreateAsync, GetByIdAsync, GetAllAsync, UpdateAsync, DeleteAsync, ExistsAsync, IsInUseAsync）
-- [ ] T049 [US2] 實作 RoleRepository `Repositories/RoleRepository.cs`（使用 Dapper, snake_case 映射, 軟刪除, 樂觀並發控制）（依賴 T048）
-- [ ] T050 [US2] 建立 IRolePermissionRepository 介面 `Repositories/Interfaces/IRolePermissionRepository.cs`（方法：AssignPermissionsAsync, RemovePermissionAsync, GetRolePermissionsAsync, ClearRolePermissionsAsync）
-- [ ] T051 [US2] 實作 RolePermissionRepository `Repositories/RolePermissionRepository.cs`（使用 Dapper, 批次新增支援, 防止重複分配）（依賴 T050）
-- [ ] T052 [US2] 建立 IRoleService 介面 `Services/Interfaces/IRoleService.cs`（方法：CreateRoleAsync, GetRoleByIdAsync, GetRolesAsync, GetRoleDetailAsync, UpdateRoleAsync, DeleteRoleAsync, AssignPermissionsAsync, RemovePermissionAsync）
-- [ ] T053 [US2] 實作 RoleService `Services/RoleService.cs`（業務邏輯：檢查角色名稱唯一性、防止刪除使用中角色、權限存在性驗證、稽核日誌記錄、併發控制）（依賴 T049, T051, T052）
-- [ ] T054 [US2] 實作 RoleController `Controllers/RoleController.cs`（API 端點：GET /api/roles, POST /api/roles, GET /api/roles/{id}, GET /api/roles/{id}/permissions, PUT /api/roles/{id}, DELETE /api/roles/{id}, POST /api/roles/{roleId}/permissions, DELETE /api/roles/{roleId}/permissions/{permissionId}，使用 ApiResponseModel 包裝器）（依賴 T053）
-- [ ] T055 [P] [US2] 整合測試 `Tests/Integration/RoleControllerIntegrationTests.cs`（測試：建立角色成功、名稱重複失敗、分配權限成功、移除權限成功、查詢角色詳情含權限列表、刪除使用中角色失敗）
-- [ ] T056 [P] [US2] 單元測試 `Tests/Unit/Services/RoleServiceTests.cs`（測試：CreateRole 業務規則、角色名稱唯一性驗證、刪除使用中角色檢查、分配不存在權限失敗）
+- [x] T034 [P] [US2] 建立 Role 實體 `Models/Entities/Role.cs`（遵循 C# 13 best practices, PascalCase, XML 文件註解）
+- [x] T035 [P] [US2] 建立 RolePermission 實體 `Models/Entities/RolePermission.cs`（關聯表實體，包含 roleId, permissionId, assignedBy, assignedAt）
+- [x] T036 [P] [US2] 建立 RoleDto `Models/Dtos/RoleDto.cs`（用於 API 回應，包含 id, roleName, description, createdAt, version）
+- [x] T037 [P] [US2] 建立 RoleDetailDto `Models/Dtos/RoleDetailDto.cs`（包含 RoleDto 欄位 + permissions 列表）
+- [x] T038 [P] [US2] 建立 CreateRoleRequest `Models/Requests/CreateRoleRequest.cs`（包含 roleName, description）
+- [x] T039 [P] [US2] 建立 UpdateRoleRequest `Models/Requests/UpdateRoleRequest.cs`（包含 roleName, description, version）
+- [x] T040 [P] [US2] 建立 DeleteRoleRequest `Models/Requests/DeleteRoleRequest.cs`（包含 version）
+- [x] T041 [P] [US2] 建立 AssignRolePermissionsRequest `Models/Requests/AssignRolePermissionsRequest.cs`（包含 permissionIds 陣列）
+- [x] T042 [P] [US2] 建立 RoleResponse `Models/Responses/RoleResponse.cs`（繼承 ApiResponseModel<RoleDto>）
+- [x] T043 [P] [US2] 建立 RoleListResponse `Models/Responses/RoleListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊）
+- [x] T044 [P] [US2] 建立 RoleDetailResponse `Models/Responses/RoleDetailResponse.cs`（繼承 ApiResponseModel<RoleDetailDto>）
+- [x] T045 [P] [US2] 建立 CreateRoleRequestValidator `Validators/CreateRoleRequestValidator.cs`（FluentValidation，驗證 roleName 長度 1-100 字元）
+- [x] T046 [P] [US2] 建立 UpdateRoleRequestValidator `Validators/UpdateRoleRequestValidator.cs`（FluentValidation，驗證 roleName 長度、version >= 1）
+- [x] T047 [P] [US2] 建立 AssignRolePermissionsRequestValidator `Validators/AssignRolePermissionsRequestValidator.cs`（FluentValidation，驗證 permissionIds 非空且每個 ID 格式正確）
+- [x] T048 [US2] 建立 IRoleRepository 介面 `Repositories/Interfaces/IRoleRepository.cs`（方法：CreateAsync, GetByIdAsync, GetAllAsync, UpdateAsync, DeleteAsync, ExistsAsync, IsInUseAsync）
+- [x] T049 [US2] 實作 RoleRepository `Repositories/RoleRepository.cs`（使用 Dapper, snake_case 映射, 軟刪除, 樂觀並發控制）（依賴 T048）
+- [x] T050 [US2] 建立 IRolePermissionRepository 介面 `Repositories/Interfaces/IRolePermissionRepository.cs`（方法：AssignPermissionsAsync, RemovePermissionAsync, GetRolePermissionsAsync, ClearRolePermissionsAsync）
+- [x] T051 [US2] 實作 RolePermissionRepository `Repositories/RolePermissionRepository.cs`（使用 Dapper, 批次新增支援, 防止重複分配）（依賴 T050）
+- [x] T052 [US2] 建立 IRoleService 介面 `Services/Interfaces/IRoleService.cs`（方法：CreateRoleAsync, GetRoleByIdAsync, GetRolesAsync, GetRoleDetailAsync, UpdateRoleAsync, DeleteRoleAsync, AssignPermissionsAsync, RemovePermissionAsync）
+- [x] T053 [US2] 實作 RoleService `Services/RoleService.cs`（業務邏輯：檢查角色名稱唯一性、防止刪除使用中角色、權限存在性驗證、稽核日誌記錄、併發控制）（依賴 T049, T051, T052）
+- [x] T054 [US2] 實作 RoleController `Controllers/RoleController.cs`（API 端點：GET /api/roles, POST /api/roles, GET /api/roles/{id}, GET /api/roles/{id}/permissions, PUT /api/roles/{id}, DELETE /api/roles/{id}, POST /api/roles/{roleId}/permissions, DELETE /api/roles/{roleId}/permissions/{permissionId}，使用 ApiResponseModel 包裝器）（依賴 T053）
+- [x] T055 [P] [US2] 整合測試 `Tests/Integration/RoleControllerIntegrationTests.cs`（測試：建立角色成功、名稱重複失敗、分配權限成功、移除權限成功、查詢角色詳情含權限列表、刪除使用中角色失敗）
+- [x] T056 [P] [US2] 單元測試 `Tests/Unit/Services/RoleServiceTests.cs`（測試：CreateRole 業務規則、角色名稱唯一性驗證、刪除使用中角色檢查、分配不存在權限失敗）
 
 **Checkpoint**: 角色管理功能完全可用且可獨立測試，管理員可以創建角色並配置權限
 

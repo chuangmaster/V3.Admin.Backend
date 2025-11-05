@@ -47,12 +47,15 @@ public partial class Program
         // ===== Repositories =====
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+        builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+        builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
 
         // ===== Services =====
         builder.Services.AddScoped<IJwtService, JwtService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IAccountService, AccountService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
+        builder.Services.AddScoped<IRoleService, RoleService>();
 
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
