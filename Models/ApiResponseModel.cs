@@ -27,7 +27,7 @@ public class ApiResponseModel<T>
     /// 響應資料
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public T? Data { get; set; }
+    public virtual T? Data { get; set; }
 
     /// <summary>
     /// 時間戳

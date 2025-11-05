@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using V3.Admin.Backend.Models.Dtos;
 
 namespace V3.Admin.Backend.Models.Responses;
@@ -7,6 +8,12 @@ namespace V3.Admin.Backend.Models.Responses;
 /// </summary>
 public class PermissionListResponse : ApiResponseModel
 {
+    /// <summary>
+    /// 隱藏繼承的 Data 屬性，分頁列表使用 Items 代替
+    /// </summary>
+    [JsonIgnore]
+    public override object? Data { get; set; }
+
     /// <summary>
     /// 權限列表
     /// </summary>
