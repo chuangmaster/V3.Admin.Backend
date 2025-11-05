@@ -63,8 +63,7 @@ public class PermissionController : BaseApiController
                 PageSize = pageSize,
                 Code = ResponseCodes.SUCCESS,
                 Message = "Query successful",
-                Data = items,
-                TraceId = TraceId
+                TraceId = TraceId,
             };
 
             return Ok(response);
