@@ -23,32 +23,39 @@ public partial class Program
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
         // ===== Serilog 日誌配置 =====
-        builder.Host.UseSerilog((context, services, logger) =>
-            logger
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .Enrich.FromLogContext()
-                .Enrich.WithProperty("Application", "V3.Admin.Backend")
-                .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+        builder.Host.UseSerilog(
+            (context, services, logger) =>
+                logger
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithProperty("Application", "V3.Admin.Backend")
+                    .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
         );
 
         // ===== 組態設定 =====
-        builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
-        JwtSettings? jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
+        builder.Services.Configure<JwtSettings>(
+            builder.Configuration.GetSection(JwtSettings.SectionName)
+        );
+        JwtSettings? jwtSettings = builder
+            .Configuration.GetSection(JwtSettings.SectionName)
+            .Get<JwtSettings>();
 
         // ===== Dapper 配置 =====
         // 設定 Dapper 的命名規則轉換 (snake_case <-> PascalCase)
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         // ===== 資料庫連接 =====
-        builder.Services.AddScoped<IDbConnection>(sp =>
-            new NpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        ));
 
         // ===== Repositories =====
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
         builder.Services.AddScoped<IRoleRepository, RoleRepository>();
         builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+        builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
         // ===== Services =====
         builder.Services.AddScoped<IJwtService, JwtService>();
@@ -56,12 +63,14 @@ public partial class Program
         builder.Services.AddScoped<IAccountService, AccountService>();
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
+        builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
         // ===== JWT Authentication =====
-        builder.Services.AddAuthentication(options =>
+        builder
+            .Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -79,7 +88,7 @@ public partial class Program
                     ValidAudience = jwtSettings?.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? string.Empty)
-                    )
+                    ),
                 };
             });
 
@@ -92,41 +101,46 @@ public partial class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "V3 Admin Backend - 帳號管理 API",
-                Version = "v1.0",
-                Description = "V3 管理後台帳號管理系統 API",
-                Contact = new OpenApiContact
+            options.SwaggerDoc(
+                "v1",
+                new OpenApiInfo
                 {
-                    Name = "V3 Admin Backend Team"
+                    Title = "V3 Admin Backend - 帳號管理 API",
+                    Version = "v1.0",
+                    Description = "V3 管理後台帳號管理系統 API",
+                    Contact = new OpenApiContact { Name = "V3 Admin Backend Team" },
                 }
-            });
+            );
 
             // JWT Bearer 認證
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Description = "使用 JWT Bearer Token 進行身份驗證。在下方輸入: Bearer {token}",
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
-            });
-
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
+            options.AddSecurityDefinition(
+                "Bearer",
+                new OpenApiSecurityScheme
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
+                    Description = "使用 JWT Bearer Token 進行身份驗證。在下方輸入: Bearer {token}",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
                 }
-            });
+            );
+
+            options.AddSecurityRequirement(
+                new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer",
+                            },
+                        },
+                        Array.Empty<string>()
+                    },
+                }
+            );
 
             // 載入 XML 文件註解
             var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -140,7 +154,7 @@ public partial class Program
         WebApplication app = builder.Build();
 
         // ===== Middleware Pipeline =====
-        
+
         // 全域異常處理 (必須在最前面)
         app.UseMiddleware<ExceptionHandlingMiddleware>();
 

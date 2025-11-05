@@ -132,17 +132,17 @@
 
 ### Implementation for User Story 3
 
-- [ ] T057 [P] [US3] 建立 UserRole 實體 `Models/Entities/UserRole.cs`（關聯表實體，包含 userId, roleId, assignedBy, assignedAt, 軟刪除欄位）
-- [ ] T058 [P] [US3] 建立 UserRoleDto `Models/Dtos/UserRoleDto.cs`（用於 API 回應，包含 id, userId, roleId, roleName, assignedAt）
-- [ ] T059 [P] [US3] 建立 AssignUserRoleRequest `Models/Requests/AssignUserRoleRequest.cs`（包含 roleIds 陣列）
-- [ ] T060 [P] [US3] 建立 RemoveUserRoleRequest `Models/Requests/RemoveUserRoleRequest.cs`（包含 roleId）
-- [ ] T061 [P] [US3] 建立 UserRoleResponse `Models/Responses/UserRoleResponse.cs`（繼承 ApiResponseModel<List<UserRoleDto>>）
-- [ ] T062 [P] [US3] 建立 AssignUserRoleRequestValidator `Validators/AssignUserRoleRequestValidator.cs`（FluentValidation，驗證 roleIds 非空且每個 ID 格式正確）
-- [ ] T063 [US3] 建立 IUserRoleRepository 介面 `Repositories/Interfaces/IUserRoleRepository.cs`（方法：AssignRoleAsync, RemoveRoleAsync, GetUserRolesAsync, HasRoleAsync）
-- [ ] T064 [US3] 實作 UserRoleRepository `Repositories/UserRoleRepository.cs`（使用 Dapper, 軟刪除實作, 防止重複指派）（依賴 T063）
-- [ ] T065 [US3] 建立 IUserRoleService 介面 `Services/Interfaces/IUserRoleService.cs`（方法：AssignRoleAsync, RemoveRoleAsync, GetUserRolesAsync）
-- [ ] T066 [US3] 實作 UserRoleService `Services/UserRoleService.cs`（業務邏輯：檢查用戶與角色存在性、防止重複指派、稽核日誌記錄）（依賴 T064, T065）
-- [ ] T067 [US3] 實作 UserRoleController `Controllers/UserRoleController.cs`（API 端點：GET /api/users/{userId}/roles, POST /api/users/{userId}/roles, DELETE /api/users/{userId}/roles/{roleId}，使用 ApiResponseModel 包裝器）（依賴 T066）
+- [x] T057 [P] [US3] 建立 UserRole 實體 `Models/Entities/UserRole.cs`（關聯表實體，包含 userId, roleId, assignedBy, assignedAt, 軟刪除欄位）
+- [x] T058 [P] [US3] 建立 UserRoleDto `Models/Dtos/UserRoleDto.cs`（用於 API 回應，包含 id, userId, roleId, roleName, assignedAt）
+- [x] T059 [P] [US3] 建立 AssignUserRoleRequest `Models/Requests/AssignUserRoleRequest.cs`（包含 roleIds 陣列）
+- [x] T060 [P] [US3] 建立 RemoveUserRoleRequest `Models/Requests/RemoveUserRoleRequest.cs`（包含 roleId）
+- [x] T061 [P] [US3] 建立 UserRoleResponse `Models/Responses/UserRoleResponse.cs`（繼承 ApiResponseModel<List<UserRoleDto>>）
+- [x] T062 [P] [US3] 建立 AssignUserRoleRequestValidator `Validators/AssignUserRoleRequestValidator.cs`（FluentValidation，驗證 roleIds 非空且每個 ID 格式正確）
+- [x] T063 [US3] 建立 IUserRoleRepository 介面 `Repositories/Interfaces/IUserRoleRepository.cs`（方法：AssignRoleAsync, RemoveRoleAsync, GetUserRolesAsync, HasRoleAsync）
+- [x] T064 [US3] 實作 UserRoleRepository `Repositories/UserRoleRepository.cs`（使用 Dapper, 軟刪除實作, 防止重複指派）（依賴 T063）
+- [x] T065 [US3] 建立 IUserRoleService 介面 `Services/Interfaces/IUserRoleService.cs`（方法：AssignRoleAsync, RemoveRoleAsync, GetUserRolesAsync）
+- [x] T066 [US3] 實作 UserRoleService `Services/UserRoleService.cs`（業務邏輯：檢查用戶與角色存在性、防止重複指派、稽核日誌記錄）（依賴 T064, T065）
+- [x] T067 [US3] 實作 UserRoleController `Controllers/UserRoleController.cs`（API 端點：GET /api/users/{userId}/roles, POST /api/users/{userId}/roles, DELETE /api/users/{userId}/roles/{roleId}，使用 ApiResponseModel 包裝器）（依賴 T066）
 - [ ] T068 [P] [US3] 整合測試 `Tests/Integration/UserRoleControllerIntegrationTests.cs`（測試：指派角色成功、重複指派失敗、查詢用戶角色列表、移除角色成功、軟刪除驗證）
 - [ ] T069 [P] [US3] 單元測試 `Tests/Unit/Services/UserRoleServiceTests.cs`（測試：AssignRole 業務規則、重複指派檢查、用戶/角色存在性驗證）
 

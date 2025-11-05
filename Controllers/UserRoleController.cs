@@ -1,0 +1,131 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using V3.Admin.Backend.Models;
+using V3.Admin.Backend.Models.Requests;
+using V3.Admin.Backend.Models.Responses;
+using V3.Admin.Backend.Services.Interfaces;
+
+namespace V3.Admin.Backend.Controllers;
+
+/// <summary>
+/// 用戶角色管理 API 控制器
+/// </summary>
+[ApiController]
+[Route("api/users/{userId}/roles")]
+[Authorize]
+public class UserRoleController : BaseApiController
+{
+    private readonly IUserRoleService _userRoleService;
+    private readonly ILogger<UserRoleController> _logger;
+
+    /// <summary>
+    /// 初始化 UserRoleController
+    /// </summary>
+    public UserRoleController(IUserRoleService userRoleService, ILogger<UserRoleController> logger)
+    {
+        _userRoleService = userRoleService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// 查詢用戶的所有角色
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(UserRoleResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUserRoles(Guid userId)
+    {
+        try
+        {
+            List<Models.Dtos.UserRoleDto> roles = await _userRoleService.GetUserRolesAsync(userId);
+            UserRoleResponse response = new UserRoleResponse(
+                roles,
+                "查詢成功",
+                ResponseCodes.SUCCESS
+            );
+            response.TraceId = TraceId;
+
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("用戶不存在 | TraceId: {TraceId}", TraceId);
+            return NotFound(ex.Message, ResponseCodes.USER_NOT_FOUND);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "查詢用戶角色失敗 | TraceId: {TraceId}", TraceId);
+            return InternalError("查詢用戶角色失敗");
+        }
+    }
+
+    /// <summary>
+    /// 為用戶指派角色
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AssignRoles(Guid userId, [FromBody] AssignUserRoleRequest request)
+    {
+        try
+        {
+            string? userIdClaim = User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+                return UnauthorizedResponse();
+
+            int count = await _userRoleService.AssignRolesAsync(userId, request, operatorId);
+            ApiResponseModel response = ApiResponseModel.CreateSuccess(
+                $"成功為用戶指派 {count} 個角色",
+                ResponseCodes.SUCCESS);
+            response.TraceId = TraceId;
+
+            return Ok(response);
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            _logger.LogWarning("角色分配驗證失敗 | TraceId: {TraceId}", TraceId);
+            return ValidationError(string.Join("; ", ex.Errors.Select(e => e.ErrorMessage)));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("用戶或角色不存在 | TraceId: {TraceId}", TraceId);
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "指派用戶角色失敗 | TraceId: {TraceId}", TraceId);
+            return InternalError("指派用戶角色失敗");
+        }
+    }
+
+    /// <summary>
+    /// 移除用戶的特定角色
+    /// </summary>
+    [HttpDelete("{roleId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveRole(Guid userId, Guid roleId)
+    {
+        try
+        {
+            string? userIdClaim = User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+                return UnauthorizedResponse();
+
+            RemoveUserRoleRequest request = new RemoveUserRoleRequest { RoleId = roleId };
+            bool success = await _userRoleService.RemoveRoleAsync(userId, request, operatorId);
+
+            if (!success)
+                return NotFound("用戶或角色不存在");
+
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("用戶或角色不存在 | TraceId: {TraceId}", TraceId);
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "移除用戶角色失敗 | TraceId: {TraceId}", TraceId);
+            return InternalError("移除用戶角色失敗");
+        }
+    }
+}

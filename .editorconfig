@@ -32,6 +32,7 @@ trim_trailing_whitespace = false
 
 # C# 檔案
 [*.cs]
+dotnet_diagnostic.IDE0270.severity = none
 
 #### Core EditorConfig Options ####
 
@@ -90,9 +91,9 @@ dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
 #### C# 程式碼樣式規則 ####
 
 # var 偏好設定
-csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_for_built_in_types = true:silent
 csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:warning
+csharp_style_var_elsewhere = true:silent
 
 # 運算式主體成員
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
@@ -238,4 +239,4 @@ dotnet_naming_style.begins_with_underscore.capitalization = camel_case
 #### 其他規則 ####
 
 # XML 文件註解
-dotnet_diagnostic.CS1591.severity = none # 缺少 XML 註解 (Phase 7 Polish 階段再處理)
+dotnet_diagnostic.CS1591.severity = none
