@@ -163,6 +163,9 @@ public partial class Program
         // TraceId 注入
         app.UseMiddleware<TraceIdMiddleware>();
 
+        // 權限授權驗證
+        app.UseMiddleware<PermissionAuthorizationMiddleware>();
+
         // HTTPS 重定向
         app.UseHttpsRedirection();
 

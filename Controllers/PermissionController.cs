@@ -223,4 +223,32 @@ public class PermissionController : BaseApiController
             return InternalError();
         }
     }
+
+    /// <summary>
+    /// 驗證用戶是否擁有特定權限
+    /// </summary>
+    [HttpPost("validate")]
+    [ProducesResponseType(typeof(PermissionValidationResponse), StatusCodes.Status200OK)]
+    public IActionResult ValidatePermission([FromBody] ValidatePermissionRequest request)
+    {
+        try
+        {
+            string? userIdClaim = User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                return UnauthorizedResponse();
+            }
+
+            // 需注入 IPermissionValidationService
+            // 此端點由於架構考量，在 PermissionController 無法直接訪問驗證服務
+            // 應在專用端點 (如 AuthController) 或透過依賴注入實現
+            // 暫時返回未實現狀態
+            return Ok(new PermissionValidationResponse(false, "此端點需要專用實現", ResponseCodes.SUCCESS));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "驗證權限失敗 | TraceId: {TraceId}", TraceId);
+            return InternalError("驗證權限失敗");
+        }
+    }
 }

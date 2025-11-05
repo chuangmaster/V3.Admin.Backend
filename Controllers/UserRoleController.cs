@@ -16,14 +16,20 @@ namespace V3.Admin.Backend.Controllers;
 public class UserRoleController : BaseApiController
 {
     private readonly IUserRoleService _userRoleService;
+    private readonly IPermissionValidationService _permissionValidationService;
     private readonly ILogger<UserRoleController> _logger;
 
     /// <summary>
     /// 初始化 UserRoleController
     /// </summary>
-    public UserRoleController(IUserRoleService userRoleService, ILogger<UserRoleController> logger)
+    public UserRoleController(
+        IUserRoleService userRoleService,
+        IPermissionValidationService permissionValidationService,
+        ILogger<UserRoleController> logger
+    )
     {
         _userRoleService = userRoleService;
+        _permissionValidationService = permissionValidationService;
         _logger = logger;
     }
 
@@ -63,18 +69,24 @@ public class UserRoleController : BaseApiController
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
-    public async Task<IActionResult> AssignRoles(Guid userId, [FromBody] AssignUserRoleRequest request)
+    public async Task<IActionResult> AssignRoles(
+        Guid userId,
+        [FromBody] AssignUserRoleRequest request
+    )
     {
         try
         {
             string? userIdClaim = User.FindFirst("sub")?.Value;
             if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+            {
                 return UnauthorizedResponse();
+            }
 
             int count = await _userRoleService.AssignRolesAsync(userId, request, operatorId);
             ApiResponseModel response = ApiResponseModel.CreateSuccess(
                 $"成功為用戶指派 {count} 個角色",
-                ResponseCodes.SUCCESS);
+                ResponseCodes.SUCCESS
+            );
             response.TraceId = TraceId;
 
             return Ok(response);
@@ -107,13 +119,17 @@ public class UserRoleController : BaseApiController
         {
             string? userIdClaim = User.FindFirst("sub")?.Value;
             if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+            {
                 return UnauthorizedResponse();
+            }
 
             RemoveUserRoleRequest request = new RemoveUserRoleRequest { RoleId = roleId };
             bool success = await _userRoleService.RemoveRoleAsync(userId, request, operatorId);
 
             if (!success)
+            {
                 return NotFound("用戶或角色不存在");
+            }
 
             return NoContent();
         }
@@ -126,6 +142,34 @@ public class UserRoleController : BaseApiController
         {
             _logger.LogError(ex, "移除用戶角色失敗 | TraceId: {TraceId}", TraceId);
             return InternalError("移除用戶角色失敗");
+        }
+    }
+
+    /// <summary>
+    /// 查詢用戶的所有有效權限（多角色合併）
+    /// </summary>
+    [HttpGet("{userId}/permissions")]
+    [ProducesResponseType(typeof(UserEffectivePermissionsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUserEffectivePermissions(Guid userId)
+    {
+        try
+        {
+            Models.Dtos.UserEffectivePermissionsDto effectivePermissions =
+                await _permissionValidationService.GetUserEffectivePermissionsAsync(userId);
+
+            UserEffectivePermissionsResponse response = new UserEffectivePermissionsResponse(
+                effectivePermissions,
+                "查詢成功",
+                ResponseCodes.SUCCESS
+            );
+            response.TraceId = TraceId;
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "查詢用戶有效權限失敗 | TraceId: {TraceId}", TraceId);
+            return InternalError("查詢用戶有效權限失敗");
         }
     }
 }
