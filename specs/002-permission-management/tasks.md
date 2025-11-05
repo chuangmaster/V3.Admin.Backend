@@ -158,15 +158,15 @@
 
 ### Implementation for User Story 4
 
-- [ ] T070 [P] [US4] 建立 PermissionFailureLog 實體 `Models/Entities/PermissionFailureLog.cs`（包含 userId, username, attemptedResource, failureReason, attemptedAt, ipAddress, userAgent, traceId）
-- [ ] T071 [P] [US4] 建立 UserEffectivePermissionsDto `Models/Dtos/UserEffectivePermissionsDto.cs`（包含 userId, permissions 列表：合併後的所有權限）
-- [ ] T072 [P] [US4] 建立 ValidatePermissionRequest `Models/Requests/ValidatePermissionRequest.cs`（包含 permissionCode）
-- [ ] T073 [P] [US4] 建立 PermissionValidationResponse `Models/Responses/PermissionValidationResponse.cs`（繼承 ApiResponseModel<bool>，包含 hasPermission 欄位）
-- [ ] T074 [P] [US4] 建立 UserEffectivePermissionsResponse `Models/Responses/UserEffectivePermissionsResponse.cs`（繼承 ApiResponseModel<UserEffectivePermissionsDto>）
-- [ ] T075 [US4] 建立 IPermissionFailureLogRepository 介面 `Repositories/Interfaces/IPermissionFailureLogRepository.cs`（方法：LogFailureAsync, GetFailureLogsAsync）
-- [ ] T076 [US4] 實作 PermissionFailureLogRepository `Repositories/PermissionFailureLogRepository.cs`（使用 Dapper, 僅新增和查詢）（依賴 T075）
-- [ ] T077 [US4] 建立 IPermissionValidationService 介面 `Services/Interfaces/IPermissionValidationService.cs`（方法：ValidatePermissionAsync, GetUserEffectivePermissionsAsync, LogPermissionFailureAsync）
-- [ ] T078 [US4] 實作 PermissionValidationService `Services/PermissionValidationService.cs`（業務邏輯：即時查詢最新權限配置、多角色權限合併（聯集）、權限驗證失敗記錄、性能優化 <100ms）（依賴 T077, T076）
+- [x] T070 [P] [US4] 建立 PermissionFailureLog 實體 `Models/Entities/PermissionFailureLog.cs`（包含 userId, username, attemptedResource, failureReason, attemptedAt, ipAddress, userAgent, traceId）
+- [x] T071 [P] [US4] 建立 UserEffectivePermissionsDto `Models/Dtos/UserEffectivePermissionsDto.cs`（包含 userId, permissions 列表：合併後的所有權限）
+- [x] T072 [P] [US4] 建立 ValidatePermissionRequest `Models/Requests/ValidatePermissionRequest.cs`（包含 permissionCode）
+- [x] T073 [P] [US4] 建立 PermissionValidationResponse `Models/Responses/PermissionValidationResponse.cs`（繼承 ApiResponseModel<bool>，包含 hasPermission 欄位）
+- [x] T074 [P] [US4] 建立 UserEffectivePermissionsResponse `Models/Responses/UserEffectivePermissionsResponse.cs`（繼承 ApiResponseModel<UserEffectivePermissionsDto>）
+- [x] T075 [US4] 建立 IPermissionFailureLogRepository 介面 `Repositories/Interfaces/IPermissionFailureLogRepository.cs`（方法：LogFailureAsync, GetFailureLogsAsync）
+- [x] T076 [US4] 實作 PermissionFailureLogRepository `Repositories/PermissionFailureLogRepository.cs`（使用 Dapper, 僅新增和查詢）（依賴 T075）
+- [x] T077 [US4] 建立 IPermissionValidationService 介面 `Services/Interfaces/IPermissionValidationService.cs`（方法：ValidatePermissionAsync, GetUserEffectivePermissionsAsync, LogPermissionFailureAsync）
+- [x] T078 [US4] 實作 PermissionValidationService `Services/PermissionValidationService.cs`（業務邏輯：即時查詢最新權限配置、多角色權限合併（联集）、權限驗證失敗記錄、性能優化 <100ms）（依賴 T077, T076）
 - [ ] T079 [US4] 實作 PermissionAuthorizationMiddleware `Middleware/PermissionAuthorizationMiddleware.cs`（自動權限驗證中介軟體，讀取 [RequirePermission] attribute，驗證失敗返回 403 Forbidden 並記錄失敗日誌）（依賴 T078）
 - [ ] T080 [US4] 擴充 BaseApiController `Controllers/BaseApiController.cs`（新增 [RequirePermission] attribute 支援，如 [RequirePermission("permissions.create")]）
 - [ ] T081 [US4] 實作 API 端點 POST /api/permissions/validate 於 PermissionController（驗證單一權限）（依賴 T078）
