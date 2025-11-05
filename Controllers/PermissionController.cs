@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
@@ -33,6 +34,7 @@ public class PermissionController : BaseApiController
     /// <param name="permissionType">Filter by permission type (route or function)</param>
     /// <returns>Paginated list of permissions</returns>
     [HttpGet]
+    [RequirePermission("permission.read")]
     [ProducesResponseType(typeof(PermissionListResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPermissions(
         [FromQuery] int pageNumber = 1,
@@ -81,6 +83,7 @@ public class PermissionController : BaseApiController
     /// <param name="request">Create permission request</param>
     /// <returns>Created permission details</returns>
     [HttpPost]
+    [RequirePermission("permission.create")]
     [ProducesResponseType(typeof(PermissionResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
@@ -184,6 +187,7 @@ public class PermissionController : BaseApiController
     /// <param name="request">Delete permission request with version</param>
     /// <returns>Delete result</returns>
     [HttpDelete("{id}")]
+    [RequirePermission("permission.delete")]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status422UnprocessableEntity)]

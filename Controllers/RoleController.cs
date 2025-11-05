@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
@@ -31,6 +32,7 @@ public class RoleController : BaseApiController
     /// 取得角色列表（分頁）
     /// </summary>
     [HttpGet]
+    [RequirePermission("role.read")]
     [ProducesResponseType(typeof(RoleListResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(
         [FromQuery] int pageNumber = 1,
@@ -67,6 +69,7 @@ public class RoleController : BaseApiController
     /// 建立新角色
     /// </summary>
     [HttpPost]
+    [RequirePermission("role.create")]
     [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
     {
@@ -166,6 +169,7 @@ public class RoleController : BaseApiController
     /// 更新角色
     /// </summary>
     [HttpPut("{id}")]
+    [RequirePermission("role.update")]
     [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request)
     {
@@ -214,6 +218,7 @@ public class RoleController : BaseApiController
     /// 刪除角色
     /// </summary>
     [HttpDelete("{id}")]
+    [RequirePermission("role.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteRole(Guid id, [FromBody] DeleteRoleRequest request)
     {
@@ -252,6 +257,7 @@ public class RoleController : BaseApiController
     /// 為角色分配權限
     /// </summary>
     [HttpPost("{roleId}/permissions")]
+    [RequirePermission("permission.assign")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignPermissions(Guid roleId, [FromBody] AssignRolePermissionsRequest request)
     {
@@ -290,6 +296,7 @@ public class RoleController : BaseApiController
     /// 移除角色的特定權限
     /// </summary>
     [HttpDelete("{roleId}/permissions/{permissionId}")]
+    [RequirePermission("permission.remove")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemovePermission(Guid roleId, Guid permissionId)
     {

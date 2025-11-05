@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
@@ -37,6 +38,7 @@ public class UserRoleController : BaseApiController
     /// 查詢用戶的所有角色
     /// </summary>
     [HttpGet]
+    [RequirePermission("role.read")]
     [ProducesResponseType(typeof(UserRoleResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserRoles(Guid userId)
     {
@@ -68,6 +70,7 @@ public class UserRoleController : BaseApiController
     /// 為用戶指派角色
     /// </summary>
     [HttpPost]
+    [RequirePermission("role.assign")]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignRoles(
         Guid userId,
@@ -112,6 +115,7 @@ public class UserRoleController : BaseApiController
     /// 移除用戶的特定角色
     /// </summary>
     [HttpDelete("{roleId}")]
+    [RequirePermission("role.remove")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveRole(Guid userId, Guid roleId)
     {
@@ -149,6 +153,7 @@ public class UserRoleController : BaseApiController
     /// 查詢用戶的所有有效權限（多角色合併）
     /// </summary>
     [HttpGet("{userId}/permissions")]
+    [RequirePermission("permission.read")]
     [ProducesResponseType(typeof(UserEffectivePermissionsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserEffectivePermissions(Guid userId)
     {
