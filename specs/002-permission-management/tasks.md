@@ -143,8 +143,8 @@
 - [x] T065 [US3] 建立 IUserRoleService 介面 `Services/Interfaces/IUserRoleService.cs`（方法：AssignRoleAsync, RemoveRoleAsync, GetUserRolesAsync）
 - [x] T066 [US3] 實作 UserRoleService `Services/UserRoleService.cs`（業務邏輯：檢查用戶與角色存在性、防止重複指派、稽核日誌記錄）（依賴 T064, T065）
 - [x] T067 [US3] 實作 UserRoleController `Controllers/UserRoleController.cs`（API 端點：GET /api/users/{userId}/roles, POST /api/users/{userId}/roles, DELETE /api/users/{userId}/roles/{roleId}，使用 ApiResponseModel 包裝器）（依賴 T066）
-- [ ] T068 [P] [US3] 整合測試 `Tests/Integration/UserRoleControllerIntegrationTests.cs`（測試：指派角色成功、重複指派失敗、查詢用戶角色列表、移除角色成功、軟刪除驗證）
-- [ ] T069 [P] [US3] 單元測試 `Tests/Unit/Services/UserRoleServiceTests.cs`（測試：AssignRole 業務規則、重複指派檢查、用戶/角色存在性驗證）
+- [x] T068 [P] [US3] 整合測試 `Tests/Integration/UserRoleControllerIntegrationTests.cs`（測試：指派角色成功、重複指派失敗、查詢用戶角色列表、移除角色成功、軟刪除驗證）
+- [x] T069 [P] [US3] 單元測試 `Tests/Unit/Services/UserRoleServiceTests.cs`（測試：AssignRole 業務規則、重複指派檢查、用戶/角色存在性驗證）
 
 **Checkpoint**: 用戶角色指派功能完全可用且可獨立測試，管理員可以為用戶分配和移除角色
 
