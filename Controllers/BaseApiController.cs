@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using V3.Admin.Backend.Models;
 
@@ -13,6 +14,23 @@ public abstract class BaseApiController : ControllerBase
     /// 取得當前請求的追蹤 ID
     /// </summary>
     protected string TraceId => HttpContext.TraceIdentifier;
+
+    /// <summary>
+    /// 從 JWT Token 中取得當前用戶 ID
+    /// 嘗試多個 claim types，因為 JWT 中間件可能會重新對映 claims
+    /// </summary>
+    protected Guid? GetUserId()
+    {
+        var userIdClaim =
+            User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return null;
+        }
+
+        return userId;
+    }
 
     /// <summary>
     /// 回傳成功響應 (200 OK)
@@ -57,7 +75,10 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// 回傳未授權響應 (401 Unauthorized)
     /// </summary>
-    protected IActionResult UnauthorizedResponse(string message = "未授權,請先登入", string code = ResponseCodes.UNAUTHORIZED)
+    protected IActionResult UnauthorizedResponse(
+        string message = "未授權,請先登入",
+        string code = ResponseCodes.UNAUTHORIZED
+    )
     {
         var response = ApiResponseModel.CreateFailure(message, code);
         response.TraceId = TraceId;

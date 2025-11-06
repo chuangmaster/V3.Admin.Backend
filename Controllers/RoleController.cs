@@ -36,14 +36,20 @@ public class RoleController : BaseApiController
     [ProducesResponseType(typeof(RoleListResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20
+    )
     {
         try
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1 || pageSize > 100) pageSize = 20;
+            if (pageNumber < 1)
+                pageNumber = 1;
+            if (pageSize < 1 || pageSize > 100)
+                pageSize = 20;
 
-            (List<Models.Dtos.RoleDto> roles, int totalCount) = await _roleService.GetRolesAsync(pageNumber, pageSize);
+            (List<Models.Dtos.RoleDto> roles, int totalCount) = await _roleService.GetRolesAsync(
+                pageNumber,
+                pageSize
+            );
 
             RoleListResponse response = new RoleListResponse
             {
@@ -53,7 +59,7 @@ public class RoleController : BaseApiController
                 PageSize = pageSize,
                 Code = ResponseCodes.SUCCESS,
                 Message = "查詢成功",
-                TraceId = TraceId
+                TraceId = TraceId,
             };
 
             return Ok(response);
@@ -75,17 +81,17 @@ public class RoleController : BaseApiController
     {
         try
         {
-            string? userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out Guid userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
                 return UnauthorizedResponse();
 
-            Models.Dtos.RoleDto role = await _roleService.CreateRoleAsync(request, userIdGuid);
+            Models.Dtos.RoleDto role = await _roleService.CreateRoleAsync(request, userId.Value);
             RoleResponse response = new RoleResponse
             {
                 Code = ResponseCodes.CREATED,
                 Message = "角色建立成功",
                 Data = role,
-                TraceId = TraceId
+                TraceId = TraceId,
             };
 
             return CreatedAtAction(nameof(GetRoleById), new { id = role.Id }, response);
@@ -125,7 +131,7 @@ public class RoleController : BaseApiController
                 Code = ResponseCodes.SUCCESS,
                 Message = "查詢成功",
                 Data = role,
-                TraceId = TraceId
+                TraceId = TraceId,
             };
 
             return Ok(response);
@@ -141,7 +147,10 @@ public class RoleController : BaseApiController
     /// 取得角色詳細資訊（包含權限）
     /// </summary>
     [HttpGet("{id}/permissions")]
-    [ProducesResponseType(typeof(ApiResponseModel<Models.Dtos.RoleDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(
+        typeof(ApiResponseModel<Models.Dtos.RoleDetailDto>),
+        StatusCodes.Status200OK
+    )]
     public async Task<IActionResult> GetRoleDetail(Guid id)
     {
         try
@@ -150,10 +159,12 @@ public class RoleController : BaseApiController
             if (roleDetail == null)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
-            ApiResponseModel<Models.Dtos.RoleDetailDto> response = ApiResponseModel<Models.Dtos.RoleDetailDto>.CreateSuccess(
-                roleDetail,
-                "查詢成功",
-                ResponseCodes.SUCCESS);
+            ApiResponseModel<Models.Dtos.RoleDetailDto> response =
+                ApiResponseModel<Models.Dtos.RoleDetailDto>.CreateSuccess(
+                    roleDetail,
+                    "查詢成功",
+                    ResponseCodes.SUCCESS
+                );
             response.TraceId = TraceId;
 
             return Ok(response);
@@ -175,17 +186,21 @@ public class RoleController : BaseApiController
     {
         try
         {
-            string? userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out Guid userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
                 return UnauthorizedResponse();
 
-            Models.Dtos.RoleDto role = await _roleService.UpdateRoleAsync(id, request, userIdGuid);
+            Models.Dtos.RoleDto role = await _roleService.UpdateRoleAsync(
+                id,
+                request,
+                userId.Value
+            );
             RoleResponse response = new RoleResponse
             {
                 Code = ResponseCodes.SUCCESS,
                 Message = "角色更新成功",
                 Data = role,
-                TraceId = TraceId
+                TraceId = TraceId,
             };
 
             return Ok(response);
@@ -224,11 +239,11 @@ public class RoleController : BaseApiController
     {
         try
         {
-            string? userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out Guid userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
                 return UnauthorizedResponse();
 
-            bool success = await _roleService.DeleteRoleAsync(id, request, userIdGuid);
+            bool success = await _roleService.DeleteRoleAsync(id, request, userId.Value);
             if (!success)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
@@ -259,18 +274,22 @@ public class RoleController : BaseApiController
     [HttpPost("{roleId}/permissions")]
     [RequirePermission("permission.assign")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> AssignPermissions(Guid roleId, [FromBody] AssignRolePermissionsRequest request)
+    public async Task<IActionResult> AssignPermissions(
+        Guid roleId,
+        [FromBody] AssignRolePermissionsRequest request
+    )
     {
         try
         {
-            string? userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out Guid userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
                 return UnauthorizedResponse();
 
-            bool success = await _roleService.AssignPermissionsAsync(roleId, request, userIdGuid);
+            bool success = await _roleService.AssignPermissionsAsync(roleId, request, userId.Value);
             ApiResponseModel response = ApiResponseModel.CreateSuccess(
                 "角色權限分配成功",
-                ResponseCodes.SUCCESS);
+                ResponseCodes.SUCCESS
+            );
             response.TraceId = TraceId;
 
             return Ok(response);
@@ -302,11 +321,15 @@ public class RoleController : BaseApiController
     {
         try
         {
-            string? userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out Guid userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
                 return UnauthorizedResponse();
 
-            bool success = await _roleService.RemovePermissionAsync(roleId, permissionId, userIdGuid);
+            bool success = await _roleService.RemovePermissionAsync(
+                roleId,
+                permissionId,
+                userId.Value
+            );
             if (!success)
                 return NotFound("角色或權限不存在");
 

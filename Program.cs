@@ -97,6 +97,39 @@ public partial class Program
                         Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? string.Empty)
                     ),
                 };
+
+                // 設定 JWT Bearer 事件以記錄驗證過程
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<
+                            ILogger<Program>
+                        >();
+                        logger.LogWarning(
+                            "JWT 驗證失敗 | Exception: {Exception} | TraceId: {TraceId}",
+                            context.Exception.Message,
+                            context.HttpContext.TraceIdentifier
+                        );
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<
+                            ILogger<Program>
+                        >();
+                        var claims = string.Join(
+                            "; ",
+                            context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}") ?? []
+                        );
+                        logger.LogInformation(
+                            "JWT 驗證成功 | Claims: {Claims} | TraceId: {TraceId}",
+                            claims,
+                            context.HttpContext.TraceIdentifier
+                        );
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         builder.Services.AddAuthorization();
@@ -168,9 +201,6 @@ public partial class Program
         // TraceId 注入
         app.UseMiddleware<TraceIdMiddleware>();
 
-        // 權限授權驗證
-        app.UseMiddleware<PermissionAuthorizationMiddleware>();
-
         // HTTPS 重定向
         app.UseHttpsRedirection();
 
@@ -185,9 +215,12 @@ public partial class Program
             });
         }
 
-        // 身份驗證與授權
+        // 身份驗證與授權 (必須在權限驗證之前)
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // 權限授權驗證 (必須在 UseAuthentication 之後)
+        app.UseMiddleware<PermissionAuthorizationMiddleware>();
 
         // Controllers
         app.MapControllers();

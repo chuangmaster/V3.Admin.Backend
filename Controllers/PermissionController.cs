@@ -110,13 +110,13 @@ public class PermissionController : BaseApiController
     {
         try
         {
-            var userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out var userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
             {
                 return UnauthorizedResponse();
             }
 
-            var permission = await _permissionService.CreatePermissionAsync(request, userIdGuid);
+            var permission = await _permissionService.CreatePermissionAsync(request, userId.Value);
             return Created($"/api/permissions/{permission.Id}", permission);
         }
         catch (InvalidOperationException ex)
@@ -192,8 +192,8 @@ public class PermissionController : BaseApiController
     {
         try
         {
-            var userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out var userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
             {
                 return UnauthorizedResponse();
             }
@@ -201,7 +201,7 @@ public class PermissionController : BaseApiController
             var permission = await _permissionService.UpdatePermissionAsync(
                 id,
                 request,
-                userIdGuid
+                userId.Value
             );
             return Success(permission, "Update successful");
         }
@@ -255,13 +255,13 @@ public class PermissionController : BaseApiController
     {
         try
         {
-            var userId = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userId, out var userIdGuid))
+            var userId = GetUserId();
+            if (userId is null)
             {
                 return UnauthorizedResponse();
             }
 
-            await _permissionService.DeletePermissionAsync(id, request, userIdGuid);
+            await _permissionService.DeletePermissionAsync(id, request, userId.Value);
             return Success("Permission deleted successfully");
         }
         catch (KeyNotFoundException ex)

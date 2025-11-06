@@ -79,13 +79,13 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            string? userIdClaim = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+            var operatorId = GetUserId();
+            if (operatorId is null)
             {
                 return UnauthorizedResponse();
             }
 
-            int count = await _userRoleService.AssignRolesAsync(userId, request, operatorId);
+            int count = await _userRoleService.AssignRolesAsync(userId, request, operatorId.Value);
             ApiResponseModel response = ApiResponseModel.CreateSuccess(
                 $"成功為用戶指派 {count} 個角色",
                 ResponseCodes.SUCCESS
@@ -121,14 +121,18 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            string? userIdClaim = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userIdClaim, out Guid operatorId))
+            var operatorId = GetUserId();
+            if (operatorId is null)
             {
                 return UnauthorizedResponse();
             }
 
             RemoveUserRoleRequest request = new RemoveUserRoleRequest { RoleId = roleId };
-            bool success = await _userRoleService.RemoveRoleAsync(userId, request, operatorId);
+            bool success = await _userRoleService.RemoveRoleAsync(
+                userId,
+                request,
+                operatorId.Value
+            );
 
             if (!success)
             {

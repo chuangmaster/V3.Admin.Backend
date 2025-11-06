@@ -42,17 +42,50 @@ public class PermissionAuthorizationMiddleware
 
             if (requirePermission != null)
             {
-                // 取得當前用戶
-                var userIdClaim = context.User.FindFirst("sub")?.Value;
-                var usernameClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (
-                    string.IsNullOrEmpty(userIdClaim)
-                    || !Guid.TryParse(userIdClaim, out Guid userId)
-                )
+                // 檢查用戶是否已驗證
+                if (!context.User?.Identity?.IsAuthenticated ?? true)
                 {
                     _logger.LogWarning(
-                        "未授權的訪問嘗試（無效的用戶 ID）| TraceId: {TraceId}",
+                        "未授權的訪問嘗試（用戶未認證）| TraceId: {TraceId}",
+                        context.TraceIdentifier
+                    );
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
+
+                // 取得當前用戶 ID
+                // 嘗試多種 claim types，因為 JWT 處理程序可能會重新對映 claims
+                var userIdClaim =
+                    context.User.FindFirst("sub")?.Value
+                    ?? context
+                        .User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+                        ?.Value
+                    ?? context.User.FindFirst("user_id")?.Value;
+
+                var usernameClaim =
+                    context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? context.User.FindFirst("username")?.Value;
+
+                var allClaims = context.User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+
+                // 驗證用戶 ID Claim
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    _logger.LogWarning(
+                        "未授權的訪問嘗試（缺少有效的用戶 ID Claim）| 已驗證用戶: {Username} | Claims: {Claims} | TraceId: {TraceId}",
+                        usernameClaim ?? "Unknown",
+                        string.Join("; ", allClaims),
+                        context.TraceIdentifier
+                    );
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
+
+                if (!Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    _logger.LogWarning(
+                        "未授權的訪問嘗試（無效的用戶 ID 格式: '{UserIdClaim}'）| TraceId: {TraceId}",
+                        userIdClaim,
                         context.TraceIdentifier
                     );
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
