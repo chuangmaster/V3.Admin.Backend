@@ -152,7 +152,7 @@ public class UserRoleController : BaseApiController
     /// <summary>
     /// 查詢用戶的所有有效權限（多角色合併）
     /// </summary>
-    [HttpGet("{userId}/permissions")]
+    [HttpGet("permissions")]
     [RequirePermission("permission.read")]
     [ProducesResponseType(typeof(UserEffectivePermissionsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserEffectivePermissions(Guid userId)

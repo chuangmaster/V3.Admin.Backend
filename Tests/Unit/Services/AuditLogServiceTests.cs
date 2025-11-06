@@ -1,7 +1,7 @@
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Text.Json;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Models.Requests;
@@ -44,12 +44,11 @@ public class AuditLogServiceTests
             OperationType = "create",
             TargetType = "permission",
             TargetId = targetId,
-            OperationTime = DateTime.UtcNow
+            OperationTime = DateTime.UtcNow,
         };
 
-        _mockRepository.Setup(r => r.LogAsync(
-            It.IsAny<AuditLog>(),
-            It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r => r.LogAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedAuditLog);
 
         // Act
@@ -58,15 +57,17 @@ public class AuditLogServiceTests
             "TestUser",
             "create",
             "permission",
-            targetId);
+            targetId
+        );
 
         // Assert
         result.Should().NotBeNull();
         result.OperatorId.Should().Be(operatorId);
         result.OperationType.Should().Be("create");
-        _mockRepository.Verify(r => r.LogAsync(
-            It.IsAny<AuditLog>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+        _mockRepository.Verify(
+            r => r.LogAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     /// <summary>
@@ -83,10 +84,11 @@ public class AuditLogServiceTests
             OperatorName = "TestUser",
             OperationType = "create",
             TargetType = "permission",
-            OperationTime = DateTime.UtcNow
+            OperationTime = DateTime.UtcNow,
         };
 
-        _mockRepository.Setup(r => r.GetByIdAsync(auditLogId, It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r => r.GetByIdAsync(auditLogId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(auditLog);
 
         // Act
@@ -105,20 +107,38 @@ public class AuditLogServiceTests
     public async Task GetAuditLogsAsync_WithValidRequest_ReturnsAuditLogs()
     {
         // Arrange
-        var request = new QueryAuditLogRequest
-        {
-            PageNumber = 1,
-            PageSize = 20
-        };
+        var request = new QueryAuditLogRequest { PageNumber = 1, PageSize = 20 };
 
         var auditLogs = new List<AuditLog>
         {
-            new AuditLog { Id = Guid.NewGuid(), OperatorName = "User1", OperationType = "create" },
-            new AuditLog { Id = Guid.NewGuid(), OperatorName = "User2", OperationType = "update" }
+            new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                OperatorName = "User1",
+                OperationType = "create",
+            },
+            new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                OperatorName = "User2",
+                OperationType = "update",
+            },
         };
 
-        _mockRepository.Setup(r => r.GetLogsAsync(
-            null, null, null, null, null, null, 1, 20, It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r =>
+                r.GetLogsAsync(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    1,
+                    20,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((auditLogs, 2L));
 
         // Act
@@ -146,12 +166,11 @@ public class AuditLogServiceTests
             Id = Guid.NewGuid(),
             BeforeState = beforeState,
             AfterState = afterState,
-            OperationType = "update"
+            OperationType = "update",
         };
 
-        _mockRepository.Setup(r => r.LogAsync(
-            It.IsAny<AuditLog>(),
-            It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r => r.LogAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(auditLog);
 
         // Act
@@ -162,7 +181,8 @@ public class AuditLogServiceTests
             "permission",
             Guid.NewGuid(),
             beforeState,
-            afterState);
+            afterState
+        );
 
         // Assert
         result.Should().NotBeNull();
@@ -180,11 +200,22 @@ public class AuditLogServiceTests
         var traceId = Guid.NewGuid().ToString();
         var auditLogs = new List<AuditLog>
         {
-            new AuditLog { Id = Guid.NewGuid(), TraceId = traceId, OperationType = "create" },
-            new AuditLog { Id = Guid.NewGuid(), TraceId = traceId, OperationType = "update" }
+            new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                TraceId = traceId,
+                OperationType = "create",
+            },
+            new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                TraceId = traceId,
+                OperationType = "update",
+            },
         };
 
-        _mockRepository.Setup(r => r.GetByTraceIdAsync(traceId, It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r => r.GetByTraceIdAsync(traceId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(auditLogs);
 
         // Act
@@ -207,11 +238,23 @@ public class AuditLogServiceTests
             PageNumber = 1,
             PageSize = 20,
             OperationType = "delete",
-            TargetType = "nonexistent"
+            TargetType = "nonexistent",
         };
 
-        _mockRepository.Setup(r => r.GetLogsAsync(
-            null, null, null, "delete", "nonexistent", null, 1, 20, It.IsAny<CancellationToken>()))
+        _mockRepository
+            .Setup(r =>
+                r.GetLogsAsync(
+                    null,
+                    null,
+                    null,
+                    "delete",
+                    "nonexistent",
+                    null,
+                    1,
+                    20,
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((new List<AuditLog>(), 0L));
 
         // Act
