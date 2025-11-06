@@ -56,7 +56,11 @@ public partial class Program
         builder.Services.AddScoped<IRoleRepository, RoleRepository>();
         builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
         builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
-        builder.Services.AddScoped<IPermissionFailureLogRepository, PermissionFailureLogRepository>();
+        builder.Services.AddScoped<
+            IPermissionFailureLogRepository,
+            PermissionFailureLogRepository
+        >();
+        builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         // ===== Services =====
         builder.Services.AddScoped<IJwtService, JwtService>();
@@ -66,6 +70,7 @@ public partial class Program
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IPermissionValidationService, PermissionValidationService>();
+        builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();

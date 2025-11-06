@@ -172,8 +172,8 @@
 - [x] T081 [US4] 實作 API 端點 POST /api/permissions/validate 於 PermissionController（驗證單一權限）（依賴 T078）
 - [x] T082 [US4] 實作 API 端點 GET /api/users/{userId}/permissions 於 UserRoleController（查詢用戶有效權限）（依賴 T078）
 - [x] T083 [US4] 為現有 PermissionController, RoleController, UserRoleController 端點新增 [RequirePermission] attributes（依賴 T079, T080）
-- [ ] T084 [P] [US4] 整合測試 `Tests/Integration/PermissionValidationIntegrationTests.cs`（測試：多角色權限合併正確、權限驗證失敗記錄、即時生效驗證、中介軟體驗證成功/失敗、查詢用戶有效權限）
-- [ ] T085 [P] [US4] 單元測試 `Tests/Unit/Services/PermissionValidationServiceTests.cs`（測試：權限合併邏輯、驗證失敗記錄邏輯、性能基準測試 <100ms）
+- [x] T084 [P] [US4] 整合測試 `Tests/Integration/PermissionValidationIntegrationTests.cs`（測試：多角色權限合併正確、權限驗證失敗記錄、即時生效驗證、中介軟體驗證成功/失敗、查詢用戶有效權限）
+- [x] T085 [P] [US4] 單元測試 `Tests/Unit/Services/PermissionValidationServiceTests.cs`（測試：權限合併邏輯、驗證失敗記錄邏輯、性能基準測試 <100ms）
 
 **Checkpoint**: 權限驗證功能完全可用且可獨立測試，系統可以即時驗證用戶權限並記錄失敗嘗試
 
@@ -194,19 +194,19 @@
 
 ### Implementation for User Story 5
 
-- [ ] T086 [P] [US5] 建立 AuditLog 實體 `Models/Entities/AuditLog.cs`（包含 operatorId, operatorName, operationTime, operationType, targetType, targetId, beforeState, afterState, ipAddress, userAgent, traceId）
-- [ ] T087 [P] [US5] 建立 AuditLogDto `Models/Dtos/AuditLogDto.cs`（用於 API 回應，包含所有 AuditLog 欄位）
-- [ ] T088 [P] [US5] 建立 QueryAuditLogRequest `Models/Requests/QueryAuditLogRequest.cs`（包含 startTime, endTime, operatorId, operationType, targetType, pageNumber, pageSize）
-- [ ] T089 [P] [US5] 建立 AuditLogListResponse `Models/Responses/AuditLogListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊）
-- [ ] T090 [P] [US5] 建立 QueryAuditLogRequestValidator `Validators/QueryAuditLogRequestValidator.cs`（FluentValidation，驗證時間範圍、分頁參數）
-- [ ] T091 [US5] 建立 IAuditLogRepository 介面 `Repositories/Interfaces/IAuditLogRepository.cs`（方法：LogAsync, GetByIdAsync, GetLogsAsync）
-- [ ] T092 [US5] 實作 AuditLogRepository `Repositories/AuditLogRepository.cs`（使用 Dapper, 僅新增和查詢, 複雜篩選查詢, 索引優化）（依賴 T091）
-- [ ] T093 [US5] 建立 IAuditLogService 介面 `Services/Interfaces/IAuditLogService.cs`（方法：LogOperationAsync, GetAuditLogByIdAsync, GetAuditLogsAsync）
-- [ ] T094 [US5] 實作 AuditLogService `Services/AuditLogService.cs`（業務邏輯：稽核日誌記錄、JSON 序列化 beforeState/afterState、分頁查詢、篩選支援）（依賴 T092, T093）
+- [x] T086 [P] [US5] 建立 AuditLog 實體 `Models/Entities/AuditLog.cs`（包含 operatorId, operatorName, operationTime, operationType, targetType, targetId, beforeState, afterState, ipAddress, userAgent, traceId）
+- [x] T087 [P] [US5] 建立 AuditLogDto `Models/Dtos/AuditLogDto.cs`（用於 API 回應，包含所有 AuditLog 欄位）
+- [x] T088 [P] [US5] 建立 QueryAuditLogRequest `Models/Requests/QueryAuditLogRequest.cs`（包含 startTime, endTime, operatorId, operationType, targetType, pageNumber, pageSize）
+- [x] T089 [P] [US5] 建立 AuditLogListResponse `Models/Responses/AuditLogListResponse.cs`（繼承 ApiResponseModel，包含分頁資訊）
+- [x] T090 [P] [US5] 建立 QueryAuditLogRequestValidator `Validators/QueryAuditLogRequestValidator.cs`（FluentValidation，驗證時間範圍、分頁參數）
+- [x] T091 [US5] 建立 IAuditLogRepository 介面 `Repositories/Interfaces/IAuditLogRepository.cs`（方法：LogAsync, GetByIdAsync, GetLogsAsync）
+- [x] T092 [US5] 實作 AuditLogRepository `Repositories/AuditLogRepository.cs`（使用 Dapper, 僅新增和查詢, 複雜篩選查詢, 索引優化）（依賴 T091）
+- [x] T093 [US5] 建立 IAuditLogService 介面 `Services/Interfaces/IAuditLogService.cs`（方法：LogOperationAsync, GetAuditLogByIdAsync, GetAuditLogsAsync）
+- [x] T094 [US5] 實作 AuditLogService `Services/AuditLogService.cs`（業務邏輯：稽核日誌記錄、JSON 序列化 beforeState/afterState、分頁查詢、篩選支援）（依賴 T092, T093）
 - [ ] T095 [US5] 整合稽核日誌記錄到 PermissionService（所有 CRUD 操作在同一 Transaction 中記錄稽核日誌，記錄失敗時回滾業務操作）（依賴 T094）
 - [ ] T096 [US5] 整合稽核日誌記錄到 RoleService（所有 CRUD 和權限分配操作記錄稽核日誌）（依賴 T094）
 - [ ] T097 [US5] 整合稽核日誌記錄到 UserRoleService（所有角色指派操作記錄稽核日誌）（依賴 T094）
-- [ ] T098 [US5] 實作 AuditLogController `Controllers/AuditLogController.cs`（API 端點：GET /api/audit-logs, GET /api/audit-logs/{id}，使用 ApiResponseModel 包裝器）（依賴 T094）
+- [x] T098 [US5] 實作 AuditLogController `Controllers/AuditLogController.cs`（API 端點：GET /api/audit-logs, GET /api/audit-logs/{id}，使用 ApiResponseModel 包裝器）（依賴 T094）
 - [ ] T099 [P] [US5] 整合測試 `Tests/Integration/AuditLogControllerIntegrationTests.cs`（測試：查詢稽核日誌分頁、多條件篩選、稽核日誌記錄完整性、Transaction 回滾驗證）
 - [ ] T100 [P] [US5] 單元測試 `Tests/Unit/Services/AuditLogServiceTests.cs`（測試：JSON 序列化正確性、分頁查詢邏輯、篩選條件正確性）
 
