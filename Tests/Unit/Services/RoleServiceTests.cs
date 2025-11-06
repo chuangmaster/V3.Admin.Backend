@@ -20,6 +20,7 @@ public class RoleServiceTests
     private readonly Mock<IRoleRepository> _mockRoleRepository;
     private readonly Mock<IRolePermissionRepository> _mockRolePermissionRepository;
     private readonly Mock<IPermissionRepository> _mockPermissionRepository;
+    private readonly Mock<IAuditLogService> _mockAuditLogService;
     private readonly Mock<IValidator<CreateRoleRequest>> _mockCreateValidator;
     private readonly Mock<IValidator<UpdateRoleRequest>> _mockUpdateValidator;
     private readonly Mock<IValidator<AssignRolePermissionsRequest>> _mockAssignValidator;
@@ -31,6 +32,7 @@ public class RoleServiceTests
         _mockRoleRepository = new Mock<IRoleRepository>();
         _mockRolePermissionRepository = new Mock<IRolePermissionRepository>();
         _mockPermissionRepository = new Mock<IPermissionRepository>();
+        _mockAuditLogService = new Mock<IAuditLogService>();
         _mockCreateValidator = new Mock<IValidator<CreateRoleRequest>>();
         _mockUpdateValidator = new Mock<IValidator<UpdateRoleRequest>>();
         _mockAssignValidator = new Mock<IValidator<AssignRolePermissionsRequest>>();
@@ -40,6 +42,7 @@ public class RoleServiceTests
             _mockRoleRepository.Object,
             _mockRolePermissionRepository.Object,
             _mockPermissionRepository.Object,
+            _mockAuditLogService.Object,
             _mockCreateValidator.Object,
             _mockUpdateValidator.Object,
             _mockAssignValidator.Object,

@@ -21,6 +21,7 @@ public class UserRoleServiceTests
     private readonly Mock<IUserRoleRepository> _mockUserRoleRepository;
     private readonly Mock<IRoleRepository> _mockRoleRepository;
     private readonly Mock<IUserRepository> _mockUserRepository;
+    private readonly Mock<IAuditLogService> _mockAuditLogService;
     private readonly Mock<ILogger<UserRoleService>> _mockLogger;
     private readonly IUserRoleService _userRoleService;
 
@@ -29,6 +30,7 @@ public class UserRoleServiceTests
         _mockUserRoleRepository = new Mock<IUserRoleRepository>();
         _mockRoleRepository = new Mock<IRoleRepository>();
         _mockUserRepository = new Mock<IUserRepository>();
+        _mockAuditLogService = new Mock<IAuditLogService>();
         _mockLogger = new Mock<ILogger<UserRoleService>>();
 
         var validator = new AssignUserRoleRequestValidator();
@@ -38,6 +40,7 @@ public class UserRoleServiceTests
             _mockRoleRepository.Object,
             _mockUserRepository.Object,
             _mockLogger.Object,
+            _mockAuditLogService.Object,
             validator
         );
     }

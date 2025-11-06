@@ -5,6 +5,7 @@ using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Repositories.Interfaces;
 using V3.Admin.Backend.Services;
+using V3.Admin.Backend.Services.Interfaces;
 using Xunit;
 
 namespace V3.Admin.Backend.Tests.Unit.Services;
@@ -12,14 +13,20 @@ namespace V3.Admin.Backend.Tests.Unit.Services;
 public class PermissionServiceTests
 {
     private readonly Mock<IPermissionRepository> _mockRepository;
+    private readonly Mock<IAuditLogService> _mockAuditLogService;
     private readonly Mock<ILogger<PermissionService>> _mockLogger;
     private readonly PermissionService _service;
 
     public PermissionServiceTests()
     {
         _mockRepository = new Mock<IPermissionRepository>();
+        _mockAuditLogService = new Mock<IAuditLogService>();
         _mockLogger = new Mock<ILogger<PermissionService>>();
-        _service = new PermissionService(_mockRepository.Object, _mockLogger.Object);
+        _service = new PermissionService(
+            _mockRepository.Object,
+            _mockAuditLogService.Object,
+            _mockLogger.Object
+        );
     }
 
     [Fact]
@@ -33,7 +40,7 @@ public class PermissionServiceTests
             Name = "Test Permission",
             Description = "Test description",
             PermissionType = "route",
-            RoutePath = "/api/test"
+            RoutePath = "/api/test",
         };
 
         _mockRepository
@@ -51,7 +58,7 @@ public class PermissionServiceTests
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId,
             Version = 1,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         _mockRepository
@@ -68,7 +75,10 @@ public class PermissionServiceTests
         result.Id.Should().Be(createdPermission.Id);
 
         _mockRepository.Verify(r => r.IsCodeUniqueAsync(request.PermissionCode, null), Times.Once);
-        _mockRepository.Verify(r => r.CreateAsync(It.IsAny<Models.Entities.Permission>()), Times.Once);
+        _mockRepository.Verify(
+            r => r.CreateAsync(It.IsAny<Models.Entities.Permission>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -82,7 +92,7 @@ public class PermissionServiceTests
             Name = "Test",
             Description = "Test",
             PermissionType = "route",
-            RoutePath = "/api/test"
+            RoutePath = "/api/test",
         };
 
         _mockRepository
@@ -91,9 +101,13 @@ public class PermissionServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.CreatePermissionAsync(request, userId));
+            () => _service.CreatePermissionAsync(request, userId)
+        );
 
-        _mockRepository.Verify(r => r.CreateAsync(It.IsAny<Models.Entities.Permission>()), Times.Never);
+        _mockRepository.Verify(
+            r => r.CreateAsync(It.IsAny<Models.Entities.Permission>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -111,12 +125,10 @@ public class PermissionServiceTests
             RoutePath = "/api/test",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(permission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(permission);
 
         // Act
         var result = await _service.GetPermissionByIdAsync(permissionId);
@@ -161,7 +173,7 @@ public class PermissionServiceTests
                 RoutePath = "/api/perm1",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1,
-                IsDeleted = false
+                IsDeleted = false,
             },
             new Models.Entities.Permission
             {
@@ -173,13 +185,11 @@ public class PermissionServiceTests
                 RoutePath = null,
                 CreatedAt = DateTime.UtcNow,
                 Version = 1,
-                IsDeleted = false
-            }
+                IsDeleted = false,
+            },
         };
 
-        _mockRepository
-            .Setup(r => r.GetAllAsync(1, 20, null, null))
-            .ReturnsAsync((permissions, 2));
+        _mockRepository.Setup(r => r.GetAllAsync(1, 20, null, null)).ReturnsAsync((permissions, 2));
 
         // Act
         var (items, totalCount) = await _service.GetPermissionsAsync(1, 20, null, null);
@@ -209,7 +219,7 @@ public class PermissionServiceTests
             RoutePath = "/api/original",
             CreatedAt = DateTime.UtcNow,
             Version = version,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         var updateRequest = new UpdatePermissionRequest
@@ -217,12 +227,10 @@ public class PermissionServiceTests
             Name = "Updated Name",
             Description = "Updated",
             RoutePath = "/api/updated",
-            Version = version
+            Version = version,
         };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(existingPermission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(existingPermission);
 
         var updatedPermission = new Models.Entities.Permission
         {
@@ -236,7 +244,7 @@ public class PermissionServiceTests
             UpdatedAt = DateTime.UtcNow,
             UpdatedBy = userId,
             Version = version + 1,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         _mockRepository
@@ -253,7 +261,8 @@ public class PermissionServiceTests
 
         _mockRepository.Verify(
             r => r.UpdateAsync(It.IsAny<Models.Entities.Permission>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -267,7 +276,7 @@ public class PermissionServiceTests
             Name = "Updated",
             Description = "Updated",
             RoutePath = "/api/updated",
-            Version = 1
+            Version = 1,
         };
 
         _mockRepository
@@ -276,7 +285,8 @@ public class PermissionServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _service.UpdatePermissionAsync(invalidId, updateRequest, userId));
+            () => _service.UpdatePermissionAsync(invalidId, updateRequest, userId)
+        );
     }
 
     [Fact]
@@ -296,7 +306,7 @@ public class PermissionServiceTests
             RoutePath = "/api/original",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         var updateRequest = new UpdatePermissionRequest
@@ -304,16 +314,15 @@ public class PermissionServiceTests
             Name = "Updated",
             Description = "Updated",
             RoutePath = "/api/updated",
-            Version = 999
+            Version = 999,
         };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(existingPermission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(existingPermission);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.UpdatePermissionAsync(permissionId, updateRequest, userId));
+            () => _service.UpdatePermissionAsync(permissionId, updateRequest, userId)
+        );
     }
 
     [Fact]
@@ -334,30 +343,22 @@ public class PermissionServiceTests
             RoutePath = "/api/test",
             CreatedAt = DateTime.UtcNow,
             Version = version,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         var deleteRequest = new DeletePermissionRequest { Version = version };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(existingPermission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(existingPermission);
 
-        _mockRepository
-            .Setup(r => r.IsInUseAsync(permissionId))
-            .ReturnsAsync(false);
+        _mockRepository.Setup(r => r.IsInUseAsync(permissionId)).ReturnsAsync(false);
 
-        _mockRepository
-            .Setup(r => r.DeleteAsync(permissionId, userId))
-            .ReturnsAsync(true);
+        _mockRepository.Setup(r => r.DeleteAsync(permissionId, userId)).ReturnsAsync(true);
 
         // Act
         await _service.DeletePermissionAsync(permissionId, deleteRequest, userId);
 
         // Assert
-        _mockRepository.Verify(
-            r => r.DeleteAsync(permissionId, userId),
-            Times.Once);
+        _mockRepository.Verify(r => r.DeleteAsync(permissionId, userId), Times.Once);
     }
 
     [Fact]
@@ -378,26 +379,21 @@ public class PermissionServiceTests
             RoutePath = "/api/test",
             CreatedAt = DateTime.UtcNow,
             Version = version,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         var deleteRequest = new DeletePermissionRequest { Version = version };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(existingPermission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(existingPermission);
 
-        _mockRepository
-            .Setup(r => r.IsInUseAsync(permissionId))
-            .ReturnsAsync(true);
+        _mockRepository.Setup(r => r.IsInUseAsync(permissionId)).ReturnsAsync(true);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.DeletePermissionAsync(permissionId, deleteRequest, userId));
+            () => _service.DeletePermissionAsync(permissionId, deleteRequest, userId)
+        );
 
-        _mockRepository.Verify(
-            r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
-            Times.Never);
+        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]
@@ -417,17 +413,16 @@ public class PermissionServiceTests
             RoutePath = "/api/test",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
-            IsDeleted = false
+            IsDeleted = false,
         };
 
         var deleteRequest = new DeletePermissionRequest { Version = 999 };
 
-        _mockRepository
-            .Setup(r => r.GetByIdAsync(permissionId))
-            .ReturnsAsync(existingPermission);
+        _mockRepository.Setup(r => r.GetByIdAsync(permissionId)).ReturnsAsync(existingPermission);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _service.DeletePermissionAsync(permissionId, deleteRequest, userId));
+            () => _service.DeletePermissionAsync(permissionId, deleteRequest, userId)
+        );
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentValidation;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Requests;
@@ -16,6 +17,7 @@ public class UserRoleService : IUserRoleService
     private readonly IRoleRepository _roleRepository;
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserRoleService> _logger;
+    private readonly IAuditLogService _auditLogService;
     private readonly AssignUserRoleRequestValidator _assignValidator;
 
     /// <summary>
@@ -26,6 +28,7 @@ public class UserRoleService : IUserRoleService
         IRoleRepository roleRepository,
         IUserRepository userRepository,
         ILogger<UserRoleService> logger,
+        IAuditLogService auditLogService,
         AssignUserRoleRequestValidator assignValidator
     )
     {
@@ -33,6 +36,7 @@ public class UserRoleService : IUserRoleService
         _roleRepository = roleRepository;
         _userRepository = userRepository;
         _logger = logger;
+        _auditLogService = auditLogService;
         _assignValidator = assignValidator;
     }
 
@@ -79,7 +83,34 @@ public class UserRoleService : IUserRoleService
         );
         _logger.LogInformation("為用戶指派了 {Count} 個角色: {UserId}", count, userId);
 
-        // TODO: 記錄稽核日誌（T097 中實作）
+        // 記錄稽核日誌
+        var afterState = JsonSerializer.Serialize(
+            new
+            {
+                UserId = userId,
+                RoleIds = request.RoleIds,
+                AssignedRoleCount = count,
+            }
+        );
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _auditLogService.LogOperationAsync(
+                    operatorId,
+                    "system",
+                    "assign",
+                    "user_role",
+                    userId,
+                    beforeState: null,
+                    afterState: afterState
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "用戶角色指派稽核日誌記錄失敗");
+            }
+        });
 
         return count;
     }
@@ -116,7 +147,32 @@ public class UserRoleService : IUserRoleService
             cancellationToken
         );
 
-        // TODO: 記錄稽核日誌（T097 中實作）
+        // 記錄稽核日誌
+        if (success)
+        {
+            var beforeState = JsonSerializer.Serialize(
+                new { UserId = userId, RoleId = request.RoleId }
+            );
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _auditLogService.LogOperationAsync(
+                        operatorId,
+                        "system",
+                        "remove",
+                        "user_role",
+                        userId,
+                        beforeState: beforeState,
+                        afterState: null
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "用戶角色移除稽核日誌記錄失敗");
+                }
+            });
+        }
 
         return success;
     }

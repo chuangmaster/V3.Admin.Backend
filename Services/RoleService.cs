@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using FluentValidation;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
@@ -17,6 +18,7 @@ public class RoleService : IRoleService
     private readonly IRoleRepository _roleRepository;
     private readonly IRolePermissionRepository _rolePermissionRepository;
     private readonly IPermissionRepository _permissionRepository;
+    private readonly IAuditLogService _auditLogService;
     private readonly IValidator<CreateRoleRequest> _createValidator;
     private readonly IValidator<UpdateRoleRequest> _updateValidator;
     private readonly IValidator<AssignRolePermissionsRequest> _assignValidator;
@@ -29,21 +31,28 @@ public class RoleService : IRoleService
         IRoleRepository roleRepository,
         IRolePermissionRepository rolePermissionRepository,
         IPermissionRepository permissionRepository,
+        IAuditLogService auditLogService,
         IValidator<CreateRoleRequest> createValidator,
         IValidator<UpdateRoleRequest> updateValidator,
         IValidator<AssignRolePermissionsRequest> assignValidator,
-        ILogger<RoleService> logger)
+        ILogger<RoleService> logger
+    )
     {
         _roleRepository = roleRepository;
         _rolePermissionRepository = rolePermissionRepository;
         _permissionRepository = permissionRepository;
+        _auditLogService = auditLogService;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _assignValidator = assignValidator;
         _logger = logger;
     }
 
-    public async Task<RoleDto> CreateRoleAsync(CreateRoleRequest request, Guid operatorId, CancellationToken cancellationToken = default)
+    public async Task<RoleDto> CreateRoleAsync(
+        CreateRoleRequest request,
+        Guid operatorId,
+        CancellationToken cancellationToken = default
+    )
     {
         // 驗證請求
         var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
@@ -53,7 +62,11 @@ public class RoleService : IRoleService
         }
 
         // 檢查角色名稱唯一性
-        var roleNameExists = await _roleRepository.RoleNameExistsAsync(request.RoleName, null, cancellationToken);
+        var roleNameExists = await _roleRepository.RoleNameExistsAsync(
+            request.RoleName,
+            null,
+            cancellationToken
+        );
         if (roleNameExists)
         {
             _logger.LogWarning("角色建立失敗：角色名稱已存在: {RoleName}", request.RoleName);
@@ -69,31 +82,49 @@ public class RoleService : IRoleService
             CreatedAt = DateTime.UtcNow,
             CreatedBy = operatorId,
             IsDeleted = false,
-            Version = 1
+            Version = 1,
         };
 
         var createdRole = await _roleRepository.CreateAsync(role, cancellationToken);
-        _logger.LogInformation("角色建立成功: {RoleName} ({Id})", createdRole.RoleName, createdRole.Id);
+        _logger.LogInformation(
+            "角色建立成功: {RoleName} ({Id})",
+            createdRole.RoleName,
+            createdRole.Id
+        );
 
         // TODO: 記錄稽核日誌（T095-T097 中實作）
 
         return MapToDto(createdRole);
     }
 
-    public async Task<RoleDto?> GetRoleByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<RoleDto?> GetRoleByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var role = await _roleRepository.GetByIdAsync(id, cancellationToken);
         return role != null ? MapToDto(role) : null;
     }
 
-    public async Task<(List<RoleDto> roles, int totalCount)> GetRolesAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(List<RoleDto> roles, int totalCount)> GetRolesAsync(
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default
+    )
     {
-        var (roles, totalCount) = await _roleRepository.GetAllAsync(pageNumber, pageSize, cancellationToken);
+        var (roles, totalCount) = await _roleRepository.GetAllAsync(
+            pageNumber,
+            pageSize,
+            cancellationToken
+        );
         var roleDtos = roles.Select(MapToDto).ToList();
         return (roleDtos, totalCount);
     }
 
-    public async Task<RoleDetailDto?> GetRoleDetailAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<RoleDetailDto?> GetRoleDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
     {
         var role = await _roleRepository.GetByIdAsync(id, cancellationToken);
         if (role == null)
@@ -101,7 +132,10 @@ public class RoleService : IRoleService
             return null;
         }
 
-        var permissions = await _rolePermissionRepository.GetRolePermissionsAsync(id, cancellationToken);
+        var permissions = await _rolePermissionRepository.GetRolePermissionsAsync(
+            id,
+            cancellationToken
+        );
         var permissionDtos = permissions.Select(MapPermissionToDto).ToList();
 
         return new RoleDetailDto
@@ -111,11 +145,16 @@ public class RoleService : IRoleService
             Description = role.Description,
             CreatedAt = role.CreatedAt,
             Version = role.Version,
-            Permissions = permissionDtos
+            Permissions = permissionDtos,
         };
     }
 
-    public async Task<RoleDto> UpdateRoleAsync(Guid id, UpdateRoleRequest request, Guid operatorId, CancellationToken cancellationToken = default)
+    public async Task<RoleDto> UpdateRoleAsync(
+        Guid id,
+        UpdateRoleRequest request,
+        Guid operatorId,
+        CancellationToken cancellationToken = default
+    )
     {
         // 驗證請求
         var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
@@ -134,7 +173,11 @@ public class RoleService : IRoleService
         // 檢查角色名稱唯一性（排除自己）
         if (role.RoleName != request.RoleName)
         {
-            var roleNameExists = await _roleRepository.RoleNameExistsAsync(request.RoleName, id, cancellationToken);
+            var roleNameExists = await _roleRepository.RoleNameExistsAsync(
+                request.RoleName,
+                id,
+                cancellationToken
+            );
             if (roleNameExists)
             {
                 throw new InvalidOperationException($"角色名稱 '{request.RoleName}' 已存在");
@@ -156,14 +199,23 @@ public class RoleService : IRoleService
 
         // 重新取得更新後的角色
         var updatedRole = await _roleRepository.GetByIdAsync(id, cancellationToken);
-        _logger.LogInformation("角色更新成功: {RoleName} ({Id})", updatedRole!.RoleName, updatedRole.Id);
+        _logger.LogInformation(
+            "角色更新成功: {RoleName} ({Id})",
+            updatedRole!.RoleName,
+            updatedRole.Id
+        );
 
         // TODO: 記錄稽核日誌（T095-T097 中實作）
 
         return MapToDto(updatedRole);
     }
 
-    public async Task<bool> DeleteRoleAsync(Guid id, DeleteRoleRequest request, Guid operatorId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteRoleAsync(
+        Guid id,
+        DeleteRoleRequest request,
+        Guid operatorId,
+        CancellationToken cancellationToken = default
+    )
     {
         // 取得角色
         var role = await _roleRepository.GetByIdAsync(id, cancellationToken);
@@ -176,12 +228,21 @@ public class RoleService : IRoleService
         var isInUse = await _roleRepository.IsInUseAsync(id, cancellationToken);
         if (isInUse)
         {
-            _logger.LogWarning("角色刪除失敗：角色正在被使用: {RoleName} ({Id})", role.RoleName, id);
+            _logger.LogWarning(
+                "角色刪除失敗：角色正在被使用: {RoleName} ({Id})",
+                role.RoleName,
+                id
+            );
             throw new InvalidOperationException($"該角色正被用戶指派，無法刪除");
         }
 
         // 刪除角色
-        var success = await _roleRepository.DeleteAsync(id, operatorId, request.Version, cancellationToken);
+        var success = await _roleRepository.DeleteAsync(
+            id,
+            operatorId,
+            request.Version,
+            cancellationToken
+        );
         if (!success)
         {
             _logger.LogWarning("角色刪除失敗（版本衝突）: {Id}", id);
@@ -195,7 +256,12 @@ public class RoleService : IRoleService
         return true;
     }
 
-    public async Task<bool> AssignPermissionsAsync(Guid roleId, AssignRolePermissionsRequest request, Guid operatorId, CancellationToken cancellationToken = default)
+    public async Task<bool> AssignPermissionsAsync(
+        Guid roleId,
+        AssignRolePermissionsRequest request,
+        Guid operatorId,
+        CancellationToken cancellationToken = default
+    )
     {
         // 驗證請求
         var validationResult = await _assignValidator.ValidateAsync(request, cancellationToken);
@@ -222,7 +288,12 @@ public class RoleService : IRoleService
         }
 
         // 分配權限
-        var count = await _rolePermissionRepository.AssignPermissionsAsync(roleId, request.PermissionIds, operatorId, cancellationToken);
+        var count = await _rolePermissionRepository.AssignPermissionsAsync(
+            roleId,
+            request.PermissionIds,
+            operatorId,
+            cancellationToken
+        );
         _logger.LogInformation("為角色分配了 {Count} 個權限: {RoleId}", count, roleId);
 
         // TODO: 記錄稽核日誌（T095-T097 中實作）
@@ -230,7 +301,12 @@ public class RoleService : IRoleService
         return true;
     }
 
-    public async Task<bool> RemovePermissionAsync(Guid roleId, Guid permissionId, Guid operatorId, CancellationToken cancellationToken = default)
+    public async Task<bool> RemovePermissionAsync(
+        Guid roleId,
+        Guid permissionId,
+        Guid operatorId,
+        CancellationToken cancellationToken = default
+    )
     {
         // 檢查角色是否存在
         var roleExists = await _roleRepository.ExistsAsync(roleId, cancellationToken);
@@ -247,10 +323,18 @@ public class RoleService : IRoleService
         }
 
         // 移除權限
-        var success = await _rolePermissionRepository.RemovePermissionAsync(roleId, permissionId, cancellationToken);
+        var success = await _rolePermissionRepository.RemovePermissionAsync(
+            roleId,
+            permissionId,
+            cancellationToken
+        );
         if (success)
         {
-            _logger.LogInformation("已移除角色權限: {RoleId} - {PermissionId}", roleId, permissionId);
+            _logger.LogInformation(
+                "已移除角色權限: {RoleId} - {PermissionId}",
+                roleId,
+                permissionId
+            );
         }
 
         // TODO: 記錄稽核日誌（T095-T097 中實作）
@@ -266,7 +350,7 @@ public class RoleService : IRoleService
             RoleName = role.RoleName,
             Description = role.Description,
             CreatedAt = role.CreatedAt,
-            Version = role.Version
+            Version = role.Version,
         };
     }
 
@@ -281,7 +365,7 @@ public class RoleService : IRoleService
             PermissionType = permission.PermissionType,
             RoutePath = permission.RoutePath,
             CreatedAt = permission.CreatedAt,
-            Version = permission.Version
+            Version = permission.Version,
         };
     }
 }

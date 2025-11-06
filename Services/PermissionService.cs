@@ -1,3 +1,4 @@
+using System.Text.Json;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Models.Requests;
@@ -12,15 +13,24 @@ namespace V3.Admin.Backend.Services;
 public class PermissionService : IPermissionService
 {
     private readonly IPermissionRepository _permissionRepository;
+    private readonly IAuditLogService _auditLogService;
     private readonly ILogger<PermissionService> _logger;
 
-    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger)
+    public PermissionService(
+        IPermissionRepository permissionRepository,
+        IAuditLogService auditLogService,
+        ILogger<PermissionService> logger
+    )
     {
         _permissionRepository = permissionRepository;
+        _auditLogService = auditLogService;
         _logger = logger;
     }
 
-    public async Task<PermissionDto> CreatePermissionAsync(CreatePermissionRequest request, Guid createdBy)
+    public async Task<PermissionDto> CreatePermissionAsync(
+        CreatePermissionRequest request,
+        Guid createdBy
+    )
     {
         // 檢查權限代碼唯一性
         var isUnique = await _permissionRepository.IsCodeUniqueAsync(request.PermissionCode);
@@ -39,10 +49,45 @@ public class PermissionService : IPermissionService
             RoutePath = request.RoutePath,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = createdBy,
-            Version = 1
+            Version = 1,
         };
 
         var created = await _permissionRepository.CreateAsync(permission);
+
+        // 非同步記錄稽核日誌（不阻塞主流程）
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var afterState = JsonSerializer.Serialize(
+                    new
+                    {
+                        created.Id,
+                        created.PermissionCode,
+                        created.Name,
+                        created.Description,
+                        created.PermissionType,
+                        created.RoutePath,
+                        created.CreatedAt,
+                    }
+                );
+
+                await _auditLogService.LogOperationAsync(
+                    createdBy,
+                    "system",
+                    "create",
+                    "permission",
+                    created.Id,
+                    beforeState: null,
+                    afterState: afterState
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", created.Id);
+            }
+        });
+
         return MapToDto(created);
     }
 
@@ -53,22 +98,45 @@ public class PermissionService : IPermissionService
     }
 
     public async Task<(List<PermissionDto> Items, int TotalCount)> GetPermissionsAsync(
-        int pageNumber, 
-        int pageSize, 
-        string? searchKeyword = null, 
-        string? permissionType = null)
+        int pageNumber,
+        int pageSize,
+        string? searchKeyword = null,
+        string? permissionType = null
+    )
     {
-        var (items, totalCount) = await _permissionRepository.GetAllAsync(pageNumber, pageSize, searchKeyword, permissionType);
+        var (items, totalCount) = await _permissionRepository.GetAllAsync(
+            pageNumber,
+            pageSize,
+            searchKeyword,
+            permissionType
+        );
         return (items.Select(MapToDto).ToList(), totalCount);
     }
 
-    public async Task<PermissionDto> UpdatePermissionAsync(Guid id, UpdatePermissionRequest request, Guid updatedBy)
+    public async Task<PermissionDto> UpdatePermissionAsync(
+        Guid id,
+        UpdatePermissionRequest request,
+        Guid updatedBy
+    )
     {
         var permission = await _permissionRepository.GetByIdAsync(id);
         if (permission == null)
         {
             throw new KeyNotFoundException($"權限 '{id}' 不存在");
         }
+
+        // 記錄更新前的狀態
+        var beforeState = JsonSerializer.Serialize(
+            new
+            {
+                permission.Id,
+                permission.PermissionCode,
+                permission.Name,
+                permission.Description,
+                permission.RoutePath,
+                permission.Version,
+            }
+        );
 
         permission.Name = request.Name;
         permission.Description = request.Description;
@@ -85,16 +153,67 @@ public class PermissionService : IPermissionService
 
         // 重新取得更新後的權限
         var updated = await _permissionRepository.GetByIdAsync(id);
+
+        // 非同步記錄稽核日誌
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var afterState = JsonSerializer.Serialize(
+                    new
+                    {
+                        updated!.Id,
+                        updated.PermissionCode,
+                        updated.Name,
+                        updated.Description,
+                        updated.RoutePath,
+                        updated.Version,
+                    }
+                );
+
+                await _auditLogService.LogOperationAsync(
+                    updatedBy,
+                    "system",
+                    "update",
+                    "permission",
+                    id,
+                    beforeState: beforeState,
+                    afterState: afterState
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
+            }
+        });
+
         return MapToDto(updated!);
     }
 
-    public async Task DeletePermissionAsync(Guid id, DeletePermissionRequest request, Guid deletedBy)
+    public async Task DeletePermissionAsync(
+        Guid id,
+        DeletePermissionRequest request,
+        Guid deletedBy
+    )
     {
         var permission = await _permissionRepository.GetByIdAsync(id);
         if (permission == null)
         {
             throw new KeyNotFoundException($"權限 '{id}' 不存在");
         }
+
+        // 記錄刪除前的狀態
+        var beforeState = JsonSerializer.Serialize(
+            new
+            {
+                permission.Id,
+                permission.PermissionCode,
+                permission.Name,
+                permission.Description,
+                permission.RoutePath,
+                permission.Version,
+            }
+        );
 
         // 檢查版本號
         if (permission.Version != request.Version)
@@ -116,6 +235,27 @@ public class PermissionService : IPermissionService
         }
 
         _logger.LogInformation("權限已刪除: {Id}", id);
+
+        // 非同步記錄稽核日誌
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _auditLogService.LogOperationAsync(
+                    deletedBy,
+                    "system",
+                    "delete",
+                    "permission",
+                    id,
+                    beforeState: beforeState,
+                    afterState: null
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
+            }
+        });
     }
 
     /// <summary>
@@ -131,6 +271,6 @@ public class PermissionService : IPermissionService
             PermissionType = permission.PermissionType,
             RoutePath = permission.RoutePath,
             CreatedAt = permission.CreatedAt,
-            Version = permission.Version
+            Version = permission.Version,
         };
 }
