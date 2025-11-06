@@ -43,6 +43,11 @@ RETURNING id, role_name, created_at;
 -- ====================================
 -- 步驟 3: 將所有系統權限分配給「系統管理員」角色
 -- ====================================
+-- 先刪除該角色已有的權限分配，然後重新分配（確保權限集合最新）
+DELETE FROM role_permissions 
+WHERE role_id = (SELECT id FROM roles WHERE role_name = '系統管理員' AND is_deleted = false LIMIT 1);
+
+-- 然後將所有有效的系統權限分配給該角色
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT 
     r.id,
@@ -58,6 +63,16 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 -- ====================================
 -- 步驟 4: 將「系統管理員」角色指派給 admin 使用者
 -- ====================================
+-- 首先恢復已刪除的記錄（如果存在）
+UPDATE user_roles
+SET is_deleted = false,
+    deleted_at = NULL,
+    deleted_by = NULL
+WHERE user_id = (SELECT id FROM users WHERE username = 'admin' AND is_deleted = false LIMIT 1)
+  AND role_id = (SELECT id FROM roles WHERE role_name = '系統管理員' AND is_deleted = false LIMIT 1)
+  AND is_deleted = true;
+
+-- 然後插入新記錄（如果不存在）
 INSERT INTO user_roles (user_id, role_id, assigned_by)
 SELECT 
     u.id,
@@ -69,7 +84,11 @@ WHERE u.username = 'admin'
   AND u.is_deleted = false
   AND r.role_name = '系統管理員'
   AND r.is_deleted = false
-ON CONFLICT (user_id, role_id) DO NOTHING
+  AND NOT EXISTS (
+    SELECT 1 FROM user_roles ur
+    WHERE ur.user_id = u.id
+      AND ur.role_id = r.id
+  )
 RETURNING user_id, role_id, assigned_at;
 
 -- ====================================
