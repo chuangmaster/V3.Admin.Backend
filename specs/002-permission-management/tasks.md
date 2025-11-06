@@ -118,7 +118,7 @@
 - [x] T053 [US2] 實作 RoleService `Services/RoleService.cs`（業務邏輯：檢查角色名稱唯一性、防止刪除使用中角色、權限存在性驗證、稽核日誌記錄、併發控制）（依賴 T049, T051, T052）
 - [x] T054 [US2] 實作 RoleController `Controllers/RoleController.cs`（API 端點：GET /api/roles, POST /api/roles, GET /api/roles/{id}, GET /api/roles/{id}/permissions, PUT /api/roles/{id}, DELETE /api/roles/{id}, POST /api/roles/{roleId}/permissions, DELETE /api/roles/{roleId}/permissions/{permissionId}，使用 ApiResponseModel 包裝器）（依賴 T053）
 - [x] T055 [P] [US2] 整合測試 `Tests/Integration/RoleControllerIntegrationTests.cs`（測試：建立角色成功、名稱重複失敗、分配權限成功、移除權限成功、查詢角色詳情含權限列表、刪除使用中角色失敗）
-- [x] T056 [P] [US2] 單元測試 `Tests/Unit/Services/RoleServiceTests.cs`（測試：CreateRole 業務規則、角色名稱唯一性驗證、刪除使用中角色檢查、分配不存在權限失敗）
+- [x] T056 [P] [US2] 單元測試 `Tests/Unit/Services/RoleServiceTests.cs`（測試：CreateRole 業務規則、角色名稱唯一性驗證、刪除使用中角色檢查、分配不存在權限失敗）✅ 已創建
 
 **Checkpoint**: 角色管理功能完全可用且可獨立測試，管理員可以創建角色並配置權限
 
