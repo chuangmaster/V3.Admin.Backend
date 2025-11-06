@@ -1,17 +1,24 @@
 <!--
 Sync Impact Report:
-Version change: 1.3.0 → 1.4.0 (Database Naming Convention Standardization)
-Added sections: Database Naming Standards section with explicit snake_case requirement
+Version change: 1.4.0 → 1.5.0 (Foreign Key Integrity & Permission Authorization Standards)
+Added sections: 
+  - Principle III: Database Design & Foreign Key Integrity (NON-NEGOTIABLE)
+  - Principle IV: Permission-Based Authorization Design (NON-NEGOTIABLE)
 Modified principles: 
-  - Principle I: Enhanced with database naming convention (snake_case for DB, PascalCase for C#)
-  - Added comprehensive naming standards covering tables, columns, indexes, constraints
+  - Renumbered existing Principle III → V (Test-First Development)
+  - Renumbered existing Principle IV → VI (User Experience Consistency & Admin Interface Standards)
+  - Renumbered existing Principle V → VII (Performance & Security Standards for Account Management)
+  - Principle I: Database Naming Standards remain unchanged (established in 1.4.0)
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Already aligned with database structure expectations
-  ✅ spec-template.md - Already aligned with entity requirements
-  ✅ tasks-template.md - Already aligned with entity and migration task patterns
-  ⚠ Command files - No updates needed for naming conventions
-Follow-up TODOs: None - all naming conventions explicitly documented with examples
+  ✅ plan-template.md - Aligned with foreign key requirements and permission design patterns
+  ✅ spec-template.md - Aligned with database integrity and authorization requirements
+  ✅ tasks-template.md - Aligned with migration tasks requiring FK constraints and permission seeding
+  ⚠ Migration files - Require amendment migrations to add missing foreign key constraints (see Principle III for full list)
+  ⚠ Future feature specs - MUST include permission definitions and [RequirePermission] attributes (see Principle IV)
+Follow-up TODOs: 
+  - Create amendment migration(s) to add missing foreign key constraints to existing tables (users.deleted_by, permissions.created_by/updated_by/deleted_by, roles.created_by/updated_by/deleted_by, role_permissions.assigned_by, user_roles.assigned_by/deleted_by, audit_logs.operator_id, permission_failure_logs.user_id)
+  - Update developer documentation to highlight mandatory foreign key and permission design requirements
 -->
 
 # V3.Admin.Backend Constitution
@@ -44,17 +51,76 @@ All features MUST implement the three-layer architecture: Presentation (Controll
 
 **Rationale**: Ensures separation of concerns, testability, and maintainable architecture that scales with user management complexity and role/permission requirements.
 
-### III. Test-First Development (NON-NEGOTIABLE)
+### III. Database Design & Foreign Key Integrity (NON-NEGOTIABLE)
+All database tables MUST maintain referential integrity through properly defined foreign key constraints. Every column that references another table's primary key MUST have an explicit foreign key constraint. Foreign key constraints MUST specify appropriate `ON DELETE` and `ON UPDATE` behaviors:
+- **Cascade deletion** (`ON DELETE CASCADE`): Use for strong ownership relationships (e.g., `role_permissions.role_id` → `roles.id`, `user_roles.user_id` → `users.id`) where child records should be automatically removed when parent is deleted.
+- **Restrict deletion** (`ON DELETE RESTRICT` or `ON DELETE NO ACTION`): Use for audit/tracking columns (e.g., `users.deleted_by` → `users.id`, `permissions.created_by` → `users.id`) to prevent deletion of users who have performed operations in the system. These should use `ON DELETE SET NULL` if the relationship is optional.
+- **Set null** (`ON DELETE SET NULL`): Use for optional references where the relationship can be broken without losing data integrity (e.g., audit columns like `created_by`, `updated_by`, `deleted_by`, `assigned_by`).
+
+**Mandatory Foreign Keys** (examples from current schema):
+- `users.deleted_by` → `users.id` (ON DELETE SET NULL)
+- `permissions.created_by`, `permissions.updated_by`, `permissions.deleted_by` → `users.id` (ON DELETE SET NULL)
+- `roles.created_by`, `roles.updated_by`, `roles.deleted_by` → `users.id` (ON DELETE SET NULL)
+- `role_permissions.role_id` → `roles.id` (ON DELETE CASCADE)
+- `role_permissions.permission_id` → `permissions.id` (ON DELETE CASCADE)
+- `role_permissions.assigned_by` → `users.id` (ON DELETE SET NULL)
+- `user_roles.user_id` → `users.id` (ON DELETE CASCADE)
+- `user_roles.role_id` → `roles.id` (ON DELETE CASCADE)
+- `user_roles.assigned_by`, `user_roles.deleted_by` → `users.id` (ON DELETE SET NULL)
+- `audit_logs.operator_id` → `users.id` (ON DELETE SET NULL)
+- `permission_failure_logs.user_id` → `users.id` (ON DELETE SET NULL)
+
+**Migration Requirements**: All foreign key constraints MUST be added in the same migration file where the table is created or in a dedicated amendment migration. Constraint names MUST follow the pattern `fk_tablename_columnname` (e.g., `fk_users_deletedby`, `fk_permissions_createdby`).
+
+**Rationale**: Foreign key constraints ensure data integrity, prevent orphaned records, maintain audit trail reliability, and make the database schema self-documenting. They catch referential integrity violations at the database level rather than application level, providing a critical defense against data corruption. Proper `ON DELETE` behaviors prevent cascade failures in audit systems while maintaining cleanup automation for transactional data.
+
+### IV. Permission-Based Authorization Design (NON-NEGOTIABLE)
+All new features MUST implement permission-based authorization following the established pattern. Every protected endpoint MUST be decorated with `[RequirePermission("resource.action")]` attribute where `resource` is the feature domain (e.g., `permission`, `role`, `account`, `inventory`) and `action` is the operation (e.g., `create`, `read`, `update`, `delete`, `assign`, `remove`). Permission codes MUST follow the dot notation format `resource.action` and be pre-defined in the `seed_permissions.sql` script before feature deployment.
+
+**Required Permission Pattern**:
+1. Define permissions in `Database/Scripts/seed_permissions.sql` using the format:
+   ```sql
+   INSERT INTO permissions (permission_code, name, description, permission_type) 
+   VALUES 
+       ('resource.read', '查詢[資源]', '允許查詢[資源]資訊', 'function'),
+       ('resource.create', '新增[資源]', '允許創建新的[資源]', 'function'),
+       ('resource.update', '修改[資源]', '允許編輯[資源]資訊', 'function'),
+       ('resource.delete', '刪除[資源]', '允許刪除[資源]', 'function')
+   ON CONFLICT (permission_code) DO NOTHING;
+   ```
+
+2. Apply `[RequirePermission]` attribute to controller endpoints:
+   ```csharp
+   [HttpGet]
+   [RequirePermission("resource.read")]
+   public async Task<IActionResult> GetResources() { ... }
+   
+   [HttpPost]
+   [RequirePermission("resource.create")]
+   public async Task<IActionResult> CreateResource() { ... }
+   ```
+
+3. Middleware `PermissionAuthorizationMiddleware` automatically validates permissions by:
+   - Extracting user ID from JWT claims (`sub` claim)
+   - Querying user's permissions through `IPermissionValidationService`
+   - Returning 403 Forbidden if permission check fails
+   - Logging permission failures to `permission_failure_logs` table
+
+**Standard Permission Actions**: `create`, `read`, `update`, `delete` for CRUD operations; `assign`, `remove` for relationship management (e.g., role assignments); custom actions as needed (e.g., `export`, `import`, `approve`).
+
+**Rationale**: Standardized permission design ensures consistent security across features, enables fine-grained access control, supports role-based authorization (RBAC), facilitates audit compliance, and makes security requirements explicit in code through declarative attributes. The `resource.action` naming convention maintains clarity and prevents permission code collisions across different domains.
+
+### V. Test-First Development (NON-NEGOTIABLE)
 Tests MUST be written before implementation. Critical paths MUST have unit tests with clear naming conventions matching existing style. Integration tests are required for API endpoints, authentication flows, role assignments, permission validations, and cross-layer interactions. Test coverage MUST be maintained for business logic layers. Tests MUST be independently executable and not depend on external resources without proper mocking.
 
 **Rationale**: Prevents regressions, ensures reliability, and documents expected behavior for future maintainers in security-critical user management operations.
 
-### IV. User Experience Consistency & Admin Interface Standards
+### VI. User Experience Consistency & Admin Interface Standards
 All API responses MUST use ApiResponseModel wrapper with consistent Success, Code, Message, Data, Timestamp, and TraceId properties. The dual-layer design combining HTTP status codes (reflecting request processing state) and business logic codes (providing fine-grained business scenarios) is MANDATORY. Error responses MUST follow standardized format with appropriate HTTP status codes AND meaningful business codes from ResponseCodes constants. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses using appropriate business codes (e.g., VALIDATION_ERROR, INVALID_CREDENTIALS, USERNAME_EXISTS, PASSWORD_SAME_AS_OLD, CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE). Account management operations MUST provide detailed feedback on business rule violations (e.g., cannot delete last account, cannot delete current logged-in account) using specific business codes. Response times MUST be predictable and documented (<200ms for simple operations like login, <2000ms for complex operations like paginated list queries). Admin interface operations MUST maintain consistent patterns across all account management endpoints (login, create, update, delete, change password, list accounts). TraceId MUST be included in all responses for distributed tracing and troubleshooting.
 
 **Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration, fine-grained error handling, and positive administrative user experience across all account management functions while supporting monitoring and debugging capabilities. Specific business codes for account operations enable frontend to provide contextual, user-friendly error messages.
 
-### V. Performance & Security Standards for Account Management
+### VII. Performance & Security Standards for Account Management
 API endpoints MUST respond within 200ms for simple operations (login, single account query) and 2000ms for complex operations (paginated account lists). Asynchronous programming patterns are mandatory for I/O operations. JWT authentication MUST be properly implemented with secure token generation, validation, and 1-hour expiration. All user inputs MUST be validated using FluentValidation with clear validation rules (username 3-20 chars alphanumeric+underscore, password min 8 chars, displayName 1-100 chars). Sensitive information (passwords, tokens) MUST NOT be logged or exposed in error messages - passwords MUST be hashed with BCrypt (work factor 12) before storage. Database queries MUST be optimized to prevent N+1 problems, especially for account list pagination. Concurrent updates MUST be handled with optimistic locking (RowVersion) to prevent data conflicts. Soft delete mechanism MUST be implemented for account deletion with business rules (cannot delete self, cannot delete last account). Rate limiting SHOULD be considered for authentication endpoints to prevent brute-force attacks.
 
 **Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
@@ -121,4 +187,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.4.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-05
+**Version**: 1.5.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-07
