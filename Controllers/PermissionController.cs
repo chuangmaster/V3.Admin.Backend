@@ -21,14 +21,17 @@ namespace V3.Admin.Backend.Controllers;
 public class PermissionController : BaseApiController
 {
     private readonly IPermissionService _permissionService;
+    private readonly IPermissionValidationService _permissionValidationService;
     private readonly ILogger<PermissionController> _logger;
 
     public PermissionController(
         IPermissionService permissionService,
+        IPermissionValidationService permissionValidationService,
         ILogger<PermissionController> logger
     )
     {
         _permissionService = permissionService;
+        _permissionValidationService = permissionValidationService;
         _logger = logger;
     }
 
@@ -298,33 +301,56 @@ public class PermissionController : BaseApiController
     }
 
     /// <summary>
-    /// 驗證用戶權限
+    /// 驗證授權用戶的單一權限
     /// </summary>
     /// <remarks>
-    /// 驗證目前授權用戶是否擁有指定的權限。
-    /// 注意：此端點已移至 AuthController.ValidatePermissionAsync，本方法保留以維持向後相容。
+    /// 驗證目前授權用戶是否擁有指定的權限代碼。
+    /// 此端點即時查詢用戶的所有角色及其關聯的權限，並檢查用戶是否擁有指定的權限。
+    /// 支援功能權限（如 inventory.create）和路由權限驗證。
     /// </remarks>
-    /// <param name="request">驗證權限請求</param>
-    /// <returns>驗證結果（是否擁有權限）</returns>
+    /// <param name="request">驗證權限請求，包含要驗證的權限代碼</param>
+    /// <returns>
+    /// 返回 PermissionValidationResponse，包含：
+    /// - HasPermission: 用戶是否擁有該權限（true/false）
+    /// - Message: 驗證結果描述
+    /// </returns>
     [HttpPost("validate")]
     [ProducesResponseType(typeof(PermissionValidationResponse), StatusCodes.Status200OK)]
-    public IActionResult ValidatePermission([FromBody] ValidatePermissionRequest request)
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ValidatePermission(
+        [FromBody] ValidatePermissionRequest request
+    )
     {
         try
         {
+            // 取得當前授權用戶的 ID
             string? userIdClaim = User.FindFirst("sub")?.Value;
             if (!Guid.TryParse(userIdClaim, out Guid userId))
             {
                 return UnauthorizedResponse();
             }
 
-            // 需注入 IPermissionValidationService
-            // 此端點由於架構考量，在 PermissionController 無法直接訪問驗證服務
-            // 應在專用端點 (如 AuthController) 或透過依賴注入實現
-            // 暫時返回未實現狀態
-            return Ok(
-                new PermissionValidationResponse(false, "此端點需要專用實現", ResponseCodes.SUCCESS)
+            // 驗證權限代碼不為空
+            if (string.IsNullOrWhiteSpace(request.PermissionCode))
+            {
+                return BadRequest("權限代碼不能為空");
+            }
+
+            // 使用 PermissionValidationService 進行權限驗證
+            bool hasPermission = await _permissionValidationService.ValidatePermissionAsync(
+                userId,
+                request.PermissionCode.Trim()
             );
+
+            // 組構驗證結果回應
+            var response = new PermissionValidationResponse(
+                hasPermission,
+                hasPermission ? "用戶擁有該權限" : "用戶不擁有該權限",
+                ResponseCodes.SUCCESS
+            );
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
