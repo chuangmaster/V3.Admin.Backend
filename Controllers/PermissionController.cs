@@ -325,8 +325,8 @@ public class PermissionController : BaseApiController
         try
         {
             // 取得當前授權用戶的 ID
-            string? userIdClaim = User.FindFirst("sub")?.Value;
-            if (!Guid.TryParse(userIdClaim, out Guid userId))
+            var userId = GetUserId();
+            if (userId is null)
             {
                 return UnauthorizedResponse();
             }
@@ -339,7 +339,7 @@ public class PermissionController : BaseApiController
 
             // 使用 PermissionValidationService 進行權限驗證
             bool hasPermission = await _permissionValidationService.ValidatePermissionAsync(
-                userId,
+                userId.Value,
                 request.PermissionCode.Trim()
             );
 
