@@ -55,6 +55,15 @@ public class PermissionAuthorizationMiddleware
 
                 // 取得當前用戶 ID
                 // 嘗試多種 claim types，因為 JWT 處理程序可能會重新對映 claims
+                if (context.User == null)
+                {
+                    _logger.LogWarning(
+                        "未授權的訪問嘗試（用戶資訊缺失）| TraceId: {TraceId}",
+                        context.TraceIdentifier
+                    );
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
                 var userIdClaim =
                     context.User.FindFirst("sub")?.Value
                     ?? context
