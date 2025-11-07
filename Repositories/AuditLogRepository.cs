@@ -45,16 +45,16 @@ public class AuditLogRepository : IAuditLogRepository
             INSERT INTO audit_logs (
                 id, operator_id, operator_name, operation_time, operation_type,
                 target_type, target_id, before_state, after_state,
-                ip_address, user_agent, trace_id, additional_info
+                ip_address, user_agent, trace_id
             )
             VALUES (
                 @Id, @OperatorId, @OperatorName, @OperationTime, @OperationType,
                 @TargetType, @TargetId, @BeforeState, @AfterState,
-                @IpAddress, @UserAgent, @TraceId, @AdditionalInfo
+                @IpAddress, @UserAgent, @TraceId
             )
             RETURNING id, operator_id, operator_name, operation_time, operation_type,
                       target_type, target_id, before_state, after_state,
-                      ip_address, user_agent, trace_id, additional_info;";
+                      ip_address, user_agent, trace_id;";
 
         var result = await _dbConnection.QuerySingleAsync<AuditLog>(sql, auditLog);
         return result;
@@ -72,7 +72,7 @@ public class AuditLogRepository : IAuditLogRepository
             @"
             SELECT id, operator_id, operator_name, operation_time, operation_type,
                    target_type, target_id, before_state, after_state,
-                   ip_address, user_agent, trace_id, additional_info
+                   ip_address, user_agent, trace_id
             FROM audit_logs
             WHERE id = @Id;";
 
@@ -151,7 +151,7 @@ public class AuditLogRepository : IAuditLogRepository
             $@"
             SELECT id, operator_id, operator_name, operation_time, operation_type,
                    target_type, target_id, before_state, after_state,
-                   ip_address, user_agent, trace_id, additional_info
+                   ip_address, user_agent, trace_id
             FROM audit_logs
             {whereClause}
             ORDER BY operation_time DESC
@@ -175,7 +175,7 @@ public class AuditLogRepository : IAuditLogRepository
             @"
             SELECT id, operator_id, operator_name, operation_time, operation_type,
                    target_type, target_id, before_state, after_state,
-                   ip_address, user_agent, trace_id, additional_info
+                   ip_address, user_agent, trace_id
             FROM audit_logs
             WHERE trace_id = @TraceId
             ORDER BY operation_time DESC;";
