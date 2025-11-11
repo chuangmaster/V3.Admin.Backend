@@ -1,4 +1,5 @@
 using V3.Admin.Backend.Models.Dtos;
+using V3.Admin.Backend.Models.Responses;
 
 namespace V3.Admin.Backend.Services.Interfaces;
 
@@ -60,4 +61,11 @@ public interface IAccountService
     /// <exception cref="KeyNotFoundException">帳號不存在</exception>
     /// <exception cref="InvalidOperationException">無法刪除當前登入帳號或最後一個有效帳號</exception>
     Task DeleteAccountAsync(Guid id, Guid operatorId);
+
+    /// <summary>
+    /// 查詢用戶的個人資料（包含角色資訊）
+    /// </summary>
+    /// <param name="userId">用戶 ID</param>
+    /// <returns>用戶個人資料，若用戶不存在或已刪除則回傳 null</returns>
+    Task<UserProfileResponse?> GetUserProfileAsync(Guid userId);
 }

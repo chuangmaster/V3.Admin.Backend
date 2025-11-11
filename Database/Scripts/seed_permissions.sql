@@ -32,7 +32,8 @@ VALUES
     ('account.read', '查詢帳號', '允許查詢系統帳號信息', 'function'),
     ('account.create', '新增帳號', '允許創建新的系統帳號', 'function'),
     ('account.update', '修改帳號', '允許編輯帳號信息', 'function'),
-    ('account.delete', '刪除帳號', '允許刪除帳號', 'function')
+    ('account.delete', '刪除帳號', '允許刪除帳號', 'function'),
+    ('user.profile.read', '查詢個人資料', '允許用戶查詢自己的個人資料，包括用戶名稱、顯示名稱和角色', 'function')
 ON CONFLICT (permission_code) DO NOTHING;
 
 -- 稽核日誌權限

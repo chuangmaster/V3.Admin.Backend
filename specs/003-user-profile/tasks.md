@@ -39,13 +39,14 @@ _無任務 - 使用現有專案設定_
 
 ### 資料庫設定
 
-- [ ] T001 [P] 在 `Database/Scripts/seed_permissions.sql` 中新增 `user.profile.read` 權限定義
+- [x] T001 [P] 在 `Database/Migrations/011_AddUserProfileReadPermission.sql` 中建立 migration 新增 `user.profile.read` 權限定義
+- [x] T001b 在 `Database/Scripts/seed_permissions.sql` 中新增 `user.profile.read` 權限定義（seed 腳本備用）
 
 ### 資料存取層準備
 
-- [ ] T002 檢查 `Repositories/Interfaces/IUserRepository.cs` 確認 `GetUserByIdAsync(Guid userId)` 方法存在
-- [ ] T003 檢查 `Repositories/Interfaces/IUserRoleRepository.cs` 確認角色查詢方法存在或新增 `GetRoleNamesByUserIdAsync(Guid userId)` 介面方法
-- [ ] T004 [P] 在 `Repositories/UserRoleRepository.cs` 實作 `GetRoleNamesByUserIdAsync(Guid userId)` 方法（如不存在），使用 LEFT JOIN 查詢用戶角色
+- [x] T002 檢查 `Repositories/Interfaces/IUserRepository.cs` 確認 `GetUserByIdAsync(Guid userId)` 方法存在
+- [x] T003 檢查 `Repositories/Interfaces/IUserRoleRepository.cs` 確認角色查詢方法存在或新增 `GetRoleNamesByUserIdAsync(Guid userId)` 介面方法
+- [x] T004 [P] 在 `Repositories/UserRoleRepository.cs` 實作 `GetRoleNamesByUserIdAsync(Guid userId)` 方法（如不存在），使用 LEFT JOIN 查詢用戶角色
 
 **Checkpoint**: 基礎設施就緒 - 可開始用戶故事實作
 
@@ -61,25 +62,25 @@ _無任務 - 使用現有專案設定_
 
 > **NOTE: 遵循 Test-First Development，先撰寫測試，確保測試失敗後再實作**
 
-- [ ] T005 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithValidUser_ReturnsProfile` 單元測試
-- [ ] T006 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithDeletedUser_ReturnsNull` 單元測試
-- [ ] T007 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithNoRoles_ReturnsEmptyRolesList` 單元測試
-- [ ] T008 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithNullDisplayName_ReturnsNullDisplayName` 單元測試
-- [ ] T009 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithValidToken_ReturnsUserProfile` 整合測試
-- [ ] T010 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithoutToken_ReturnsUnauthorized` 整合測試
-- [ ] T011 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithInvalidToken_ReturnsUnauthorized` 整合測試
-- [ ] T012 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithoutPermission_ReturnsForbidden` 整合測試
+- [x] T005 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithValidUser_ReturnsProfile` 單元測試
+- [x] T006 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithDeletedUser_ReturnsNull` 單元測試
+- [x] T007 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithNoRoles_ReturnsEmptyRolesList` 單元測試
+- [x] T008 [P] [US1] 在 `Tests/Unit/AccountServiceTests.cs` 撰寫 `GetUserProfileAsync_WithNullDisplayName_ReturnsNullDisplayName` 單元測試
+- [x] T009 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithValidToken_ReturnsUserProfile` 整合測試
+- [x] T010 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithoutToken_ReturnsUnauthorized` 整合測試
+- [x] T011 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithInvalidToken_ReturnsUnauthorized` 整合測試
+- [x] T012 [P] [US1] 在 `Tests/Integration/AccountControllerTests.cs` 撰寫 `GetMyProfile_WithoutPermission_ReturnsForbidden` 整合測試
 
 ### Implementation for User Story 1
 
 #### 資料模型層
 
-- [ ] T013 [P] [US1] 在 `Models/Responses/UserProfileResponse.cs` 建立 UserProfileResponse DTO，包含 Username (string)、DisplayName (string?)、Roles (List&lt;string&gt;) 屬性，加上 XML 註解
+- [x] T013 [P] [US1] 在 `Models/Responses/UserProfileResponse.cs` 建立 UserProfileResponse DTO，包含 Username (string)、DisplayName (string?)、Roles (List&lt;string&gt;) 屬性，加上 XML 註解
 
 #### 服務層
 
-- [ ] T014 [US1] 在 `Services/Interfaces/IAccountService.cs` 新增 `Task<UserProfileResponse?> GetUserProfileAsync(Guid userId)` 介面方法定義，加上 XML 註解
-- [ ] T015 [US1] 在 `Services/AccountService.cs` 實作 `GetUserProfileAsync(Guid userId)` 方法：
+- [x] T014 [US1] 在 `Services/Interfaces/IAccountService.cs` 新增 `Task<UserProfileResponse?> GetUserProfileAsync(Guid userId)` 介面方法定義，加上 XML 註解
+- [x] T015 [US1] 在 `Services/AccountService.cs` 實作 `GetUserProfileAsync(Guid userId)` 方法：
   - 呼叫 `_userRepository.GetUserByIdAsync(userId)` 查詢用戶
   - 檢查用戶是否存在且未刪除（is_deleted = false）
   - 呼叫 `_userRoleRepository.GetRoleNamesByUserIdAsync(userId)` 查詢角色
@@ -90,7 +91,7 @@ _無任務 - 使用現有專案設定_
 
 #### 控制器層
 
-- [ ] T016 [US1] 在 `Controllers/AccountController.cs` 新增 `GetMyProfile()` 端點：
+- [x] T016 [US1] 在 `Controllers/AccountController.cs` 新增 `GetMyProfile()` 端點：
   - 使用 `[HttpGet("me")]` 路由屬性
   - 使用 `[RequirePermission("user.profile.read")]` 權限屬性
   - 使用 `GetUserId()` 方法從 JWT token 提取用戶 ID
@@ -104,8 +105,8 @@ _無任務 - 使用現有專案設定_
 
 #### 驗證與錯誤處理
 
-- [ ] T017 [US1] 確認錯誤訊息使用繁體中文且包含 TraceId
-- [ ] T018 [US1] 驗證所有回應使用 ApiResponseModel 包裝，包含 success、code、message、data、timestamp、traceId 欄位
+- [x] T017 [US1] 確認錯誤訊息使用繁體中文且包含 TraceId
+- [x] T018 [US1] 驗證所有回應使用 ApiResponseModel 包裝，包含 success、code、message、data、timestamp、traceId 欄位
 
 **Checkpoint**: 此時 User Story 1 應完全正常運作且可獨立測試
 
@@ -115,18 +116,20 @@ _無任務 - 使用現有專案設定_
 
 **Purpose**: 影響多個用戶故事的改善
 
-- [ ] T019 [P] 執行所有測試，確保測試通過率 100%
-- [ ] T020 [P] 使用 `dotnet test` 執行單元測試，驗證測試覆蓋率
-- [ ] T021 [P] 使用 Postman 或類似工具進行手動 API 測試，驗證所有場景
-- [ ] T022 [P] 檢查程式碼遵循 C# 13 最佳實踐和 Constitution 規範
-- [ ] T023 [P] 檢查所有公開 API 都有 XML 文件註解（繁體中文）
-- [ ] T024 [P] 驗證資料庫命名使用 snake_case，C# 程式碼使用 PascalCase
-- [ ] T025 [P] 檢查 nullable reference types 使用正確
-- [ ] T026 [P] 驗證回應時間符合效能目標（<200ms）
-- [ ] T027 [P] 更新 Swagger/OpenAPI 文件，確保端點正確顯示
-- [ ] T028 [P] 執行 Constitution Check 驗證，確保所有原則都已遵循
-- [ ] T029 執行 `quickstart.md` 中的驗證步驟
-- [ ] T030 程式碼審查與重構
+- [x] T019 [P] 執行所有測試，確保測試通過率 100%
+- [x] T020 [P] 使用 `dotnet test` 執行單元測試，驗證測試覆蓋率
+- [x] T021 [P] 使用 Postman 或類似工具進行手動 API 測試，驗證所有場景
+- [x] T022 [P] 檢查程式碼遵循 C# 13 最佳實踐和 Constitution 規範
+- [x] T023 [P] 檢查所有公開 API 都有 XML 文件註解（繁體中文）
+- [x] T024 [P] 驗證資料庫命名使用 snake_case，C# 程式碼使用 PascalCase
+- [x] T025 [P] 檢查 nullable reference types 使用正確
+- [x] T026 [P] 驗證回應時間符合效能目標（<200ms）
+- [x] T027 [P] 更新 Swagger/OpenAPI 文件，確保端點正確顯示
+- [x] T028 [P] 執行 Constitution Check 驗證，確保所有原則都已遵循
+- [x] T029 執行 `quickstart.md` 中的驗證步驟
+- [x] T030 程式碼審查與重構
+- [x] T031 建立資料庫遷移檔 `Database/Migrations/011_AddUserProfileReadPermission.sql`
+- [x] T032 建立遷移指南 `Database/Migrations/011_MIGRATION_GUIDE.md`
 
 ---
 

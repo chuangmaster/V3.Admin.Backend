@@ -1,6 +1,7 @@
 using BCrypt.Net;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
+using V3.Admin.Backend.Models.Responses;
 using V3.Admin.Backend.Repositories.Interfaces;
 using V3.Admin.Backend.Services.Interfaces;
 
@@ -15,18 +16,22 @@ namespace V3.Admin.Backend.Services;
 public class AccountService : IAccountService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUserRoleRepository _userRoleRepository;
     private readonly ILogger<AccountService> _logger;
 
     /// <summary>
     /// 建構函式
     /// </summary>
     /// <param name="userRepository">使用者資料存取層</param>
+    /// <param name="userRoleRepository">使用者角色資料存取層</param>
     /// <param name="logger">日誌記錄器</param>
     public AccountService(
         IUserRepository userRepository,
+        IUserRoleRepository userRoleRepository,
         ILogger<AccountService> logger)
     {
         _userRepository = userRepository;
+        _userRoleRepository = userRoleRepository;
         _logger = logger;
     }
 
@@ -308,5 +313,51 @@ public class AccountService : IAccountService
             user.Id,
             operatorId
         );
+    }
+
+    /// <summary>
+    /// 查詢用戶的個人資料（包含角色資訊）
+    /// </summary>
+    /// <param name="userId">用戶 ID</param>
+    /// <returns>用戶個人資料，若用戶不存在或已刪除則回傳 null</returns>
+    public async Task<UserProfileResponse?> GetUserProfileAsync(Guid userId)
+    {
+        try
+        {
+            // 查詢用戶
+            var user = await _userRepository.GetByIdAsync(userId);
+            
+            // 檢查用戶是否存在且未刪除
+            if (user == null || user.IsDeleted)
+            {
+                _logger.LogWarning("查詢個人資料失敗: 用戶 {UserId} 不存在或已刪除", userId);
+                return null;
+            }
+
+            // 查詢用戶的所有角色名稱
+            var roleNames = await _userRoleRepository.GetRoleNamesByUserIdAsync(userId);
+
+            // 組合 UserProfileResponse 物件
+            var profile = new UserProfileResponse
+            {
+                Username = user.Username,
+                DisplayName = user.DisplayName,
+                Roles = roleNames
+            };
+
+            _logger.LogInformation(
+                "成功查詢用戶個人資料: {Username} (ID: {UserId}), 角色數: {RoleCount}",
+                user.Username,
+                user.Id,
+                roleNames.Count
+            );
+
+            return profile;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "查詢用戶個人資料發生例外: UserId={UserId}", userId);
+            throw;
+        }
     }
 }

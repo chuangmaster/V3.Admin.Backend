@@ -258,4 +258,48 @@ public class UserRoleRepository : IUserRoleRepository
             throw;
         }
     }
+
+    /// <summary>
+    /// 查詢用戶的所有角色名稱（用於個人資料查詢）
+    /// 使用 LEFT JOIN 確保沒有角色的用戶也能正確查詢
+    /// </summary>
+    public async Task<List<string>> GetRoleNamesByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        const string sql =
+            @"
+            SELECT COALESCE(r.name, '') AS role_name
+            FROM users u
+            LEFT JOIN user_roles ur 
+                ON u.id = ur.user_id 
+                AND ur.is_deleted = false
+            LEFT JOIN roles r 
+                ON ur.role_id = r.id 
+                AND r.is_deleted = false
+            WHERE u.id = @UserId 
+                AND u.is_deleted = false
+            ORDER BY r.name;
+        ";
+
+        try
+        {
+            var roles = (await _dbConnection.QueryAsync<string>(sql, new { UserId = userId }))
+                .Where(r => !string.IsNullOrEmpty(r))
+                .ToList();
+
+            _logger.LogInformation(
+                "查詢用戶角色名稱成功: UserId={UserId}, Count={Count}",
+                userId,
+                roles.Count
+            );
+            return roles;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "查詢用戶角色名稱失敗: UserId={UserId}", userId);
+            throw;
+        }
+    }
 }

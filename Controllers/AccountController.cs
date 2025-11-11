@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Requests;
@@ -33,6 +34,55 @@ public class AccountController : BaseApiController
     {
         _accountService = accountService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 查詢當前登入用戶的個人資料
+    /// </summary>
+    /// <remarks>
+    /// 允許已登入用戶查詢自己的個人資料，包含用戶名稱、顯示名稱和角色清單
+    /// 
+    /// 需要的權限: user.profile.read
+    /// </remarks>
+    /// <returns>當前用戶的個人資料</returns>
+    /// <response code="200">查詢成功</response>
+    /// <response code="401">未授權 - Token 無效、過期或用戶已停用</response>
+    /// <response code="403">禁止存取 - 無 user.profile.read 權限</response>
+    /// <response code="404">用戶不存在</response>
+    [HttpGet("me")]
+    [RequirePermission("user.profile.read")]
+    [ProducesResponseType(typeof(ApiResponseModel<UserProfileResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
+    [ProducesResponseType(typeof(ApiResponseModel), 404)]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        try
+        {
+            // 從 JWT Token 中取得當前用戶 ID
+            var userId = GetUserId();
+            if (userId is null)
+            {
+                _logger.LogWarning("查詢個人資料失敗: 無法識別當前登入使用者");
+                return UnauthorizedResponse("未授權，請先登入");
+            }
+
+            // 查詢用戶個人資料
+            var profile = await _accountService.GetUserProfileAsync(userId.Value);
+            if (profile is null)
+            {
+                _logger.LogWarning("查詢個人資料失敗: 用戶 {UserId} 不存在或已刪除", userId);
+                return NotFound("用戶不存在", ResponseCodes.NOT_FOUND);
+            }
+
+            _logger.LogInformation("成功查詢用戶 {UserId} 的個人資料", userId);
+            return Success(profile, "查詢成功");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "查詢個人資料時發生未預期的錯誤");
+            return InternalError("系統錯誤，請稍後再試");
+        }
     }
 
     /// <summary>

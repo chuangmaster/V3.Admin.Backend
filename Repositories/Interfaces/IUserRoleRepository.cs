@@ -73,4 +73,16 @@ public interface IUserRoleRepository
         Guid deletedBy,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// 查詢用戶的所有角色名稱
+    /// 使用 LEFT JOIN 以確保沒有角色的用戶也能正確查詢
+    /// </summary>
+    /// <param name="userId">用戶 ID</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>角色名稱清單（若無角色則回傳空清單）</returns>
+    Task<List<string>> GetRoleNamesByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default
+    );
 }
