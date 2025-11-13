@@ -38,7 +38,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileSuccessResponse'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserProfileData'
               examples:
                 withDisplayNameAndRoles:
                   summary: 有顯示名稱和角色的用戶
@@ -73,7 +78,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiResponse'
               examples:
                 unauthorized:
                   summary: Token 無效或未提供
@@ -81,6 +86,7 @@ paths:
                     success: false
                     code: UNAUTHORIZED
                     message: 未授權，請先登入
+                    data: null
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440002
                 
@@ -90,6 +96,7 @@ paths:
                     success: false
                     code: UNAUTHORIZED
                     message: 帳號已停用
+                    data: null
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440003
         
@@ -98,7 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiResponse'
               examples:
                 forbidden:
                   summary: 無權限
@@ -106,6 +113,7 @@ paths:
                     success: false
                     code: FORBIDDEN
                     message: 無權限執行此操作
+                    data: null
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440004
         
@@ -114,7 +122,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiResponse'
               examples:
                 notFound:
                   summary: 用戶不存在
@@ -122,6 +130,7 @@ paths:
                     success: false
                     code: NOT_FOUND
                     message: 用戶不存在
+                    data: null
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440005
         
@@ -130,7 +139,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiResponse'
               examples:
                 internalError:
                   summary: 系統錯誤
@@ -138,6 +147,7 @@ paths:
                     success: false
                     code: INTERNAL_ERROR
                     message: 系統內部錯誤，請稍後再試
+                    data: null
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440006
 
@@ -157,41 +167,6 @@ components:
         - exp claim: 過期時間 (1小時)
   
   schemas:
-    UserProfileSuccessResponse:
-      type: object
-      required:
-        - success
-        - code
-        - message
-        - data
-        - timestamp
-        - traceId
-      properties:
-        success:
-          type: boolean
-          description: 請求是否成功
-          example: true
-        code:
-          type: string
-          description: 業務邏輯回應碼
-          example: SUCCESS
-        message:
-          type: string
-          description: 回應訊息（繁體中文）
-          example: 查詢成功
-        data:
-          $ref: '#/components/schemas/UserProfileData'
-        timestamp:
-          type: string
-          format: date-time
-          description: 回應時間戳 (UTC)
-          example: '2025-11-12T10:30:00Z'
-        traceId:
-          type: string
-          format: uuid
-          description: 分散式追蹤 ID
-          example: 550e8400-e29b-41d4-a716-446655440000
-    
     UserProfileData:
       type: object
       required:
@@ -221,7 +196,7 @@ components:
             - Admin
             - User
     
-    ErrorResponse:
+    ApiResponse:
       type: object
       required:
         - success
@@ -232,28 +207,27 @@ components:
       properties:
         success:
           type: boolean
-          description: 請求是否成功
-          example: false
+          description: 操作是否成功
+          example: true
         code:
           type: string
-          description: 業務邏輯錯誤碼
-          enum:
-            - UNAUTHORIZED
-            - FORBIDDEN
-            - NOT_FOUND
-            - INTERNAL_ERROR
-          example: UNAUTHORIZED
+          description: 業務邏輯代碼
+          example: SUCCESS
         message:
           type: string
-          description: 錯誤訊息（繁體中文）
-          example: 未授權，請先登入
+          description: 繁體中文訊息
+          example: 操作成功
+        data:
+          type: object
+          description: 回應資料 (可為 null)
+          nullable: true
         timestamp:
           type: string
           format: date-time
-          description: 回應時間戳 (UTC)
-          example: '2025-11-12T10:30:00Z'
+          description: 回應時間戳記 (ISO 8601, UTC)
+          example: '2025-10-26T14:30:00Z'
         traceId:
           type: string
           format: uuid
           description: 分散式追蹤 ID
-          example: 550e8400-e29b-41d4-a716-446655440000
+          example: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b

@@ -665,7 +665,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/UserProfileResponse'
+                        $ref: '#/components/schemas/UserProfileData'
               examples:
                 withDisplayNameAndRoles:
                   summary: 有顯示名稱和角色的用戶
@@ -1235,6 +1235,36 @@ components:
           description: 總頁數
           example: 1
 
+    
+    UserProfileData:
+      type: object
+      required:
+        - username
+        - roles
+      properties:
+        username:
+          type: string
+          description: 用戶名稱
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: john_doe
+        displayName:
+          type: string
+          nullable: true
+          description: 顯示名稱（可為 null）
+          maxLength: 100
+          example: John Doe
+        roles:
+          type: array
+          description: 角色名稱清單（空陣列代表無角色）
+          items:
+            type: string
+            example: Admin
+          example:
+            - Admin
+            - User
+    
     UserProfileResponse:
       type: object
       required:
