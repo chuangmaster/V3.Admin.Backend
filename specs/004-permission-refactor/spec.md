@@ -121,24 +121,24 @@
 ### Measurable Outcomes
 
 - **SC-001**: 所有權限管理 API（建立、編輯、刪除、查詢權限）在移除 RoutePath 後，測試通過率達 100%
-- **SC-002**: 資料遷移完成後，現有的 1000+ 個權限記錄中，95% 以上的 PermissionCode 格式合法且路由資訊可正確推導
-- **SC-003**: 權限驗證性能不降低，授權檢查平均耗時在 50ms 內（與遷移前相同）
-- **SC-004**: view 和 function 權限類型建立、分配、驗證功能完全可用，route 類型已完全移除
-- **SC-005**: 舊 route 類型權限遷移完成，所有轉換為 view 類型的權限能正確驗證，零授權檢查錯誤
-- **SC-006**: 完成 RoutePath 廢棄後，系統程式碼中 RoutePath 和 route 類型引用數量下降 100%
+- **SC-002**: 系統完全移除 route 類型和 RoutePath 欄位後，支持 function 和 view 兩種權限類型，功能完全可用
+- **SC-003**: 權限驗證性能維持遷移前水平，授權檢查平均耗時在 50ms 內
+- **SC-004**: PermissionCode 編碼格式驗證正確率 100%，多層級資源表示正常運作
+- **SC-005**: 系統程式碼中 RoutePath 和 route 類型引用數量達到 0（完全移除）
 
 ---
 
 ## Assumptions
 
-根據現有資訊和業界標準，本規格假設：
+根據澄清會議和業界標準，本規格假設：
 
-1. **Permission Type 的完整列表**: 重構後支持 `function` 和 `view` 兩種類型，完全移除 `route` 類型
-2. **PermissionCode 編碼規範**: 遵循 `[resource].[subresource?].[action]` 格式，如 `inventory.create`、`reports.sales.view`、`dashboard.summary_widget`
-3. **舊 route 權限遷移策略**: 將現有所有 route 類型權限轉換為 view 類型，例如舊的 `route` + `RoutePath=/inventory` 轉為 `view` + `PermissionCode=inventory.view`
-4. **向後相容期**: 預計 2-3 個月內維持相容層，之後完全移除 RoutePath 和 route 類型相關程式碼
-5. **稽核需求**: 所有權限變動必須記錄稽核日誌（已在現有 AuditLog 機制中）
-6. **前端改造**: 前端應調整 UI，改由 PermissionCode 和 PermissionType 決定 UI 元件的渲染（`function` 用於操作按鈕，`view` 用於區塊顯示）
+1. **Permission Type 的完整列表與擴展**：重構後初始支持 `function` 和 `view` 兩種類型；架構設計應預留擴展機制（enum 或 database table），以支持未來新增其他類型（如 `report`、`api` 等）
+2. **PermissionCode 編碼規範**：遵循多層級格式（如 `resource.subresource.action`），例如 `inventory.create`、`reports.sales.view`、`dashboard.summary_widget`；不強制硬限制格式，保持靈活性
+3. **舊 Route 權限遷移**：當前系統無 route 類型權限，無需遷移
+4. **RoutePath 欄位處理**：立即從資料庫 schema 和所有程式碼中完全刪除 RoutePath，無廢棄過渡期
+5. **稽核需求**：所有權限變動必須記錄稽核日誌（已在現有 AuditLog 機制中）
+6. **性能基準**：權限驗證性能維持遷移前水平，授權檢查平均耗時在 50ms 內
+7. **前端改造**：前端應調整 UI，改由 PermissionCode 和 PermissionType 決定 UI 元件的渲染（`function` 用於操作按鈕，`view` 用於區塊顯示）
 
 ---
 
