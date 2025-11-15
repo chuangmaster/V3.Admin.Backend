@@ -15,12 +15,11 @@
 -- dotnet user-secrets set "DefaultPassword" "YourNewPassword"
 -- 或使用 C# 代碼: BCrypt.Net.BCrypt.HashPassword("password", 12)
 
-INSERT INTO users (username, password_hash, display_name, created_by)
+INSERT INTO users (username, password_hash, display_name)
 VALUES (
     'admin',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5pf1kc6Tpm/Q6',  -- BCrypt hash of 'Admin@12345'
-    '系統管理員',
-    NULL  -- 初始建立者為 NULL
+    '$2a$12$3deuWAVCwSvLsCaGj8r0s.O8I7Y0vafSti9SoEmH9BYTzAlu7k5se',  -- BCrypt hash of 'Admin@12345'
+    '系統管理員'
 )
 ON CONFLICT (username) DO NOTHING
 RETURNING id, username, display_name, created_at;
