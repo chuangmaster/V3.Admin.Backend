@@ -6,6 +6,18 @@
 **Input**: 重構功能，想要移除 'RoutePath' 的相關功能，把決定路由權限放在permission code 本身，同時PermissionType未來就可能是function 或是 view；view表示某個區塊的瀏覽權限  
 **Language**: Traditional Chinese (zh-TW)
 
+## Clarifications
+
+### Session 2025-11-16
+
+- Q: PermissionCode 驗證規則是否需要硬限制格式？ → A: 不需要硬限制格式，保持靈活
+- Q: 舊 Route 權限遷移策略為何？ → A: 當前系統沒有 route 類型權限，直接忽略遷移
+- Q: PermissionType 的完整列表與未來擴展？ → A: 預留擴展機制（enum 或 database table），便於未來新增類型
+- Q: RoutePath 欄位的最終處理方式？ → A: 立即刪除，從資料庫 schema 和所有程式碼中完全移除
+- Q: 非功能品質屬性基準？ → A: 維持遷移前的性能特性（授權檢查 ≤50ms）
+
+---
+
 ## 功能概述
 
 本重構旨在簡化權限模型，將目前在 `RoutePath` 欄位中管理的路由資訊移至 `PermissionCode` 中，並擴展 `PermissionType` 的語義以支持 `view`（區塊瀏覽權限），使權限管理更加一致、靈活且可擴展。
@@ -75,23 +87,23 @@
 
 ### Functional Requirements
 
-- **FR-001**: 系統 MUST 移除 Permission 實體中的 `RoutePath` 欄位（或標記為廢棄），後續不再維護此欄位
-- **FR-002**: 系統 MUST 支援兩種 PermissionType：`function`（操作權限）和 `view`（區塊瀏覽權限），完全移除 `route` 類型，舊的路由權限應遷移為 `view` 類型
-- **FR-003**: 系統 MUST 定義並驗證 PermissionCode 編碼規範，支援多層級資源表示（如 `resource.subresource.action`）
-- **FR-004**: 系統 MUST 提供資料遷移方案，將現有的 `RoutePath` 資訊安全轉換至新的 PermissionCode 格式
-- **FR-005**: 系統 MUST 在 Permission 建立/編輯 API 中移除 `RoutePath` 必填驗證，改為可選或廢棄狀態
-- **FR-006**: 系統 MUST 更新所有權限驗證邏輯（PermissionValidationService、PermissionAuthorizationMiddleware 等）以適配新模型
-- **FR-007**: 系統 MUST 更新權限管理 UI（控制器、DTO、表單驗證器）以隱藏或移除 RoutePath 欄位
-- **FR-008**: 系統 MUST 對現有 permission 記錄建立向後相容層，確保舊的授權檢查邏輯仍能工作（過渡期）
+- **FR-001**: 系統 MUST 移除 Permission 實體中的 `RoutePath` 欄位及其相關程式碼引用（完全刪除，不經過廢棄期）
+- **FR-002**: 系統 MUST 支援兩種初始 PermissionType：`function`（操作權限）和 `view`（區塊瀏覽權限），完全移除 `route` 類型；架構設計應支持未來透過 enum 或 database table 新增其他類型
+- **FR-003**: 系統 MUST 定義並驗證 PermissionCode 編碼規範，支援多層級資源表示（如 `resource.subresource.action`），但不強制硬限制格式
+- **FR-004**: 系統無需提供資料遷移方案（當前系統無 route 類型權限）
+- **FR-005**: 系統 MUST 在 Permission 建立/編輯 API 中完全移除 `RoutePath` 參數及相關驗證
+- **FR-006**: 系統 MUST 更新所有權限驗證邏輯（PermissionValidationService、PermissionAuthorizationMiddleware 等）以適配新模型，PermissionCode 直接決定路由和 UI 元件權限
+- **FR-007**: 系統 MUST 更新權限管理 UI（控制器、DTO、表單驗證器）以移除 RoutePath 欄位
+- **FR-008**: 系統 MUST 在所有 Permission 異動操作（CREATE、UPDATE、DELETE）時記錄稽核日誌
 - **FR-009**: 系統 MUST 保留 Permission 實體中的版本號（version），支援樂觀並發控制
-- **FR-010**: 系統 MUST 在所有 Permission 異動操作（CREATE、UPDATE、DELETE）時記錄稽核日誌
+- **FR-010**: PermissionType 應設計為可擴展類型系統，以支持未來新增（如 `report`、`api` 等）
 
 ### Key Entities
 
 - **Permission**: 
-  - 移除或廢棄 `RoutePath` 欄位
-  - 擴展 `PermissionType` 支持 `view` 類型
-  - `PermissionCode` 編碼規範：支持多層級（如 `resource.subresource.action`）
+  - 完全移除 `RoutePath` 欄位（從資料庫 schema 和程式碼中刪除）
+  - 擴展 `PermissionType` 支持 `function` 和 `view` 類型，架構設計預留擴展機制
+  - `PermissionCode` 編碼規範：支持多層級（如 `resource.subresource.action`），格式靈活不硬限制
   - 保留 `CreatedAt`, `UpdatedAt`, `DeletedAt`, `Version` 等審計欄位
 
 - **Role**: 無變動，仍為權限集合
@@ -100,7 +112,7 @@
 
 - **UserRole**: 無直接變動
 
-- **PermissionFailureLog**: 記錄欄位 `AttemptedResource` 應調整為記錄新格式的 PermissionCode 而非 RoutePath
+- **PermissionFailureLog**: 記錄欄位應調整為記錄新格式的 PermissionCode（RoutePath 已移除）
 
 ---
 
