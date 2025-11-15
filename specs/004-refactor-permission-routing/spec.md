@@ -6,6 +6,16 @@
 **Input**: User description: "重構功能。 #permisssion 想要移除 'RoutePath' 的相關功能，把決定路由權限放在permission code 本身，同時PermissionType未來就可能是function 或是 view，簡化功能"
 **Language**: Traditional Chinese (zh-TW)
 
+## Clarifications
+
+### Session 2025-11-15
+
+- Q: 權限代碼是否應該支援多層級結構？ → A: 支援兩層或三層級（resource.subresource.action）
+- Q: View 和 Function 權限類型的核心區別是什麼？ → A: View 控制 UI 區塊/元件的顯示決定；Function 控制 API 操作權限；Read 權限會被用來判斷前端頁面是否可進入
+- Q: 舊權限資料中的 route_path 欄位值應如何處理？ → A: 直接捨棄，不保留任何資訊
+- Q: permission_code 的格式驗證應該多嚴格？ → A: 嚴格驗證（正則表達式，限制字元和層級）
+- Q: 資料遷移的回滾機制應該如何實作？ → A: 交易式回滾（失敗時自動還原）
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 系統管理員使用簡化的權限代碼管理權限 (Priority: P1)
@@ -58,10 +68,10 @@
 
 ### Edge Cases
 
-- 當權限代碼格式不符合新的命名規範時（如缺少資源名稱或操作類型），系統如何處理？
-- 如果舊資料中存在重複的 route_path 但不同 permission_code 的情況，遷移時如何避免衝突？
-- 當使用者嘗試建立權限時未指定 permission_type，系統是否有預設值或要求必填？
-- 如果權限代碼中包含多層級結構（如 "inventory.product.view"），系統如何解析和驗證？
+- 當權限代碼格式不符合新的命名規範時（如缺少資源名稱或操作類型），系統應拒絕建立並回傳明確的格式錯誤訊息
+- 如果舊資料中存在重複的 route_path 但不同 permission_code 的情況，遷移時直接捨棄 route_path 欄位，不進行任何衝突檢查
+- 當使用者嘗試建立權限時未指定 permission_type，系統必須要求必填，不提供預設值
+- 權限代碼支援兩層級（resource.action）或三層級（resource.subresource.action）結構，系統應使用正則表達式驗證格式並限制允許的字元集（僅允許小寫字母、數字、底線和點號）
 
 ## Requirements *(mandatory)*
 
@@ -70,9 +80,9 @@
 - **FR-001**: 系統必須移除 permissions 資料表中的 route_path 欄位
 - **FR-002**: 系統必須將 permission_type 的允許值從 ('route', 'function') 改為 ('view', 'function')
 - **FR-003**: 系統必須移除與 route_path 相關的資料庫約束（chk_route_path_required）
-- **FR-004**: 系統必須移除與 route_path 相關的檢查約束，僅保留 permission_code 格式驗證
-- **FR-005**: 權限代碼（permission_code）必須能夠完整表達權限的作用範圍，格式為 "resource.action"（如 "inventory.view", "order.create"）
-- **FR-006**: 系統必須提供資料遷移腳本，將現有 permission_type = 'route' 的權限轉換為 'view' 類型
+- **FR-004**: 系統必須移除與 route_path 相關的檢查約束，並更新 permission_code 格式驗證為嚴格的正則表達式驗證，僅允許兩層級（resource.action）或三層級（resource.subresource.action）格式，字元限制為小寫字母、數字、底線和點號
+- **FR-005**: 權限代碼（permission_code）必須能夠完整表達權限的作用範圍，格式為 "resource.action" 或 "resource.subresource.action"（如 "inventory.view", "inventory.product.create"）
+- **FR-006**: 系統必須提供資料遷移腳本，將現有 permission_type = 'route' 的權限轉換為 'view' 類型，並直接移除 route_path 欄位資料（不保留）。遷移必須在單一資料庫交易中執行，失敗時自動回滾所有變更
 - **FR-007**: 系統必須更新所有相關的程式碼（Controllers, Services, Repositories）以移除 RoutePath 屬性和相關邏輯
 - **FR-008**: 系統必須更新權限驗證中間件（PermissionAuthorizationMiddleware），使其僅基於 permission_code 進行驗證
 - **FR-009**: 系統必須更新所有 DTO、Entity、Request、Response 模型，移除 RoutePath 相關屬性
@@ -83,11 +93,13 @@
 ### Key Entities
 
 - **Permission（權限）**: 代表系統中的一個權限項目
-  - permission_code: 權限代碼（唯一識別碼，格式為 "resource.action"）
+  - permission_code: 權限代碼（唯一識別碼，格式為 "resource.action" 或 "resource.subresource.action"，僅允許小寫字母、數字、底線和點號）
   - name: 權限名稱
   - description: 權限描述
-  - permission_type: 權限類型（'view' 表示檢視權限，'function' 表示功能權限）
-  - ~~route_path: 路由路徑~~（已移除）
+  - permission_type: 權限類型
+    - 'view': 控制 UI 區塊/元件的顯示決定，其中 read 權限會被用來判斷前端頁面是否可進入
+    - 'function': 控制 API 操作權限
+  - ~~route_path: 路由路徑~~（已移除，遷移時直接捨棄不保留）
   - 審計欄位：created_at, updated_at, created_by, updated_by, is_deleted, deleted_at, deleted_by, version
 
 - **RolePermission（角色權限關聯）**: 關聯角色與權限的多對多關係
@@ -106,4 +118,19 @@
 - **SC-004**: 所有單元測試和整合測試在重構後均能通過，涵蓋權限建立、查詢、驗證等核心功能
 - **SC-005**: API 文檔正確反映新的權限資料結構，開發人員能夠清楚了解如何使用新的權限系統
 - **SC-006**: 權限驗證的效能不因重構而降低，平均回應時間保持在原有水準（建議 < 100ms）
-- **SC-007**: 資料遷移過程可以安全地回滾，確保在遷移失敗時不會造成資料損壞
+- **SC-007**: 資料遷移過程必須在單一資料庫交易中執行，失敗時能夠自動回滾所有變更，確保不會造成資料損壞或部分更新狀態
+
+## Assumptions & Constraints
+
+### Assumptions
+
+- 現有系統中的權限資料量不大，可以在單一交易中完成遷移
+- route_path 欄位中的歷史資訊對未來系統運作無實質價值，可以安全捨棄
+- 開發團隊能夠同步更新前端和後端程式碼，確保權限語義變更的一致性
+
+### Constraints
+
+- 權限代碼格式限制：僅支援兩層級或三層級結構（resource.action 或 resource.subresource.action）
+- 字元集限制：權限代碼僅允許小寫字母（a-z）、數字（0-9）、底線（_）和點號（.）
+- 遷移策略：必須在單一資料庫交易中完成，不支援分批遷移
+- permission_type 為必填欄位，系統不提供預設值
