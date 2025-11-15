@@ -270,7 +270,7 @@ public class UserRoleRepository : IUserRoleRepository
     {
         const string sql =
             @"
-            SELECT COALESCE(r.name, '') AS role_name
+            SELECT r.role_name AS role_name
             FROM users u
             LEFT JOIN user_roles ur 
                 ON u.id = ur.user_id 
@@ -280,14 +280,15 @@ public class UserRoleRepository : IUserRoleRepository
                 AND r.is_deleted = false
             WHERE u.id = @UserId 
                 AND u.is_deleted = false
-            ORDER BY r.name;
+                AND r.role_name IS NOT NULL
+            ORDER BY r.role_name;
         ";
 
         try
         {
-            var roles = (await _dbConnection.QueryAsync<string>(sql, new { UserId = userId }))
-                .Where(r => !string.IsNullOrEmpty(r))
-                .ToList();
+            var roles = (
+                await _dbConnection.QueryAsync<string>(sql, new { UserId = userId })
+            ).ToList();
 
             _logger.LogInformation(
                 "查詢用戶角色名稱成功: UserId={UserId}, Count={Count}",
