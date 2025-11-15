@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: 用戶個人資料查詢 API
+  description: 允許已登入用戶查詢自己的個人資料，包含用戶名稱、顯示名稱和角色清單
+  version: 1.0.0
+  contact:
+    name: V3 Admin Backend Team
+
+servers:
+  - url: http://localhost:5000
+    description: 本地開發環境
+  - url: https://api.example.com
+    description: 生產環境
+
+tags:
+  - name: Account
+    description: 帳號管理相關端點
+
+paths:
+  /api/account/me:
+    get:
+      tags:
+        - Account
+      summary: 查詢當前用戶的個人資料
+      description: |
+        取得當前已登入用戶的個人資料，包含：
+        - 用戶名稱 (username)
+        - 顯示名稱 (displayName) - 可能為 null
+        - 角色清單 (roles) - 字串陣列
+        
+        需要權限: `user.profile.read`
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserProfileData'
+              examples:
+                withDisplayNameAndRoles:
+                  summary: 有顯示名稱和角色的用戶
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 查詢成功
+                    data:
+                      username: john_doe
+                      displayName: John Doe
+                      roles:
+                        - Admin
+                        - User
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440000
+                
+                noDisplayNameNoRoles:
+                  summary: 無顯示名稱和角色的用戶
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 查詢成功
+                    data:
+                      username: jane_doe
+                      displayName: null
+                      roles: []
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440001
+        
+        '401':
+          description: 未授權 - Token 無效、過期或用戶已停用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                unauthorized:
+                  summary: Token 無效或未提供
+                  value:
+                    success: false
+                    code: UNAUTHORIZED
+                    message: 未授權，請先登入
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440002
+                
+                accountDisabled:
+                  summary: 帳號已停用
+                  value:
+                    success: false
+                    code: UNAUTHORIZED
+                    message: 帳號已停用
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440003
+        
+        '403':
+          description: 禁止存取 - 無 user.profile.read 權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                forbidden:
+                  summary: 無權限
+                  value:
+                    success: false
+                    code: FORBIDDEN
+                    message: 無權限執行此操作
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440004
+        
+        '404':
+          description: 用戶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                notFound:
+                  summary: 用戶不存在
+                  value:
+                    success: false
+                    code: NOT_FOUND
+                    message: 用戶不存在
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440005
+        
+        '500':
+          description: 伺服器內部錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                internalError:
+                  summary: 系統錯誤
+                  value:
+                    success: false
+                    code: INTERNAL_ERROR
+                    message: 系統內部錯誤，請稍後再試
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440006
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer Token 驗證
+        
+        格式: `Authorization: Bearer {token}`
+        
+        Token 必須包含:
+        - sub claim: 用戶 ID
+        - exp claim: 過期時間 (1小時)
+  
+  schemas:
+    UserProfileData:
+      type: object
+      required:
+        - username
+        - roles
+      properties:
+        username:
+          type: string
+          description: 用戶名稱
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: john_doe
+        displayName:
+          type: string
+          nullable: true
+          description: 顯示名稱（可為 null）
+          maxLength: 100
+          example: John Doe
+        roles:
+          type: array
+          description: 角色名稱清單（空陣列代表無角色）
+          items:
+            type: string
+            example: Admin
+          example:
+            - Admin
+            - User
+    
+    ApiResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        code:
+          type: string
+          description: 業務邏輯代碼
+          example: SUCCESS
+        message:
+          type: string
+          description: 繁體中文訊息
+          example: 操作成功
+        data:
+          type: object
+          description: 回應資料 (可為 null)
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          description: 回應時間戳記 (ISO 8601, UTC)
+          example: '2025-10-26T14:30:00Z'
+        traceId:
+          type: string
+          format: uuid
+          description: 分散式追蹤 ID
+          example: 7d3e5f8a-2b4c-4d9e-8f7a-1c2d3e4f5a6b

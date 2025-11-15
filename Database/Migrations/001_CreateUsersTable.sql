@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     display_name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
+    created_by UUID,
+    updated_by UUID,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
     deleted_at TIMESTAMP,
     deleted_by UUID,
@@ -22,9 +24,13 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_version_positive CHECK (version >= 1)
 );
 
--- 建立索引
--- 帳號名稱唯一索引 (排除已刪除)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username 
+-- 建立約束與索引
+-- 帳號名稱唯一約束（支援 ON CONFLICT）
+ALTER TABLE users
+ADD CONSTRAINT uq_users_username UNIQUE (username);
+
+-- 帳號名稱查詢索引 (排除已刪除，優化軟刪除查詢)
+CREATE INDEX IF NOT EXISTS idx_users_username_not_deleted 
     ON users(username) 
     WHERE is_deleted = false;
 
@@ -44,6 +50,8 @@ COMMENT ON COLUMN users.password_hash IS '密碼雜湊 (BCrypt, 60字元)';
 COMMENT ON COLUMN users.display_name IS '顯示名稱 (最大100字元)';
 COMMENT ON COLUMN users.created_at IS '建立時間 (UTC)';
 COMMENT ON COLUMN users.updated_at IS '最後更新時間 (UTC)';
+COMMENT ON COLUMN users.created_by IS '建立者 ID (可關聯至 users.id)';
+COMMENT ON COLUMN users.updated_by IS '最後更新者 ID (可關聯至 users.id)';
 COMMENT ON COLUMN users.is_deleted IS '是否已刪除 (軟刪除標記)';
 COMMENT ON COLUMN users.deleted_at IS '刪除時間 (UTC)';
 COMMENT ON COLUMN users.deleted_by IS '刪除操作者 ID (可關聯至 users.id)';

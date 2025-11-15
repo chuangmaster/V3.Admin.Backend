@@ -15,12 +15,11 @@
 -- dotnet user-secrets set "DefaultPassword" "YourNewPassword"
 -- 或使用 C# 代碼: BCrypt.Net.BCrypt.HashPassword("password", 12)
 
-INSERT INTO users (username, password_hash, display_name, created_by)
+INSERT INTO users (username, password_hash, display_name)
 VALUES (
     'admin',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5pf1kc6Tpm/Q6',  -- BCrypt hash of 'Admin@12345'
-    '系統管理員',
-    NULL  -- 初始建立者為 NULL
+    '$2a$12$3deuWAVCwSvLsCaGj8r0s.O8I7Y0vafSti9SoEmH9BYTzAlu7k5se',  -- BCrypt hash of 'Admin@12345'
+    '系統管理員'
 )
 ON CONFLICT (username) DO NOTHING
 RETURNING id, username, display_name, created_at;
@@ -31,12 +30,12 @@ RETURNING id, username, display_name, created_at;
 -- 只在不存在時建立角色
 INSERT INTO roles (role_name, description, created_by)
 SELECT 
-    '系統管理員',
+    'admin',
     '具有系統所有權限的管理員角色，可以管理權限、角色、使用者和稽核日誌',
     (SELECT id FROM users WHERE username = 'admin' AND is_deleted = false LIMIT 1)
 WHERE NOT EXISTS (
     SELECT 1 FROM roles 
-    WHERE role_name = '系統管理員' AND is_deleted = false
+    WHERE role_name = 'admin' AND is_deleted = false
 )
 RETURNING id, role_name, created_at;
 
@@ -45,7 +44,7 @@ RETURNING id, role_name, created_at;
 -- ====================================
 -- 先刪除該角色已有的權限分配，然後重新分配（確保權限集合最新）
 DELETE FROM role_permissions 
-WHERE role_id = (SELECT id FROM roles WHERE role_name = '系統管理員' AND is_deleted = false LIMIT 1);
+WHERE role_id = (SELECT id FROM roles WHERE role_name = 'admin' AND is_deleted = false LIMIT 1);
 
 -- 然後將所有有效的系統權限分配給該角色
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
@@ -55,7 +54,7 @@ SELECT
     (SELECT id FROM users WHERE username = 'admin' AND is_deleted = false LIMIT 1)
 FROM roles r
 CROSS JOIN permissions p
-WHERE r.role_name = '系統管理員'
+WHERE r.role_name = 'admin'
   AND r.is_deleted = false
   AND p.is_deleted = false
 ON CONFLICT (role_id, permission_id) DO NOTHING;
@@ -69,7 +68,7 @@ SET is_deleted = false,
     deleted_at = NULL,
     deleted_by = NULL
 WHERE user_id = (SELECT id FROM users WHERE username = 'admin' AND is_deleted = false LIMIT 1)
-  AND role_id = (SELECT id FROM roles WHERE role_name = '系統管理員' AND is_deleted = false LIMIT 1)
+  AND role_id = (SELECT id FROM roles WHERE role_name = 'admin' AND is_deleted = false LIMIT 1)
   AND is_deleted = true;
 
 -- 然後插入新記錄（如果不存在）
@@ -82,7 +81,7 @@ FROM users u
 CROSS JOIN roles r
 WHERE u.username = 'admin'
   AND u.is_deleted = false
-  AND r.role_name = '系統管理員'
+  AND r.role_name = 'admin'
   AND r.is_deleted = false
   AND NOT EXISTS (
     SELECT 1 FROM user_roles ur
@@ -136,7 +135,7 @@ ORDER BY p.permission_code;
 -- ├─ 用戶名稱: admin
 -- ├─ 密碼: Admin@12345
 -- ├─ 顯示名稱: 系統管理員
--- ├─ 角色: 系統管理員
+-- ├─ 角色: admin
 -- └─ 權限: 系統中所有權限
 --
 -- 登入方式:

@@ -638,6 +638,127 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/account/me:
+    get:
+      tags:
+        - Accounts
+      summary: 查詢當前用戶的個人資料
+      description: |
+        取得當前已登入用戶的個人資料，包含：
+        - 用戶名稱 (username)
+        - 顯示名稱 (displayName) - 可能為 null
+        - 角色清單 (roles) - 字串陣列
+        
+        需要權限: `user.profile.read`
+        需要 JWT 身份驗證。
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserProfileData'
+              examples:
+                withDisplayNameAndRoles:
+                  summary: 有顯示名稱和角色的用戶
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 查詢成功
+                    data:
+                      username: john_doe
+                      displayName: John Doe
+                      roles:
+                        - Admin
+                        - User
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440000
+                
+                noDisplayNameNoRoles:
+                  summary: 無顯示名稱和角色的用戶
+                  value:
+                    success: true
+                    code: SUCCESS
+                    message: 查詢成功
+                    data:
+                      username: jane_doe
+                      displayName: null
+                      roles: []
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440001
+        
+        '401':
+          description: 未授權 - Token 無效、過期或用戶已停用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                unauthorized:
+                  summary: Token 無效或未提供
+                  value:
+                    success: false
+                    code: UNAUTHORIZED
+                    message: 未授權，請先登入
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440002
+                
+                accountDisabled:
+                  summary: 帳號已停用
+                  value:
+                    success: false
+                    code: UNAUTHORIZED
+                    message: 帳號已停用
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440003
+        
+        '403':
+          description: 禁止存取 - 無 user.profile.read 權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                forbidden:
+                  summary: 無權限
+                  value:
+                    success: false
+                    code: FORBIDDEN
+                    message: 無權限執行此操作
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440004
+        
+        '404':
+          description: 用戶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                notFound:
+                  summary: 用戶不存在
+                  value:
+                    success: false
+                    code: NOT_FOUND
+                    message: 用戶不存在
+                    data: null
+                    timestamp: '2025-11-12T10:30:00Z'
+                    traceId: 550e8400-e29b-41d4-a716-446655440005
+        
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/permissions:
     get:
       tags:
@@ -1113,6 +1234,65 @@ components:
           minimum: 0
           description: 總頁數
           example: 1
+
+    
+    UserProfileData:
+      type: object
+      required:
+        - username
+        - roles
+      properties:
+        username:
+          type: string
+          description: 用戶名稱
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: john_doe
+        displayName:
+          type: string
+          nullable: true
+          description: 顯示名稱（可為 null）
+          maxLength: 100
+          example: John Doe
+        roles:
+          type: array
+          description: 角色名稱清單（空陣列代表無角色）
+          items:
+            type: string
+            example: Admin
+          example:
+            - Admin
+            - User
+    
+    UserProfileResponse:
+      type: object
+      required:
+        - username
+        - roles
+      properties:
+        username:
+          type: string
+          description: 用戶名稱
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: john_doe
+        displayName:
+          type: string
+          nullable: true
+          description: 顯示名稱（可為 null）
+          maxLength: 100
+          example: John Doe
+        roles:
+          type: array
+          description: 角色名稱清單（空陣列代表無角色）
+          items:
+            type: string
+            example: Admin
+          example:
+            - Admin
+            - User
 
     CreatePermissionRequest:
       type: object
