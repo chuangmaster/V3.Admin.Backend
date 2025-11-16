@@ -79,6 +79,7 @@ public class AccountController : BaseApiController
                 Username = profileDto.Username,
                 DisplayName = profileDto.DisplayName,
                 Roles = profileDto.Roles,
+                Permissions = profileDto.Permissions ?? new List<string>(),
             };
 
             _logger.LogInformation("成功查詢用戶 {UserId} 的個人資料", userId);
