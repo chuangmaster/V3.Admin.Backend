@@ -47,6 +47,12 @@ tags:
     description: 帳號管理相關端點
   - name: Permissions
     description: 權限管理操作
+  - name: Roles
+    description: 角色管理操作
+  - name: User Roles
+    description: 用戶角色管理操作
+  - name: Audit Logs
+    description: 稽核日誌查詢
 
 paths:
   /api/auth/login:
@@ -638,7 +644,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/account/me:
+  /api/accounts/me:
     get:
       tags:
         - Accounts
@@ -648,6 +654,7 @@ paths:
         - 用戶名稱 (username)
         - 顯示名稱 (displayName) - 可能為 null
         - 角色清單 (roles) - 字串陣列
+        - 權限清單 (permissions) - 字串陣列，聚合所有角色的權限
         
         需要權限: `user.profile.read`
         需要 JWT 身份驗證。
@@ -679,6 +686,10 @@ paths:
                       roles:
                         - Admin
                         - User
+                      permissions:
+                        - user.profile.read
+                        - permission.read
+                        - role.create
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440000
                 
@@ -692,6 +703,7 @@ paths:
                       username: jane_doe
                       displayName: null
                       roles: []
+                      permissions: []
                     timestamp: '2025-11-12T10:30:00Z'
                     traceId: 550e8400-e29b-41d4-a716-446655440001
         
@@ -1044,6 +1056,630 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/permissions/validate:
+    post:
+      tags:
+        - Permissions
+      summary: 驗證授權用戶的單一權限
+      description: |
+        驗證目前授權用戶是否擁有指定的權限代碼。
+        此端點即時查詢用戶的所有角色及其關聯的權限，並檢查用戶是否擁有指定的權限。
+        支援功能權限（如 inventory.create）和路由權限驗證。
+      operationId: validatePermission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidatePermissionRequest'
+      responses:
+        '200':
+          description: 驗證完成
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionValidationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/role:
+    get:
+      tags:
+        - Roles
+      summary: 取得角色列表（分頁）
+      description: 查詢所有角色的列表，支援分頁
+      operationId: getRoles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageNumber
+          in: query
+          description: 頁碼（從 1 開始）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每頁筆數（最大 100）
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - Roles
+      summary: 建立新角色
+      description: 建立一個新的角色，需要具有 "role.create" 權限
+      operationId: createRole
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        '201':
+          description: 角色建立成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: 角色名稱已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/role/{id}:
+    get:
+      tags:
+        - Roles
+      summary: 根據 ID 取得角色
+      description: 查詢單一角色的基本資訊
+      operationId: getRoleById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - Roles
+      summary: 更新角色
+      description: 更新指定角色的資訊，需要具有 "role.update" 權限
+      operationId: updateRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '409':
+          description: 版本衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Roles
+      summary: 刪除角色
+      description: 刪除指定角色（軟刪除），需要具有 "role.delete" 權限
+      operationId: deleteRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteRoleRequest'
+      responses:
+        '204':
+          description: 刪除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '409':
+          description: 版本衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '422':
+          description: 角色正被使用，無法刪除
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/role/{id}/permissions:
+    get:
+      tags:
+        - Roles
+      summary: 取得角色詳細資訊（包含權限）
+      description: 查詢角色的詳細資訊，包含該角色擁有的所有權限
+      operationId: getRoleDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RoleDetailDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - Roles
+      summary: 為角色分配權限
+      description: 為指定角色分配一個或多個權限，需要具有 "permission.assign" 權限
+      operationId: assignPermissionsToRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRolePermissionsRequest'
+      responses:
+        '200':
+          description: 分配成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色或權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/role/{roleId}/permissions/{permissionId}:
+    delete:
+      tags:
+        - Roles
+      summary: 移除角色的特定權限
+      description: 從指定角色移除一個權限，需要具有 "permission.remove" 權限
+      operationId: removePermissionFromRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+        - name: permissionId
+          in: path
+          required: true
+          description: 權限 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 移除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 角色或權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{userId}/roles:
+    get:
+      tags:
+        - User Roles
+      summary: 查詢用戶的所有角色
+      description: 查詢指定用戶擁有的所有角色，需要具有 "role.read" 權限
+      operationId: getUserRoles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 用戶 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 用戶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - User Roles
+      summary: 為用戶指派角色
+      description: 為指定用戶指派一個或多個角色，需要具有 "role.assign" 權限
+      operationId: assignRolesToUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 用戶 ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignUserRoleRequest'
+      responses:
+        '200':
+          description: 指派成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 用戶或角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{userId}/roles/{roleId}:
+    delete:
+      tags:
+        - User Roles
+      summary: 移除用戶的特定角色
+      description: 從指定用戶移除一個角色，需要具有 "role.remove" 權限
+      operationId: removeRoleFromUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 用戶 ID
+          schema:
+            type: string
+            format: uuid
+        - name: roleId
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 移除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 用戶或角色不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/{userId}/roles/permissions:
+    get:
+      tags:
+        - User Roles
+      summary: 查詢用戶的所有有效權限（多角色合併）
+      description: 查詢指定用戶通過所有角色獲得的有效權限（去重合併），需要具有 "permission.read" 權限
+      operationId: getUserEffectivePermissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 用戶 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEffectivePermissionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auditlog/query:
+    post:
+      tags:
+        - Audit Logs
+      summary: 查詢稽核日誌列表
+      description: |
+        查詢稽核日誌，支援多條件篩選和分頁。
+        可根據時間範圍、操作者、操作類型、目標類型等條件進行篩選。
+        結果按操作時間降序排列。
+      operationId: queryAuditLogs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryAuditLogRequest'
+            examples:
+              basic:
+                summary: 基本查詢
+                value:
+                  pageNumber: 1
+                  pageSize: 20
+              filtered:
+                summary: 帶篩選條件的查詢
+                value:
+                  startTime: "2025-10-01T00:00:00Z"
+                  endTime: "2025-11-06T23:59:59Z"
+                  operationType: "create"
+                  targetType: "permission"
+                  pageNumber: 1
+                  pageSize: 20
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auditlog/{id}:
+    get:
+      tags:
+        - Audit Logs
+      summary: 根據 ID 查詢單筆稽核日誌
+      description: 查詢指定 ID 的稽核日誌詳細資訊
+      operationId: getAuditLogById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 稽核日誌 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuditLogDto'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 稽核日誌不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auditlog/trace/{traceId}:
+    get:
+      tags:
+        - Audit Logs
+      summary: 根據追蹤 ID 查詢相關稽核日誌
+      description: 查詢具有相同追蹤 ID 的所有稽核日誌，用於追蹤同一請求中執行的多項操作
+      operationId: getAuditLogsByTraceId
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          description: 追蹤 ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AuditLogDto'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1275,6 +1911,7 @@ components:
       required:
         - username
         - roles
+        - permissions
       properties:
         username:
           type: string
@@ -1298,35 +1935,16 @@ components:
           example:
             - Admin
             - User
-    
-    UserProfileResponse:
-      type: object
-      required:
-        - username
-        - roles
-      properties:
-        username:
-          type: string
-          description: 用戶名稱
-          minLength: 3
-          maxLength: 20
-          pattern: '^[a-zA-Z0-9_]+$'
-          example: john_doe
-        displayName:
-          type: string
-          nullable: true
-          description: 顯示名稱（可為 null）
-          maxLength: 100
-          example: John Doe
-        roles:
+        permissions:
           type: array
-          description: 角色名稱清單（空陣列代表無角色）
+          description: 使用者擁有的權限代碼清單（聚合所有角色的權限，去重）
           items:
             type: string
-            example: Admin
+            example: user.profile.read
           example:
-            - Admin
-            - User
+            - user.profile.read
+            - permission.read
+            - role.create
 
     CreatePermissionRequest:
       type: object
@@ -1442,6 +2060,375 @@ components:
         hasPermission:
           type: boolean
           description: 是否擁有該權限
+
+    ValidatePermissionRequest:
+      type: object
+      required:
+        - permissionCode
+      properties:
+        permissionCode:
+          type: string
+          description: 要驗證的權限代碼
+          example: "inventory.create"
+
+    PermissionValidationResponse:
+      type: object
+      required:
+        - hasPermission
+        - message
+        - code
+      properties:
+        hasPermission:
+          type: boolean
+          description: 是否擁有該權限
+        message:
+          type: string
+          description: 驗證結果描述
+        code:
+          type: string
+          description: 回應代碼
+
+    CreateRoleRequest:
+      type: object
+      required:
+        - roleName
+      properties:
+        roleName:
+          type: string
+          description: 角色名稱
+          example: "管理員"
+        description:
+          type: string
+          nullable: true
+          description: 角色描述
+          example: "系統管理員角色"
+
+    UpdateRoleRequest:
+      type: object
+      required:
+        - roleName
+        - version
+      properties:
+        roleName:
+          type: string
+          description: 角色名稱
+          example: "管理員"
+        description:
+          type: string
+          nullable: true
+          description: 角色描述
+          example: "系統管理員角色"
+        version:
+          type: integer
+          minimum: 1
+          description: 版本號（用於樂觀並發控制）
+          example: 1
+
+    DeleteRoleRequest:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          minimum: 1
+          description: 版本號（用於樂觀並發控制）
+          example: 1
+
+    RoleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 角色 ID
+        roleName:
+          type: string
+          description: 角色名稱
+        description:
+          type: string
+          nullable: true
+          description: 角色描述
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間 (UTC)
+        version:
+          type: integer
+          description: 版本號
+
+    RoleDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 角色 ID
+        roleName:
+          type: string
+          description: 角色名稱
+        description:
+          type: string
+          nullable: true
+          description: 角色描述
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間 (UTC)
+        version:
+          type: integer
+          description: 版本號
+        permissions:
+          type: array
+          description: 角色擁有的權限清單
+          items:
+            $ref: '#/components/schemas/PermissionDto'
+
+    RoleResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 回應代碼
+        message:
+          type: string
+          description: 回應訊息
+        data:
+          $ref: '#/components/schemas/RoleDto'
+        traceId:
+          type: string
+          description: 追蹤 ID
+
+    RoleListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleDto'
+        totalCount:
+          type: integer
+          description: 總筆數
+        pageNumber:
+          type: integer
+          description: 當前頁碼
+        pageSize:
+          type: integer
+          description: 每頁筆數
+        code:
+          type: string
+          description: 回應代碼
+        message:
+          type: string
+          description: 回應訊息
+        traceId:
+          type: string
+          description: 追蹤 ID
+
+    AssignRolePermissionsRequest:
+      type: object
+      required:
+        - permissionIds
+      properties:
+        permissionIds:
+          type: array
+          description: 權限 ID 陣列
+          items:
+            type: string
+            format: uuid
+
+    AssignUserRoleRequest:
+      type: object
+      required:
+        - roleIds
+      properties:
+        roleIds:
+          type: array
+          description: 角色 ID 陣列
+          items:
+            type: string
+            format: uuid
+
+    UserRoleDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: 用戶 ID
+        roleId:
+          type: string
+          format: uuid
+          description: 角色 ID
+        roleName:
+          type: string
+          description: 角色名稱
+        assignedAt:
+          type: string
+          format: date-time
+          description: 指派時間
+
+    UserRoleResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRoleDto'
+        message:
+          type: string
+          description: 回應訊息
+        code:
+          type: string
+          description: 回應代碼
+        traceId:
+          type: string
+          description: 追蹤 ID
+
+    UserEffectivePermissionsDto:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: 用戶 ID
+        permissions:
+          type: array
+          description: 有效權限清單（去重合併）
+          items:
+            $ref: '#/components/schemas/PermissionDto'
+
+    UserEffectivePermissionsResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserEffectivePermissionsDto'
+        message:
+          type: string
+          description: 回應訊息
+        code:
+          type: string
+          description: 回應代碼
+        traceId:
+          type: string
+          description: 追蹤 ID
+
+    QueryAuditLogRequest:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 起始時間（UTC）
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: 結束時間（UTC）
+        operatorId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 操作者 ID（可選篩選）
+        operationType:
+          type: string
+          nullable: true
+          description: 操作類型（可選篩選：create, update, delete）
+          enum: [create, update, delete]
+        targetType:
+          type: string
+          nullable: true
+          description: 目標類型（可選篩選：permission, role, user_role, role_permission）
+          enum: [permission, role, user_role, role_permission]
+        targetId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 目標物件 ID（可選篩選）
+        pageNumber:
+          type: integer
+          minimum: 1
+          default: 1
+          description: 分頁頁碼（從 1 開始）
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: 每頁筆數（最大 100）
+
+    AuditLogDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 稽核日誌唯一識別碼
+        operatorId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 操作者 ID
+        operatorName:
+          type: string
+          description: 操作者名稱
+        operationTime:
+          type: string
+          format: date-time
+          description: 操作發生的時間 (UTC)
+        operationType:
+          type: string
+          description: 操作類型
+        targetType:
+          type: string
+          description: 目標類型
+        targetId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 目標物件 ID
+        beforeState:
+          type: string
+          nullable: true
+          description: 操作前的狀態（JSON）
+        afterState:
+          type: string
+          nullable: true
+          description: 操作後的狀態（JSON）
+        ipAddress:
+          type: string
+          nullable: true
+          description: 請求的來源 IP 位址
+        userAgent:
+          type: string
+          nullable: true
+          description: 用戶代理字串
+        traceId:
+          type: string
+          nullable: true
+          description: 分散式追蹤 ID
+        additionalInfo:
+          type: string
+          nullable: true
+          description: 額外資訊（JSON）
+
+    AuditLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogDto'
+        totalCount:
+          type: integer
+          description: 總筆數
+        pageNumber:
+          type: integer
+          description: 當前頁碼
+        pageSize:
+          type: integer
+          description: 每頁筆數
 
   responses:
     Unauthorized:
