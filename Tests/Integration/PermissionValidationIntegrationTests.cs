@@ -89,9 +89,9 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
         _testPermissionId1 = Guid.NewGuid();
         _testPermissionId2 = Guid.NewGuid();
         var insertPermSql = @"
-            INSERT INTO permissions (id, permission_code, name, description, permission_type, route_path, version, is_deleted, created_at, updated_at)
-            VALUES (@id1, @code1, @name1, @desc1, @type1, @route1, 1, false, NOW(), NOW()),
-                   (@id2, @code2, @name2, @desc2, @type2, @route2, 1, false, NOW(), NOW());
+            INSERT INTO permissions (id, permission_code, name, description, permission_type, version, is_deleted, created_at, updated_at)
+            VALUES (@id1, @code1, @name1, @desc1, @type1, 1, false, NOW(), NOW()),
+                   (@id2, @code2, @name2, @desc2, @type2, 1, false, NOW(), NOW());
         ";
 
         await using (var command = new NpgsqlCommand(insertPermSql, connection))
@@ -100,14 +100,12 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
             command.Parameters.AddWithValue("code1", "permission.validation.test1");
             command.Parameters.AddWithValue("name1", "Test Permission 1");
             command.Parameters.AddWithValue("desc1", "First test permission");
-            command.Parameters.AddWithValue("type1", 0);
-            command.Parameters.AddWithValue("route1", "/api/test/1");
+            command.Parameters.AddWithValue("type1", "function");
             command.Parameters.AddWithValue("id2", _testPermissionId2);
             command.Parameters.AddWithValue("code2", "permission.validation.test2");
             command.Parameters.AddWithValue("name2", "Test Permission 2");
             command.Parameters.AddWithValue("desc2", "Second test permission");
-            command.Parameters.AddWithValue("type2", 0);
-            command.Parameters.AddWithValue("route2", "/api/test/2");
+            command.Parameters.AddWithValue("type2", "function");
             await command.ExecuteNonQueryAsync();
         }
 

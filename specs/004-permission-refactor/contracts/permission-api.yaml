@@ -1,0 +1,650 @@
+````yaml
+openapi: 3.0.0
+info:
+  title: Permission Management API
+  description: 權限管理 API - 支持權限的建立、編輯、刪除和查詢
+  version: 1.0.0
+  language: zh-TW
+
+servers:
+  - url: http://localhost:5000/api
+    description: 本機開發環境
+  - url: https://api.example.com/api
+    description: 生產環境
+
+tags:
+  - name: Permission Management
+    description: 權限管理相關端點
+
+paths:
+  /permissions:
+    post:
+      summary: 建立新權限
+      description: |
+        建立一個新的權限定義
+        
+        **必需權限**: permission.create
+        
+        **欄位說明**:
+        - `permissionCode`: 權限代碼，必填，遵循 resource.action 格式
+        - `name`: 權限名稱，必填，1-255 字元
+        - `description`: 權限描述，選填
+        - `permissionType`: 權限類型，必填，值為 "function" (操作權限) 或 "view" (區塊瀏覽權限)
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermissionRequest'
+            examples:
+              functionPermission:
+                summary: 建立操作權限
+                value:
+                  permissionCode: "inventory.create"
+                  name: "新增庫存"
+                  description: "允許新增庫存項目"
+                  permissionType: "function"
+              viewPermission:
+                summary: 建立區塊瀏覽權限
+                value:
+                  permissionCode: "dashboard.analytics_panel"
+                  name: "分析面板"
+                  description: "允許查看儀表板分析面板"
+                  permissionType: "view"
+      responses:
+        '201':
+          description: 權限建立成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    code: "CREATED"
+                    message: "權限已建立"
+                    data:
+                      id: 1
+                      permissionCode: "inventory.create"
+                      name: "新增庫存"
+                      description: "允許新增庫存項目"
+                      permissionType: "function"
+                      createdAt: "2025-11-16T10:30:00Z"
+                      version: 0
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+        '400':
+          description: 請求驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                validation_error:
+                  value:
+                    success: false
+                    code: "VALIDATION_ERROR"
+                    message: "權限代碼格式不正確"
+                    data: null
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+        '401':
+          description: 未授權（缺少有效的 JWT 令牌）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: 禁止（用戶無 permission.create 權限）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: 業務規則衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                duplicate_code:
+                  value:
+                    success: false
+                    code: "PERMISSION_CODE_EXISTS"
+                    message: "權限代碼已存在"
+                    data: null
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+
+    get:
+      summary: 查詢權限列表
+      description: |
+        分頁查詢權限列表，支援按類型篩選
+        
+        **必需權限**: permission.read
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: 頁碼（從 1 開始）
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: 每頁筆數
+          schema:
+            type: integer
+            default: 20
+        - name: permissionType
+          in: query
+          description: 按權限類型篩選（function 或 view）
+          schema:
+            type: string
+            enum:
+              - function
+              - view
+        - name: keyword
+          in: query
+          description: 按權限代碼或名稱搜尋
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPaginatedResponse'
+        '401':
+          description: 未授權
+        '403':
+          description: 禁止
+
+  /permissions/{id}:
+    get:
+      summary: 查詢單個權限詳情
+      description: |
+        根據權限 ID 查詢詳細資訊
+        
+        **必需權限**: permission.read
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: 未授權
+        '403':
+          description: 禁止
+        '404':
+          description: 權限不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                not_found:
+                  value:
+                    success: false
+                    code: "NOT_FOUND"
+                    message: "權限不存在"
+                    data: null
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+
+    put:
+      summary: 編輯權限
+      description: |
+        編輯現有權限的資訊（權限代碼不可變更）
+        
+        **必需權限**: permission.update
+        
+        **支持樂觀並發控制**: 需要提供正確的 version，若版本過期會返回 409 Conflict
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePermissionRequest'
+            example:
+              name: "編輯庫存"
+              description: "允許編輯庫存項目資訊"
+              permissionType: "function"
+              version: 0
+      responses:
+        '200':
+          description: 編輯成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: 驗證失敗
+        '401':
+          description: 未授權
+        '403':
+          description: 禁止
+        '404':
+          description: 權限不存在
+        '409':
+          description: 並發更新衝突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                concurrent_conflict:
+                  value:
+                    success: false
+                    code: "CONCURRENT_UPDATE_CONFLICT"
+                    message: "資料已被其他使用者更新，請重新載入"
+                    data: null
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+
+    delete:
+      summary: 刪除權限
+      description: |
+        軟刪除指定的權限
+        
+        **必需權限**: permission.delete
+        
+        **注意**: 軟刪除後，此權限不再被分配，但歷史記錄保留
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 權限 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 刪除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                code: "DELETED"
+                message: "權限已刪除"
+                data: null
+                timestamp: "2025-11-16T10:30:00Z"
+                traceId: "trace-123-abc"
+        '401':
+          description: 未授權
+        '403':
+          description: 禁止
+        '404':
+          description: 權限不存在
+
+  /permissions/check/{permissionCode}:
+    get:
+      summary: 檢查當前用戶是否擁有指定權限
+      description: |
+        前端用此端點檢查用戶是否擁有特定權限，以決定 UI 元件的顯示/隱藏
+        
+        **必需身份**: 已授權用戶
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: permissionCode
+          in: path
+          required: true
+          description: 權限代碼（如 "dashboard.widget"）
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 檢查成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckPermissionResponse'
+              examples:
+                has_permission:
+                  value:
+                    success: true
+                    code: "SUCCESS"
+                    message: "檢查完成"
+                    data:
+                      permissionCode: "dashboard.widget"
+                      permissionType: "view"
+                      hasPermission: true
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+                no_permission:
+                  value:
+                    success: true
+                    code: "SUCCESS"
+                    message: "檢查完成"
+                    data:
+                      permissionCode: "admin.advanced"
+                      permissionType: "function"
+                      hasPermission: false
+                    timestamp: "2025-11-16T10:30:00Z"
+                    traceId: "trace-123-abc"
+        '401':
+          description: 未授權
+
+  /roles/{roleId}/permissions:
+    post:
+      summary: 為角色分配權限
+      description: |
+        為指定的角色分配一組權限
+        
+        **必需權限**: role.assign_permission
+      tags:
+        - Permission Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          description: 角色 ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignPermissionsRequest'
+            example:
+              permissionIds:
+                - 1
+                - 2
+                - 5
+      responses:
+        '200':
+          description: 權限分配成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: 未授權
+        '403':
+          description: 禁止
+        '404':
+          description: 角色不存在
+        '422':
+          description: 業務規則衝突
+
+components:
+  schemas:
+    # Request DTOs
+    CreatePermissionRequest:
+      type: object
+      required:
+        - permissionCode
+        - name
+        - permissionType
+      properties:
+        permissionCode:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: 權限代碼（resource.action 格式）
+          example: "inventory.create"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 權限名稱
+          example: "新增庫存"
+        description:
+          type: string
+          maxLength: 500
+          description: 權限描述
+          example: "允許新增庫存項目"
+        permissionType:
+          type: string
+          enum:
+            - function
+            - view
+          description: 權限類型
+          example: "function"
+
+    UpdatePermissionRequest:
+      type: object
+      required:
+        - name
+        - permissionType
+        - version
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 權限名稱
+          example: "編輯庫存"
+        description:
+          type: string
+          maxLength: 500
+          description: 權限描述
+        permissionType:
+          type: string
+          enum:
+            - function
+            - view
+          description: 權限類型
+        version:
+          type: integer
+          minimum: 0
+          description: 版本號（用於樂觀並發控制）
+
+    AssignPermissionsRequest:
+      type: object
+      required:
+        - permissionIds
+      properties:
+        permissionIds:
+          type: array
+          items:
+            type: integer
+          description: 權限 ID 列表
+          example:
+            - 1
+            - 2
+            - 3
+
+    # Response DTOs
+    PermissionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 權限 ID
+        permissionCode:
+          type: string
+          description: 權限代碼
+        name:
+          type: string
+          description: 權限名稱
+        description:
+          type: string
+          description: 權限描述
+        permissionType:
+          type: string
+          enum:
+            - function
+            - view
+          description: 權限類型
+        createdAt:
+          type: string
+          format: date-time
+          description: 建立時間
+        updatedAt:
+          type: string
+          format: date-time
+          description: 最後修改時間
+        version:
+          type: integer
+          description: 版本號
+
+    CheckPermissionResponse:
+      type: object
+      properties:
+        permissionCode:
+          type: string
+          description: 權限代碼
+        permissionType:
+          type: string
+          enum:
+            - function
+            - view
+          description: 權限類型
+        hasPermission:
+          type: boolean
+          description: 用戶是否擁有此權限
+
+    # Base Response Structures
+    ApiResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+          description: 操作是否成功
+        code:
+          type: string
+          description: 業務代碼（SUCCESS, CREATED, UPDATED, DELETED, VALIDATION_ERROR 等）
+        message:
+          type: string
+          description: 響應訊息（繁體中文）
+        data:
+          type: object
+          nullable: true
+          description: 響應資料（失敗時為 null）
+        timestamp:
+          type: string
+          format: date-time
+          description: 伺服器時間戳
+        traceId:
+          type: string
+          description: 分散式追蹤 ID
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+          enum:
+            - false
+          description: 必為 false
+        code:
+          type: string
+          description: 錯誤碼（VALIDATION_ERROR, NOT_FOUND, FORBIDDEN, INTERNAL_ERROR 等）
+        message:
+          type: string
+          description: 錯誤訊息（繁體中文）
+        data:
+          type: object
+          nullable: true
+          example: null
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+
+    ApiPaginatedResponse:
+      type: object
+      required:
+        - success
+        - code
+        - message
+        - data
+        - timestamp
+        - traceId
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PermissionResponse'
+            total:
+              type: integer
+              description: 總筆數
+            page:
+              type: integer
+              description: 當前頁碼
+            pageSize:
+              type: integer
+              description: 每頁筆數
+            totalPages:
+              type: integer
+              description: 總頁數
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer 令牌，格式為 "Authorization: Bearer <token>"
+````

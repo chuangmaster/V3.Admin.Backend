@@ -34,11 +34,6 @@ public class PermissionDto
     public string PermissionType { get; set; } = string.Empty;
 
     /// <summary>
-    /// 路由路徑（僅路由權限）
-    /// </summary>
-    public string? RoutePath { get; set; }
-
-    /// <summary>
     /// 建立時間
     /// </summary>
     public DateTime CreatedAt { get; set; }

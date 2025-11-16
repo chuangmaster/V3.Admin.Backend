@@ -46,7 +46,6 @@ public class PermissionService : IPermissionService
             Name = request.Name,
             Description = request.Description,
             PermissionType = request.PermissionType,
-            RoutePath = request.RoutePath,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = createdBy,
             Version = 1,
@@ -67,7 +66,6 @@ public class PermissionService : IPermissionService
                         created.Name,
                         created.Description,
                         created.PermissionType,
-                        created.RoutePath,
                         created.CreatedAt,
                     }
                 );
@@ -133,14 +131,12 @@ public class PermissionService : IPermissionService
                 permission.PermissionCode,
                 permission.Name,
                 permission.Description,
-                permission.RoutePath,
                 permission.Version,
             }
         );
 
         permission.Name = request.Name;
         permission.Description = request.Description;
-        permission.RoutePath = request.RoutePath;
         permission.UpdatedAt = DateTime.UtcNow;
         permission.UpdatedBy = updatedBy;
         permission.Version = request.Version;
@@ -166,7 +162,6 @@ public class PermissionService : IPermissionService
                         updated.PermissionCode,
                         updated.Name,
                         updated.Description,
-                        updated.RoutePath,
                         updated.Version,
                     }
                 );
@@ -210,7 +205,6 @@ public class PermissionService : IPermissionService
                 permission.PermissionCode,
                 permission.Name,
                 permission.Description,
-                permission.RoutePath,
                 permission.Version,
             }
         );
@@ -269,7 +263,6 @@ public class PermissionService : IPermissionService
             Name = permission.Name,
             Description = permission.Description,
             PermissionType = permission.PermissionType,
-            RoutePath = permission.RoutePath,
             CreatedAt = permission.CreatedAt,
             Version = permission.Version,
         };

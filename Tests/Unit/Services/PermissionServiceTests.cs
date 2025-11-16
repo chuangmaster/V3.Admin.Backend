@@ -39,8 +39,7 @@ public class PermissionServiceTests
             PermissionCode = "test.perm.read",
             Name = "Test Permission",
             Description = "Test description",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
         };
 
         _mockRepository
@@ -54,7 +53,6 @@ public class PermissionServiceTests
             Name = request.Name,
             Description = request.Description,
             PermissionType = request.PermissionType,
-            RoutePath = request.RoutePath,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId,
             Version = 1,
@@ -91,8 +89,7 @@ public class PermissionServiceTests
             PermissionCode = "duplicate.code",
             Name = "Test",
             Description = "Test",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
         };
 
         _mockRepository
@@ -121,8 +118,7 @@ public class PermissionServiceTests
             PermissionCode = "test.read",
             Name = "Test Permission",
             Description = "Test",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
             IsDeleted = false,
@@ -169,8 +165,7 @@ public class PermissionServiceTests
                 PermissionCode = "perm.1",
                 Name = "Permission 1",
                 Description = "Desc 1",
-                PermissionType = "route",
-                RoutePath = "/api/perm1",
+                PermissionType = "function",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1,
                 IsDeleted = false,
@@ -181,8 +176,7 @@ public class PermissionServiceTests
                 PermissionCode = "perm.2",
                 Name = "Permission 2",
                 Description = "Desc 2",
-                PermissionType = "function",
-                RoutePath = null,
+                PermissionType = "view",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1,
                 IsDeleted = false,
@@ -215,8 +209,7 @@ public class PermissionServiceTests
             PermissionCode = "test.perm",
             Name = "Original Name",
             Description = "Original",
-            PermissionType = "route",
-            RoutePath = "/api/original",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = version,
             IsDeleted = false,
@@ -226,7 +219,6 @@ public class PermissionServiceTests
         {
             Name = "Updated Name",
             Description = "Updated",
-            RoutePath = "/api/updated",
             Version = version,
         };
 
@@ -239,7 +231,6 @@ public class PermissionServiceTests
             Name = updateRequest.Name,
             Description = updateRequest.Description,
             PermissionType = existingPermission.PermissionType,
-            RoutePath = updateRequest.RoutePath,
             CreatedAt = existingPermission.CreatedAt,
             UpdatedAt = DateTime.UtcNow,
             UpdatedBy = userId,
@@ -275,7 +266,6 @@ public class PermissionServiceTests
         {
             Name = "Updated",
             Description = "Updated",
-            RoutePath = "/api/updated",
             Version = 1,
         };
 
@@ -302,8 +292,7 @@ public class PermissionServiceTests
             PermissionCode = "test.perm",
             Name = "Original Name",
             Description = "Original",
-            PermissionType = "route",
-            RoutePath = "/api/original",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
             IsDeleted = false,
@@ -313,7 +302,6 @@ public class PermissionServiceTests
         {
             Name = "Updated",
             Description = "Updated",
-            RoutePath = "/api/updated",
             Version = 999,
         };
 
@@ -339,8 +327,7 @@ public class PermissionServiceTests
             PermissionCode = "test.perm",
             Name = "Permission to Delete",
             Description = "To delete",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = version,
             IsDeleted = false,
@@ -375,8 +362,7 @@ public class PermissionServiceTests
             PermissionCode = "in.use.perm",
             Name = "Permission In Use",
             Description = "In use",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = version,
             IsDeleted = false,
@@ -409,8 +395,7 @@ public class PermissionServiceTests
             PermissionCode = "test.perm",
             Name = "Permission",
             Description = "Desc",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1,
             IsDeleted = false,

@@ -22,8 +22,8 @@ public class PermissionRepository : IPermissionRepository
     public async Task<Permission> CreateAsync(Permission permission)
     {
         const string sql = @"
-            INSERT INTO permissions (id, permission_code, name, description, permission_type, route_path, created_at, created_by, version)
-            VALUES (@Id, @PermissionCode, @Name, @Description, @PermissionType, @RoutePath, @CreatedAt, @CreatedBy, 1)
+            INSERT INTO permissions (id, permission_code, name, description, permission_type, created_at, created_by, version)
+            VALUES (@Id, @PermissionCode, @Name, @Description, @PermissionType, @CreatedAt, @CreatedBy, 1)
             RETURNING *;
         ";
 
@@ -48,6 +48,16 @@ public class PermissionRepository : IPermissionRepository
         ";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<Permission?>(sql, new { Id = id });
+    }
+
+    public async Task<Permission?> GetByCodeAsync(string permissionCode)
+    {
+        const string sql = @"
+            SELECT * FROM permissions 
+            WHERE permission_code = @PermissionCode AND is_deleted = false;
+        ";
+
+        return await _dbConnection.QuerySingleOrDefaultAsync<Permission?>(sql, new { PermissionCode = permissionCode });
     }
 
     public async Task<(List<Permission> Items, int TotalCount)> GetAllAsync(
@@ -99,7 +109,6 @@ public class PermissionRepository : IPermissionRepository
             UPDATE permissions 
             SET name = @Name, 
                 description = @Description, 
-                route_path = @RoutePath, 
                 updated_at = @UpdatedAt, 
                 updated_by = @UpdatedBy, 
                 version = version + 1

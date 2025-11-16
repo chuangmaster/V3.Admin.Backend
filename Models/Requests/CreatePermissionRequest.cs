@@ -21,12 +21,7 @@ public class CreatePermissionRequest
     public string? Description { get; set; }
 
     /// <summary>
-    /// 權限類型 (route 或 function)
+    /// 權限類型 (function 或 view)
     /// </summary>
     public string PermissionType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 路由路徑（僅路由權限使用）
-    /// </summary>
-    public string? RoutePath { get; set; }
 }
