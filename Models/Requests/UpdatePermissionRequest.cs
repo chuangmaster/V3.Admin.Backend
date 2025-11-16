@@ -16,11 +16,6 @@ public class UpdatePermissionRequest
     public string? Description { get; set; }
 
     /// <summary>
-    /// 路由路徑（僅路由權限使用）
-    /// </summary>
-    public string? RoutePath { get; set; }
-
-    /// <summary>
     /// 版本號（用於樂觀並發控制）
     /// </summary>
     public int Version { get; set; }

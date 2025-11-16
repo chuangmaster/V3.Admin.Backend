@@ -70,8 +70,7 @@ public class PermissionValidationServiceTests
                 PermissionCode = "permission.read",
                 Name = "Read Permission",
                 Description = "Read",
-                PermissionType = "route",
-                RoutePath = "/api/test",
+                PermissionType = "function",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1
             }
@@ -85,8 +84,7 @@ public class PermissionValidationServiceTests
                 PermissionCode = "permission.write",
                 Name = "Write Permission",
                 Description = "Write",
-                PermissionType = "route",
-                RoutePath = "/api/test",
+                PermissionType = "function",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1
             }
@@ -146,8 +144,7 @@ public class PermissionValidationServiceTests
             PermissionCode = "permission.shared",
             Name = "Shared Permission",
             Description = "Shared",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -224,8 +221,7 @@ public class PermissionValidationServiceTests
             PermissionCode = permissionCode,
             Name = "Read",
             Description = "Read",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -268,8 +264,7 @@ public class PermissionValidationServiceTests
             PermissionCode = "permission.read",
             Name = "Read",
             Description = "Read",
-            PermissionType = "route",
-            RoutePath = "/api/test",
+            PermissionType = "function",
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -313,8 +308,7 @@ public class PermissionValidationServiceTests
                 PermissionCode = $"permission.{i}",
                 Name = $"Permission {i}",
                 Description = $"Desc {i}",
-                PermissionType = "route",
-                RoutePath = $"/api/test/{i}",
+                PermissionType = "function",
                 CreatedAt = DateTime.UtcNow,
                 Version = 1
             })

@@ -134,7 +134,6 @@ public class PermissionValidationService : IPermissionValidationService
                             Name = permission.Name,
                             Description = permission.Description,
                             PermissionType = permission.PermissionType,
-                            RoutePath = permission.RoutePath,
                             CreatedAt = permission.CreatedAt,
                             Version = permission.Version,
                         };
@@ -159,6 +158,85 @@ public class PermissionValidationService : IPermissionValidationService
             _logger.LogError(ex, "查詢用戶有效權限失敗: UserId={UserId}", userId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// 檢查用戶是否擁有指定型別的權限
+    /// </summary>
+    public async Task<bool> HasPermissionTypeAsync(
+        Guid userId,
+        string permissionCode,
+        string permissionType,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            // 首先檢查用戶是否擁有該權限
+            bool hasPermission = await ValidatePermissionAsync(userId, permissionCode, cancellationToken);
+            if (!hasPermission)
+            {
+                return false;
+            }
+
+            // 檢查權限類型是否匹配
+            var permission = await _permissionRepository.GetByCodeAsync(permissionCode);
+            if (permission == null || permission.IsDeleted)
+            {
+                return false;
+            }
+
+            // 驗證權限類型
+            bool typeMatches = string.Equals(permission.PermissionType, permissionType, StringComparison.OrdinalIgnoreCase);
+            
+            _logger.LogInformation(
+                "權限類型檢查: UserId={UserId}, PermissionCode={PermissionCode}, ExpectedType={ExpectedType}, ActualType={ActualType}, Matches={Matches}",
+                userId,
+                permissionCode,
+                permissionType,
+                permission.PermissionType,
+                typeMatches
+            );
+
+            return typeMatches;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "權限類型檢查失敗: UserId={UserId}, PermissionCode={PermissionCode}, PermissionType={PermissionType}",
+                userId,
+                permissionCode,
+                permissionType
+            );
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 驗證 PermissionCode 格式是否正確
+    /// </summary>
+    /// <param name="permissionCode">權限代碼</param>
+    /// <returns>格式是否正確</returns>
+    public bool ValidatePermissionCode(string permissionCode)
+    {
+        if (string.IsNullOrWhiteSpace(permissionCode))
+        {
+            return false;
+        }
+
+        // 長度檢查
+        if (permissionCode.Length < 3 || permissionCode.Length > 100)
+        {
+            return false;
+        }
+
+        // 格式驗證：允許字母、數字、點號、下劃線
+        // 開頭和結尾不能是點號或下劃線
+        // 支援單字元或 3-100 字元的格式
+        var regex = new System.Text.RegularExpressions.Regex(@"^[a-zA-Z0-9][a-zA-Z0-9._]{1,98}[a-zA-Z0-9]$|^[a-zA-Z0-9]$");
+        
+        return regex.IsMatch(permissionCode);
     }
 
     /// <summary>

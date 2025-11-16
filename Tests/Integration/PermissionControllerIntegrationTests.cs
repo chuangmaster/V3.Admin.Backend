@@ -126,8 +126,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "test.permission.read",
             Name = "Test Permission Read",
             Description = "Test permission for reading",
-            PermissionType = "route",
-            RoutePath = "/api/test"
+            PermissionType = "function"
         };
 
         // Act
@@ -156,8 +155,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "duplicate.test.perm",
             Name = "First Test",
             Description = "First",
-            PermissionType = "function",
-            RoutePath = null
+            PermissionType = "function"
         };
 
         var firstResponse = await _client.PostAsJsonAsync("/api/permission", firstRequest);
@@ -173,8 +171,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "duplicate.test.perm",
             Name = "Second Test",
             Description = "Second",
-            PermissionType = "route",
-            RoutePath = "/api/duplicate"
+            PermissionType = "function"
         };
 
         // Act
@@ -199,8 +196,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "get.test.permission",
             Name = "Get Test Permission",
             Description = "For getting",
-            PermissionType = "route",
-            RoutePath = "/api/get-test"
+            PermissionType = "function"
         };
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
@@ -253,8 +249,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "update.test.perm",
             Name = "Original Name",
             Description = "Original Description",
-            PermissionType = "route",
-            RoutePath = "/api/original"
+            PermissionType = "function"
         };
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
@@ -269,7 +264,6 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         {
             Name = "Updated Name",
             Description = "Updated Description",
-            RoutePath = "/api/updated",
             Version = version
         };
 
@@ -298,8 +292,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "version.conflict.test",
             Name = "Version Conflict Test",
             Description = "Test",
-            PermissionType = "function",
-            RoutePath = null
+            PermissionType = "function"
         };
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
@@ -313,7 +306,6 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         {
             Name = "Updated",
             Description = "Updated",
-            RoutePath = null,
             Version = 999  // Wrong version
         };
 
@@ -339,8 +331,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             PermissionCode = "delete.test.perm",
             Name = "Delete Test",
             Description = "To be deleted",
-            PermissionType = "route",
-            RoutePath = "/api/delete"
+            PermissionType = "function"
         };
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);

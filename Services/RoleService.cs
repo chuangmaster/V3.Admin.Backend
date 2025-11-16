@@ -363,7 +363,6 @@ public class RoleService : IRoleService
             Name = permission.Name,
             Description = permission.Description,
             PermissionType = permission.PermissionType,
-            RoutePath = permission.RoutePath,
             CreatedAt = permission.CreatedAt,
             Version = permission.Version,
         };

@@ -12,8 +12,9 @@ public class CreatePermissionRequestValidator : AbstractValidator<CreatePermissi
     {
         RuleFor(x => x.PermissionCode)
             .NotEmpty().WithMessage("權限代碼不可為空")
-            .MaximumLength(100).WithMessage("權限代碼最多 100 字元")
-            .Matches(@"^[a-z0-9._-]+$").WithMessage("權限代碼只能包含小寫字母、數字、點、下劃線和連字號");
+            .Length(3, 100).WithMessage("權限代碼長度須為 3-100 字元")
+            .Matches(@"^[a-zA-Z0-9][a-zA-Z0-9._]{1,98}[a-zA-Z0-9]$|^[a-zA-Z0-9]$")
+            .WithMessage("權限代碼格式不正確，只允許字母、數字、點號、下劃線");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("權限名稱不可為空")
@@ -21,11 +22,6 @@ public class CreatePermissionRequestValidator : AbstractValidator<CreatePermissi
 
         RuleFor(x => x.PermissionType)
             .NotEmpty().WithMessage("權限類型不可為空")
-            .Must(x => x == "route" || x == "function").WithMessage("權限類型必須是 'route' 或 'function'");
-
-        RuleFor(x => x.RoutePath)
-            .NotEmpty().When(x => x.PermissionType == "route")
-            .WithMessage("路由權限必須指定路由路徑")
-            .MaximumLength(500).WithMessage("路由路徑最多 500 字元");
+            .Must(x => x == "function" || x == "view").WithMessage("權限類型必須是 'function' 或 'view'");
     }
 }

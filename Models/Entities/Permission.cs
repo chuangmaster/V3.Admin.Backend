@@ -5,7 +5,7 @@ namespace V3.Admin.Backend.Models.Entities;
 /// </summary>
 /// <remarks>
 /// 對應資料庫 permissions 資料表，定義系統中的訪問或操作授權
-/// 支援兩種類型：路由權限（控制頁面訪問）和功能權限（控制操作權限）
+/// 支援兩種類型：function（功能操作權限）和 view（UI 區塊瀏覽權限）
 /// </remarks>
 public class Permission
 {
@@ -18,8 +18,8 @@ public class Permission
     /// 權限代碼（唯一）
     /// </summary>
     /// <remarks>
-    /// 功能權限格式: resource.action（如 inventory.create, users.delete）
-    /// 路由權限格式: 自訂字串（如 dashboard_access, inventory_page_access）
+    /// 格式: resource.action 或 resource.subresource.action
+    /// 範例: permission.create, dashboard.summary_widget, inventory.warehouse.transfer
     /// </remarks>
     public string PermissionCode { get; set; } = string.Empty;
 
@@ -34,17 +34,12 @@ public class Permission
     public string? Description { get; set; }
 
     /// <summary>
-    /// 權限類型（route: 路由權限, function: 功能權限）
-    /// </summary>
-    public string PermissionType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 路由路徑（僅路由權限使用）
+    /// 權限類型（function: 功能操作權限, view: UI 區塊瀏覽權限）
     /// </summary>
     /// <remarks>
-    /// 如 /inventory, /users/profile
+    /// 資料庫儲存為字串（'function' 或 'view'），對應 PermissionType 列舉
     /// </remarks>
-    public string? RoutePath { get; set; }
+    public string PermissionType { get; set; } = string.Empty;
 
     /// <summary>
     /// 建立時間 (UTC)

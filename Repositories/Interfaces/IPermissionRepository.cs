@@ -18,6 +18,11 @@ public interface IPermissionRepository
     Task<Permission?> GetByIdAsync(Guid id);
 
     /// <summary>
+    /// 取得權限 (根據 PermissionCode)
+    /// </summary>
+    Task<Permission?> GetByCodeAsync(string permissionCode);
+
+    /// <summary>
     /// 取得所有權限 (分頁)
     /// </summary>
     Task<(List<Permission> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? searchKeyword = null, string? permissionType = null);

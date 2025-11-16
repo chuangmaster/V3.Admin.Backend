@@ -4,6 +4,7 @@ using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
+using V3.Admin.Backend.Repositories.Interfaces;
 using V3.Admin.Backend.Services.Interfaces;
 
 namespace V3.Admin.Backend.Controllers;
@@ -22,16 +23,19 @@ public class PermissionController : BaseApiController
 {
     private readonly IPermissionService _permissionService;
     private readonly IPermissionValidationService _permissionValidationService;
+    private readonly IPermissionRepository _permissionRepository;
     private readonly ILogger<PermissionController> _logger;
 
     public PermissionController(
         IPermissionService permissionService,
         IPermissionValidationService permissionValidationService,
+        IPermissionRepository permissionRepository,
         ILogger<PermissionController> logger
     )
     {
         _permissionService = permissionService;
         _permissionValidationService = permissionValidationService;
+        _permissionRepository = permissionRepository;
         _logger = logger;
     }
 
@@ -297,6 +301,53 @@ public class PermissionController : BaseApiController
                 TraceId
             );
             return InternalError();
+        }
+    }
+
+    /// <summary>
+    /// 檢查當前用戶是否擁有指定權限
+    /// </summary>
+    /// <remarks>
+    /// 根據權限代碼檢查當前授權用戶是否擁有該權限。
+    /// 用於前端查詢用戶權限以控制 UI 元件顯示/隱藏。
+    /// </remarks>
+    /// <param name="permissionCode">權限代碼</param>
+    /// <returns>權限檢查結果</returns>
+    [HttpGet("check/{permissionCode}")]
+    [ProducesResponseType(typeof(CheckPermissionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CheckPermission([FromRoute] string permissionCode)
+    {
+        try
+        {
+            var userId = GetUserId();
+            if (userId is null)
+            {
+                return UnauthorizedResponse();
+            }
+
+            // 檢查用戶是否擁有該權限
+            bool hasPermission = await _permissionValidationService.ValidatePermissionAsync(
+                userId.Value,
+                permissionCode
+            );
+
+            // 取得權限資訊（如果存在）
+            var permission = await _permissionRepository.GetByCodeAsync(permissionCode);
+
+            var response = new CheckPermissionResponse
+            {
+                PermissionCode = permissionCode,
+                PermissionType = permission?.PermissionType,
+                HasPermission = hasPermission
+            };
+
+            return Success(response, "權限檢查完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "檢查權限失敗: {PermissionCode} | TraceId: {TraceId}", permissionCode, TraceId);
+            return InternalError("檢查權限失敗");
         }
     }
 

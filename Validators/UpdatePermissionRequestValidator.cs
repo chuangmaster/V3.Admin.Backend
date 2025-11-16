@@ -14,9 +14,6 @@ public class UpdatePermissionRequestValidator : AbstractValidator<UpdatePermissi
             .NotEmpty().WithMessage("權限名稱不可為空")
             .MaximumLength(200).WithMessage("權限名稱最多 200 字元");
 
-        RuleFor(x => x.RoutePath)
-            .MaximumLength(500).WithMessage("路由路徑最多 500 字元");
-
         RuleFor(x => x.Version)
             .GreaterThanOrEqualTo(1).WithMessage("版本號必須大於等於 1");
     }

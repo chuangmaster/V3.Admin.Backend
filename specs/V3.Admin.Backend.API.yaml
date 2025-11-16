@@ -786,10 +786,10 @@ paths:
             default: 20
         - name: permissionType
           in: query
-          description: 權限類型篩選（route 或 function）
+          description: 權限類型篩選（function-功能權限 或 view-檢視權限）
           schema:
             type: string
-            enum: [route, function]
+            enum: [function, view]
         - name: searchKeyword
           in: query
           description: 搜尋關鍵字（搜尋權限代碼或名稱）
@@ -1007,6 +1007,40 @@ paths:
                 message: "該權限正被角色使用，無法刪除"
                 timestamp: "2025-11-05T10:30:00Z"
                 traceId: "abc123"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/permissions/check/{permissionCode}:
+    get:
+      tags:
+        - Permissions
+      summary: 檢查當前用戶權限
+      description: 檢查當前授權用戶是否擁有指定的權限代碼
+      operationId: checkPermission
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionCode
+          in: path
+          required: true
+          description: 權限代碼
+          schema:
+            type: string
+          example: "inventory.create"
+      responses:
+        '200':
+          description: 權限檢查完成
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CheckPermissionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -1317,14 +1351,9 @@ components:
           example: "允許新增庫存項目"
         permissionType:
           type: string
-          enum: [route, function]
-          description: 權限類型（route: 路由權限, function: 功能權限）
+          enum: [function, view]
+          description: 權限類型（function: 功能操作權限, view: UI 區塊瀏覽權限）
           example: "function"
-        routePath:
-          type: string
-          maxLength: 500
-          description: 路由路徑（僅路由權限需要，如 /inventory）
-          example: "/inventory"
 
     UpdatePermissionRequest:
       type: object
@@ -1366,12 +1395,8 @@ components:
           description: 權限描述
         permissionType:
           type: string
-          enum: [route, function]
+          enum: [function, view]
           description: 權限類型
-        routePath:
-          type: string
-          nullable: true
-          description: 路由路徑
         createdAt:
           type: string
           format: date-time
@@ -1401,6 +1426,22 @@ components:
         pageSize:
           type: integer
           description: 每頁筆數
+
+    CheckPermissionResponse:
+      type: object
+      properties:
+        permissionCode:
+          type: string
+          description: 權限代碼
+          example: "user.create"
+        permissionType:
+          type: string
+          nullable: true
+          enum: [function, view]
+          description: 權限類型 (function-功能權限, view-檢視權限)
+        hasPermission:
+          type: boolean
+          description: 是否擁有該權限
 
   responses:
     Unauthorized:

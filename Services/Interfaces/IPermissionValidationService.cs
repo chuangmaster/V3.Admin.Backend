@@ -34,6 +34,21 @@ public interface IPermissionValidationService
     );
 
     /// <summary>
+    /// 檢查用戶是否擁有指定型別的權限
+    /// </summary>
+    /// <param name="userId">用戶 ID</param>
+    /// <param name="permissionCode">權限代碼</param>
+    /// <param name="permissionType">權限類型（'function' 或 'view'）</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>是否擁有指定型別的權限</returns>
+    Task<bool> HasPermissionTypeAsync(
+        Guid userId,
+        string permissionCode,
+        string permissionType,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// 記錄權限驗證失敗
     /// </summary>
     /// <param name="userId">用戶 ID</param>
