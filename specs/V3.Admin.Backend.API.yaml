@@ -1968,7 +1968,7 @@ components:
         permissionType:
           type: string
           enum: [function, view]
-          description: 權限類型（function: 功能操作權限, view: UI 區塊瀏覽權限）
+          description: "權限類型（function: 功能操作權限, view: UI 區塊瀏覽權限）"
           example: "function"
 
     UpdatePermissionRequest:
