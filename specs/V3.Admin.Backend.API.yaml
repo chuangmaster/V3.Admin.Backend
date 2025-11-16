@@ -141,7 +141,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/accounts:
+  /api/account:
     get:
       tags:
         - Accounts
@@ -301,7 +301,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/accounts/{id}:
+  /api/account/{id}:
     get:
       tags:
         - Accounts
@@ -530,7 +530,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/accounts/{id}/password:
+  /api/account/{id}/password:
     put:
       tags:
         - Accounts
@@ -644,7 +644,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/accounts/me:
+  /api/account/me:
     get:
       tags:
         - Accounts
@@ -771,7 +771,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/permissions:
+  /api/permission:
     get:
       tags:
         - Permissions
@@ -823,8 +823,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
-      security:
-        - bearerAuth: []
 
     post:
       tags:
@@ -871,7 +869,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/permissions/{id}:
+  /api/permission/{id}:
     get:
       tags:
         - Permissions
@@ -1022,7 +1020,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/permissions/check/{permissionCode}:
+  /api/permission/check/{permissionCode}:
     get:
       tags:
         - Permissions
@@ -1056,7 +1054,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/permissions/validate:
+  /api/permission/validate:
     post:
       tags:
         - Permissions
