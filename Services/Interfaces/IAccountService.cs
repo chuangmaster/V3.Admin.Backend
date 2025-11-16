@@ -66,6 +66,6 @@ public interface IAccountService
     /// 查詢用戶的個人資料（包含角色資訊）
     /// </summary>
     /// <param name="userId">用戶 ID</param>
-    /// <returns>用戶個人資料，若用戶不存在或已刪除則回傳 null</returns>
-    Task<UserProfileResponse?> GetUserProfileAsync(Guid userId);
+    /// <returns>用戶個人資料 DTO，若用戶不存在或已刪除則回傳 null</returns>
+    Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
 }

@@ -319,16 +319,16 @@ public class AccountService : IAccountService
     /// 查詢用戶的個人資料（包含角色資訊）
     /// </summary>
     /// <param name="userId">用戶 ID</param>
-    /// <returns>用戶個人資料，若用戶不存在或已刪除則回傳 null</returns>
-    public async Task<UserProfileResponse?> GetUserProfileAsync(Guid userId)
+    /// <returns>用戶個人資料 DTO，若用戶不存在或已刪除則回傳 null</returns>
+    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
     {
         try
         {
             // 查詢用戶
             var user = await _userRepository.GetByIdAsync(userId);
-            
+
             // 檢查用戶是否存在且未刪除
-            if (user == null || user.IsDeleted)
+            if (user is null || user.IsDeleted)
             {
                 _logger.LogWarning("查詢個人資料失敗: 用戶 {UserId} 不存在或已刪除", userId);
                 return null;
@@ -337,8 +337,8 @@ public class AccountService : IAccountService
             // 查詢用戶的所有角色名稱
             var roleNames = await _userRoleRepository.GetRoleNamesByUserIdAsync(userId);
 
-            // 組合 UserProfileResponse 物件
-            var profile = new UserProfileResponse
+            // 在 Service 層組合並回傳 DTO 物件
+            var profileDto = new UserProfileDto
             {
                 Username = user.Username,
                 DisplayName = user.DisplayName,
@@ -352,7 +352,7 @@ public class AccountService : IAccountService
                 roleNames.Count
             );
 
-            return profile;
+            return profileDto;
         }
         catch (Exception ex)
         {

@@ -1,6 +1,6 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Dtos;
@@ -28,9 +28,7 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="accountService">帳號管理服務</param>
     /// <param name="logger">日誌記錄器</param>
-    public AccountController(
-        IAccountService accountService,
-        ILogger<AccountController> logger)
+    public AccountController(IAccountService accountService, ILogger<AccountController> logger)
     {
         _accountService = accountService;
         _logger = logger;
@@ -41,7 +39,7 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <remarks>
     /// 允許已登入用戶查詢自己的個人資料，包含用戶名稱、顯示名稱和角色清單
-    /// 
+    ///
     /// 需要的權限: user.profile.read
     /// </remarks>
     /// <returns>當前用戶的個人資料</returns>
@@ -67,16 +65,24 @@ public class AccountController : BaseApiController
                 return UnauthorizedResponse("未授權，請先登入");
             }
 
-            // 查詢用戶個人資料
-            var profile = await _accountService.GetUserProfileAsync(userId.Value);
-            if (profile is null)
+            // 查詢用戶個人資料 (Service 層回傳 DTO)
+            var profileDto = await _accountService.GetUserProfileAsync(userId.Value);
+            if (profileDto is null)
             {
                 _logger.LogWarning("查詢個人資料失敗: 用戶 {UserId} 不存在或已刪除", userId);
                 return NotFound("用戶不存在", ResponseCodes.NOT_FOUND);
             }
 
+            // 轉換 DTO 為 Response 物件回傳給客戶端
+            var response = new UserProfileResponse
+            {
+                Username = profileDto.Username,
+                DisplayName = profileDto.DisplayName,
+                Roles = profileDto.Roles,
+            };
+
             _logger.LogInformation("成功查詢用戶 {UserId} 的個人資料", userId);
-            return Success(profile, "查詢成功");
+            return Success(response, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -96,7 +102,10 @@ public class AccountController : BaseApiController
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponseModel<AccountListResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
-    public async Task<IActionResult> GetAccounts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAccounts(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10
+    )
     {
         try
         {
@@ -104,18 +113,20 @@ public class AccountController : BaseApiController
 
             AccountListResponse response = new AccountListResponse
             {
-                Items = result.Items.Select(dto => new AccountResponse
-                {
-                    Id = dto.Id,
-                    Username = dto.Username,
-                    DisplayName = dto.DisplayName,
-                    CreatedAt = dto.CreatedAt,
-                    UpdatedAt = dto.UpdatedAt
-                }).ToList(),
+                Items = result
+                    .Items.Select(dto => new AccountResponse
+                    {
+                        Id = dto.Id,
+                        Username = dto.Username,
+                        DisplayName = dto.DisplayName,
+                        CreatedAt = dto.CreatedAt,
+                        UpdatedAt = dto.UpdatedAt,
+                    })
+                    .ToList(),
                 TotalCount = result.TotalCount,
                 PageNumber = result.PageNumber,
                 PageSize = result.PageSize,
-                TotalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize)
+                TotalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize),
             };
 
             return Success(response, "查詢成功");
@@ -151,7 +162,7 @@ public class AccountController : BaseApiController
                 Username = result.Username,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
-                UpdatedAt = result.UpdatedAt
+                UpdatedAt = result.UpdatedAt,
             };
 
             return Success(response, "查詢成功");
@@ -191,7 +202,7 @@ public class AccountController : BaseApiController
             {
                 Username = request.Username,
                 Password = request.Password,
-                DisplayName = request.DisplayName
+                DisplayName = request.DisplayName,
             };
 
             // 執行新增
@@ -204,7 +215,7 @@ public class AccountController : BaseApiController
                 Username = result.Username,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
-                UpdatedAt = result.UpdatedAt
+                UpdatedAt = result.UpdatedAt,
             };
 
             return Created(response, "帳號建立成功");
@@ -239,7 +250,11 @@ public class AccountController : BaseApiController
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 409)]
-    public async Task<IActionResult> UpdateAccount(Guid id, [FromBody] UpdateAccountRequest request, [FromQuery] int version = 1)
+    public async Task<IActionResult> UpdateAccount(
+        Guid id,
+        [FromBody] UpdateAccountRequest request,
+        [FromQuery] int version = 1
+    )
     {
         try
         {
@@ -248,7 +263,7 @@ public class AccountController : BaseApiController
             {
                 Id = id,
                 DisplayName = request.DisplayName,
-                Version = version
+                Version = version,
             };
 
             // 執行更新
@@ -261,7 +276,7 @@ public class AccountController : BaseApiController
                 Username = result.Username,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
-                UpdatedAt = result.UpdatedAt
+                UpdatedAt = result.UpdatedAt,
             };
 
             return Success(response, "更新成功");
@@ -271,7 +286,8 @@ public class AccountController : BaseApiController
             _logger.LogWarning(ex, "更新帳號失敗: {Message}", ex.Message);
             return NotFound("帳號不存在", ResponseCodes.NOT_FOUND);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("並發") || ex.Message.Contains("衝突"))
+        catch (InvalidOperationException ex)
+            when (ex.Message.Contains("並發") || ex.Message.Contains("衝突"))
         {
             _logger.LogWarning(ex, "更新帳號失敗: {Message}", ex.Message);
             return Conflict(ex.Message, ResponseCodes.CONCURRENT_UPDATE_CONFLICT);
@@ -303,7 +319,11 @@ public class AccountController : BaseApiController
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 409)]
     [ProducesResponseType(typeof(ApiResponseModel), 422)]
-    public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordRequest request, [FromQuery] int version = 1)
+    public async Task<IActionResult> ChangePassword(
+        Guid id,
+        [FromBody] ChangePasswordRequest request,
+        [FromQuery] int version = 1
+    )
     {
         try
         {
@@ -313,7 +333,7 @@ public class AccountController : BaseApiController
                 Id = id,
                 OldPassword = request.OldPassword,
                 NewPassword = request.NewPassword,
-                Version = version
+                Version = version,
             };
 
             // 執行變更密碼
@@ -336,7 +356,8 @@ public class AccountController : BaseApiController
             _logger.LogWarning(ex, "變更密碼失敗: {Message}", ex.Message);
             return BusinessError(ex.Message, ResponseCodes.PASSWORD_SAME_AS_OLD);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("並發") || ex.Message.Contains("衝突"))
+        catch (InvalidOperationException ex)
+            when (ex.Message.Contains("並發") || ex.Message.Contains("衝突"))
         {
             _logger.LogWarning(ex, "變更密碼失敗: {Message}", ex.Message);
             return Conflict(ex.Message, ResponseCodes.CONCURRENT_UPDATE_CONFLICT);
@@ -371,7 +392,10 @@ public class AccountController : BaseApiController
         {
             // 取得當前登入使用者 ID
             string? userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid operatorId))
+            if (
+                string.IsNullOrEmpty(userIdClaim)
+                || !Guid.TryParse(userIdClaim, out Guid operatorId)
+            )
             {
                 return UnauthorizedResponse("無法識別當前登入使用者");
             }
