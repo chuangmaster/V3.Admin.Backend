@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using Npgsql;
 using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Repositories.Interfaces;
 
@@ -75,8 +76,16 @@ public class UserRepository : IUserRepository
             INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
             VALUES (@Id, @Username, @PasswordHash, @DisplayName, @CreatedAt, @IsDeleted, @Version)";
 
-        int affected = await _connection.ExecuteAsync(sql, user);
-        return affected > 0;
+        try
+        {
+            int affected = await _connection.ExecuteAsync(sql, user);
+            return affected > 0;
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23505")
+        {
+            _logger.LogWarning(ex, "建立使用者失敗: 帳號 {Username} 已有重複鍵", user.Username);
+            throw new InvalidOperationException($"帳號 {user.Username} 已存在");
+        }
     }
 
     /// <inheritdoc />
