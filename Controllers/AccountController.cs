@@ -122,6 +122,7 @@ public class AccountController : BaseApiController
                         DisplayName = dto.DisplayName,
                         CreatedAt = dto.CreatedAt,
                         UpdatedAt = dto.UpdatedAt,
+                        Version = dto.Version,
                     })
                     .ToList(),
                 TotalCount = result.TotalCount,
@@ -238,7 +239,6 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="id">帳號 ID</param>
     /// <param name="request">更新帳號請求</param>
-    /// <param name="version">版本號 (用於樂觀並發控制)</param>
     /// <returns>更新後的帳號資訊</returns>
     /// <response code="200">更新成功</response>
     /// <response code="400">輸入驗證錯誤</response>
@@ -251,11 +251,7 @@ public class AccountController : BaseApiController
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 409)]
-    public async Task<IActionResult> UpdateAccount(
-        Guid id,
-        [FromBody] UpdateAccountRequest request,
-        [FromQuery] int version = 1
-    )
+    public async Task<IActionResult> UpdateAccount(Guid id, [FromBody] UpdateAccountRequest request)
     {
         try
         {
@@ -264,7 +260,7 @@ public class AccountController : BaseApiController
             {
                 Id = id,
                 DisplayName = request.DisplayName,
-                Version = version,
+                Version = request.Version,
             };
 
             // 執行更新
