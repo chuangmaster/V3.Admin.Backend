@@ -15,4 +15,12 @@ public class UpdateAccountRequest
     /// 最大長度 100 字元
     /// </remarks>
     public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 資料版本號
+    /// </summary>
+    /// <remarks>
+    /// 用於實現樂觀併發控制，避免資料衝突
+    /// </remarks>
+    public int Version { get; set; } = 1;
 }
