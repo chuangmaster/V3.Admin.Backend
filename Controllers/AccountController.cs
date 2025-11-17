@@ -122,6 +122,7 @@ public class AccountController : BaseApiController
                         DisplayName = dto.DisplayName,
                         CreatedAt = dto.CreatedAt,
                         UpdatedAt = dto.UpdatedAt,
+                        Version = dto.Version,
                     })
                     .ToList(),
                 TotalCount = result.TotalCount,

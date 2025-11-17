@@ -32,4 +32,9 @@ public class AccountResponse
     /// 最後更新時間 (UTC)
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 資料版本號
+    /// </summary>
+    public int Version { get; set; }
 }
