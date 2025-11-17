@@ -349,7 +349,7 @@ public class PermissionValidationServiceTests
 
         _mockFailureLogRepository
             .Setup(r => r.LogFailureAsync(It.IsAny<PermissionFailureLog>(), It.IsAny<CancellationToken>()))
-            .Returns(() => Task.CompletedTask);
+            .ReturnsAsync(true);
 
         // Act
         await _service.LogPermissionFailureAsync(userId, username, resource, reason, ipAddress, userAgent, traceId);

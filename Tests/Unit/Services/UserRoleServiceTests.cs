@@ -144,6 +144,9 @@ public class UserRoleServiceTests
             .Setup(r => r.GetByIdAsync(userId))
             .ReturnsAsync(new User { Id = userId, Username = "testuser" });
 
+        // 模擬角色存在
+        _mockRoleRepository.Setup(r => r.ExistsAsync(roleId, default)).ReturnsAsync(true);
+
         // 模擬移除成功
         _mockUserRoleRepository
             .Setup(r => r.RemoveRoleAsync(userId, roleId, adminId, default))
@@ -167,6 +170,9 @@ public class UserRoleServiceTests
         var userId = Guid.NewGuid();
         var roleId1 = Guid.NewGuid();
         var roleId2 = Guid.NewGuid();
+        var user = new User { Id = userId, Username = "testuser", IsDeleted = false };
+        var role1 = new Role { Id = roleId1, RoleName = "Admin", IsDeleted = false };
+        var role2 = new Role { Id = roleId2, RoleName = "User", IsDeleted = false };
 
         var expectedRoles = new List<UserRole>
         {
@@ -186,9 +192,21 @@ public class UserRoleServiceTests
             },
         };
 
+        _mockUserRepository
+            .Setup(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(user);
+
         _mockUserRoleRepository
             .Setup(r => r.GetUserRolesAsync(userId, default))
             .ReturnsAsync(expectedRoles);
+
+        _mockRoleRepository
+            .Setup(r => r.GetByIdAsync(roleId1, default))
+            .ReturnsAsync(role1);
+
+        _mockRoleRepository
+            .Setup(r => r.GetByIdAsync(roleId2, default))
+            .ReturnsAsync(role2);
 
         // Act
         var result = await _userRoleService.GetUserRolesAsync(userId);
@@ -203,6 +221,11 @@ public class UserRoleServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
+        var user = new User { Id = userId, Username = "testuser", IsDeleted = false };
+
+        _mockUserRepository
+            .Setup(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(user);
 
         _mockUserRoleRepository
             .Setup(r => r.GetUserRolesAsync(userId, default))

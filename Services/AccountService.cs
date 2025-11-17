@@ -379,15 +379,16 @@ public class AccountService : IAccountService
             {
                 Username = user.Username,
                 DisplayName = user.DisplayName,
-                Roles = roleNames,
+                Roles = roleNames ?? [],
                 Permissions = permissionSet.OrderBy(x => x).ToList(),
             };
 
             _logger.LogInformation(
-                "成功查詢用戶個人資料: {Username} (ID: {UserId}), 角色數: {RoleCount}",
+                "成功查詢用戶個人資料: {Username} (ID: {UserId}), 角色數: {RoleCount}, 權限數: {PermissionCount}",
                 user.Username,
                 user.Id,
-                roleNames.Count
+                roleNames?.Count ?? 0,
+                permissionSet.Count
             );
 
             return profileDto;
