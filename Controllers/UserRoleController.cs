@@ -44,15 +44,9 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            List<Models.Dtos.UserRoleDto> roles = await _userRoleService.GetUserRolesAsync(userId);
-            UserRoleResponse response = new UserRoleResponse(
-                roles,
-                "查詢成功",
-                ResponseCodes.SUCCESS
-            );
-            response.TraceId = TraceId;
-
-            return Ok(response);
+            List<Models.Dtos.UserRoleDto> rolesDto = await _userRoleService.GetUserRolesAsync(userId);
+            var response = new UserRoleResponse(rolesDto);
+            return Success(response, "查詢成功");
         }
         catch (KeyNotFoundException ex)
         {
@@ -86,13 +80,7 @@ public class UserRoleController : BaseApiController
             }
 
             int count = await _userRoleService.AssignRolesAsync(userId, request, operatorId.Value);
-            ApiResponseModel response = ApiResponseModel.CreateSuccess(
-                $"成功為用戶指派 {count} 個角色",
-                ResponseCodes.SUCCESS
-            );
-            response.TraceId = TraceId;
-
-            return Ok(response);
+            return Success($"成功為用戶指派 {count} 個角色");
         }
         catch (FluentValidation.ValidationException ex)
         {
@@ -163,17 +151,11 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            Models.Dtos.UserEffectivePermissionsDto effectivePermissions =
+            Models.Dtos.UserEffectivePermissionsDto effectivePermissionsDto =
                 await _permissionValidationService.GetUserEffectivePermissionsAsync(userId);
 
-            UserEffectivePermissionsResponse response = new UserEffectivePermissionsResponse(
-                effectivePermissions,
-                "查詢成功",
-                ResponseCodes.SUCCESS
-            );
-            response.TraceId = TraceId;
-
-            return Ok(response);
+            var response = new UserEffectivePermissionsResponse(effectivePermissionsDto);
+            return Success(response, "查詢成功");
         }
         catch (Exception ex)
         {

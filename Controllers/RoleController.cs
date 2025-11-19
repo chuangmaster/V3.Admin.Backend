@@ -51,18 +51,15 @@ public class RoleController : BaseApiController
                 pageSize
             );
 
-            RoleListResponse response = new RoleListResponse
+            var response = new RoleListResponse
             {
                 Items = roles,
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                Code = ResponseCodes.SUCCESS,
-                Message = "查詢成功",
-                TraceId = TraceId,
             };
 
-            return Ok(response);
+            return Success(response, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -85,16 +82,12 @@ public class RoleController : BaseApiController
             if (userId is null)
                 return UnauthorizedResponse();
 
-            Models.Dtos.RoleDto role = await _roleService.CreateRoleAsync(request, userId.Value);
-            RoleResponse response = new RoleResponse
+            Models.Dtos.RoleDto roleDto = await _roleService.CreateRoleAsync(request, userId.Value);
+            var response = new RoleResponse
             {
-                Code = ResponseCodes.CREATED,
-                Message = "角色建立成功",
-                Data = role,
-                TraceId = TraceId,
+                Data = roleDto,
             };
-
-            return CreatedAtAction(nameof(GetRoleById), new { id = role.Id }, response);
+            return Created(response, "角色建立成功");
         }
         catch (FluentValidation.ValidationException ex)
         {
@@ -122,19 +115,15 @@ public class RoleController : BaseApiController
     {
         try
         {
-            Models.Dtos.RoleDto? role = await _roleService.GetRoleByIdAsync(id);
-            if (role == null)
+            Models.Dtos.RoleDto? roleDto = await _roleService.GetRoleByIdAsync(id);
+            if (roleDto == null)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
-            RoleResponse response = new RoleResponse
+            var response = new RoleResponse
             {
-                Code = ResponseCodes.SUCCESS,
-                Message = "查詢成功",
-                Data = role,
-                TraceId = TraceId,
+                Data = roleDto,
             };
-
-            return Ok(response);
+            return Success(response, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -155,19 +144,15 @@ public class RoleController : BaseApiController
     {
         try
         {
-            Models.Dtos.RoleDetailDto? roleDetail = await _roleService.GetRoleDetailAsync(id);
-            if (roleDetail == null)
+            Models.Dtos.RoleDetailDto? roleDetailDto = await _roleService.GetRoleDetailAsync(id);
+            if (roleDetailDto == null)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
-            ApiResponseModel<Models.Dtos.RoleDetailDto> response =
-                ApiResponseModel<Models.Dtos.RoleDetailDto>.CreateSuccess(
-                    roleDetail,
-                    "查詢成功",
-                    ResponseCodes.SUCCESS
-                );
-            response.TraceId = TraceId;
-
-            return Ok(response);
+            var response = new RoleDetailResponse
+            {
+                Data = roleDetailDto,
+            };
+            return Success(response, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -190,20 +175,16 @@ public class RoleController : BaseApiController
             if (userId is null)
                 return UnauthorizedResponse();
 
-            Models.Dtos.RoleDto role = await _roleService.UpdateRoleAsync(
+            Models.Dtos.RoleDto roleDto = await _roleService.UpdateRoleAsync(
                 id,
                 request,
                 userId.Value
             );
-            RoleResponse response = new RoleResponse
+            var response = new RoleResponse
             {
-                Code = ResponseCodes.SUCCESS,
-                Message = "角色更新成功",
-                Data = role,
-                TraceId = TraceId,
+                Data = roleDto,
             };
-
-            return Ok(response);
+            return Success(response, "角色更新成功");
         }
         catch (FluentValidation.ValidationException ex)
         {

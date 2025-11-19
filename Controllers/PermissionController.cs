@@ -86,12 +86,9 @@ public class PermissionController : BaseApiController
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                Code = ResponseCodes.SUCCESS,
-                Message = "Query successful",
-                TraceId = TraceId,
             };
 
-            return Ok(response);
+            return Success(response, "Query successful");
         }
         catch (Exception ex)
         {
@@ -123,8 +120,12 @@ public class PermissionController : BaseApiController
                 return UnauthorizedResponse();
             }
 
-            var permission = await _permissionService.CreatePermissionAsync(request, userId.Value);
-            return Created($"/api/permissions/{permission.Id}", permission);
+            var permissionDto = await _permissionService.CreatePermissionAsync(
+                request,
+                userId.Value
+            );
+            var response = new PermissionResponse { Data = permissionDto };
+            return Created(response, "建立成功");
         }
         catch (InvalidOperationException ex)
         {
@@ -158,13 +159,14 @@ public class PermissionController : BaseApiController
     {
         try
         {
-            var permission = await _permissionService.GetPermissionByIdAsync(id);
-            if (permission == null)
+            var permissionDto = await _permissionService.GetPermissionByIdAsync(id);
+            if (permissionDto == null)
             {
                 return NotFound("Permission not found", ResponseCodes.PERMISSION_NOT_FOUND);
             }
 
-            return Success(permission, "Query successful");
+            var response = new PermissionResponse { Data = permissionDto };
+            return Success(response, "Query successful");
         }
         catch (Exception ex)
         {
@@ -205,12 +207,13 @@ public class PermissionController : BaseApiController
                 return UnauthorizedResponse();
             }
 
-            var permission = await _permissionService.UpdatePermissionAsync(
+            var permissionDto = await _permissionService.UpdatePermissionAsync(
                 id,
                 request,
                 userId.Value
             );
-            return Success(permission, "Update successful");
+            var response = new PermissionResponse { Data = permissionDto };
+            return Success(response, "Update successful");
         }
         catch (KeyNotFoundException ex)
         {
@@ -339,14 +342,19 @@ public class PermissionController : BaseApiController
             {
                 PermissionCode = permissionCode,
                 PermissionType = permission?.PermissionType,
-                HasPermission = hasPermission
+                HasPermission = hasPermission,
             };
 
             return Success(response, "權限檢查完成");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "檢查權限失敗: {PermissionCode} | TraceId: {TraceId}", permissionCode, TraceId);
+            _logger.LogError(
+                ex,
+                "檢查權限失敗: {PermissionCode} | TraceId: {TraceId}",
+                permissionCode,
+                TraceId
+            );
             return InternalError("檢查權限失敗");
         }
     }
@@ -395,13 +403,8 @@ public class PermissionController : BaseApiController
             );
 
             // 組構驗證結果回應
-            var response = new PermissionValidationResponse(
-                hasPermission,
-                hasPermission ? "用戶擁有該權限" : "用戶不擁有該權限",
-                ResponseCodes.SUCCESS
-            );
-
-            return Ok(response);
+            var response = new PermissionValidationResponse { Data = hasPermission };
+            return Success(response, hasPermission ? "用戶擁有該權限" : "用戶不擁有該權限");
         }
         catch (Exception ex)
         {
