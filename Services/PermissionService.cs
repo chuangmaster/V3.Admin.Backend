@@ -53,38 +53,35 @@ public class PermissionService : IPermissionService
 
         var created = await _permissionRepository.CreateAsync(permission);
 
-        // 非同步記錄稽核日誌（不阻塞主流程）
-        _ = Task.Run(async () =>
+        // 同步記錄稽核日誌
+        try
         {
-            try
-            {
-                var afterState = JsonSerializer.Serialize(
-                    new
-                    {
-                        created.Id,
-                        created.PermissionCode,
-                        created.Name,
-                        created.Description,
-                        created.PermissionType,
-                        created.CreatedAt,
-                    }
-                );
-
-                await _auditLogService.LogOperationAsync(
-                    createdBy,
-                    "system",
-                    "create",
-                    "permission",
+            var afterState = JsonSerializer.Serialize(
+                new
+                {
                     created.Id,
-                    beforeState: null,
-                    afterState: afterState
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", created.Id);
-            }
-        });
+                    created.PermissionCode,
+                    created.Name,
+                    created.Description,
+                    created.PermissionType,
+                    created.CreatedAt,
+                }
+            );
+
+            await _auditLogService.LogOperationAsync(
+                createdBy,
+                "system",
+                "create",
+                "permission",
+                created.Id,
+                beforeState: null,
+                afterState: afterState
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", created.Id);
+        }
 
         return MapToDto(created);
     }
@@ -150,37 +147,34 @@ public class PermissionService : IPermissionService
         // 重新取得更新後的權限
         var updated = await _permissionRepository.GetByIdAsync(id);
 
-        // 非同步記錄稽核日誌
-        _ = Task.Run(async () =>
+        // 同步記錄稽核日誌
+        try
         {
-            try
-            {
-                var afterState = JsonSerializer.Serialize(
-                    new
-                    {
-                        updated!.Id,
-                        updated.PermissionCode,
-                        updated.Name,
-                        updated.Description,
-                        updated.Version,
-                    }
-                );
+            var afterState = JsonSerializer.Serialize(
+                new
+                {
+                    updated!.Id,
+                    updated.PermissionCode,
+                    updated.Name,
+                    updated.Description,
+                    updated.Version,
+                }
+            );
 
-                await _auditLogService.LogOperationAsync(
-                    updatedBy,
-                    "system",
-                    "update",
-                    "permission",
-                    id,
-                    beforeState: beforeState,
-                    afterState: afterState
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
-            }
-        });
+            await _auditLogService.LogOperationAsync(
+                updatedBy,
+                "system",
+                "update",
+                "permission",
+                id,
+                beforeState: beforeState,
+                afterState: afterState
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
+        }
 
         return MapToDto(updated!);
     }
@@ -230,26 +224,23 @@ public class PermissionService : IPermissionService
 
         _logger.LogInformation("權限已刪除: {Id}", id);
 
-        // 非同步記錄稽核日誌
-        _ = Task.Run(async () =>
+        // 同步記錄稽核日誌
+        try
         {
-            try
-            {
-                await _auditLogService.LogOperationAsync(
-                    deletedBy,
-                    "system",
-                    "delete",
-                    "permission",
-                    id,
-                    beforeState: beforeState,
-                    afterState: null
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
-            }
-        });
+            await _auditLogService.LogOperationAsync(
+                deletedBy,
+                "system",
+                "delete",
+                "permission",
+                id,
+                beforeState: beforeState,
+                afterState: null
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "記錄稽核日誌失敗: PermissionId={PermissionId}", id);
+        }
     }
 
     /// <summary>
