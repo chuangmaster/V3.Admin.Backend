@@ -49,11 +49,11 @@ public class AuditLogRepository : IAuditLogRepository
             )
             VALUES (
                 @Id, @OperatorId, @OperatorName, @OperationTime, @OperationType,
-                @TargetType, @TargetId, @BeforeState, @AfterState,
+                @TargetType, @TargetId, @BeforeState::text::jsonb, @AfterState::text::jsonb,
                 @IpAddress, @UserAgent, @TraceId
             )
             RETURNING id, operator_id, operator_name, operation_time, operation_type,
-                      target_type, target_id, before_state, after_state,
+                      target_type, target_id, before_state::text, after_state::text,
                       ip_address, user_agent, trace_id;";
 
         var result = await _dbConnection.QuerySingleAsync<AuditLog>(sql, auditLog);
