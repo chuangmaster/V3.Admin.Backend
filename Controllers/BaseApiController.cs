@@ -53,6 +53,40 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// 回傳分頁成功響應 (200 OK)
+    /// </summary>
+    protected IActionResult PagedSuccess<TItem>(
+        IEnumerable<TItem>? items,
+        int page,
+        int pageSize,
+        long total,
+        string message = "操作成功"
+    )
+    {
+        var response = ApiResponseFactory.CreatePagedSuccess(
+            items,
+            page,
+            pageSize,
+            total,
+            message,
+            ResponseCodes.SUCCESS
+        );
+
+        response.TraceId = TraceId;
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// 回傳分頁失敗響應 (400 Bad Request)
+    /// </summary>
+    protected IActionResult PagedFailure<TItem>(string message, string code = "FAILURE")
+    {
+        var response = ApiResponseFactory.CreatePagedFailure<TItem>(message, code);
+        response.TraceId = TraceId;
+        return BadRequest(response);
+    }
+
+    /// <summary>
     /// 回傳建立成功響應 (201 Created)
     /// </summary>
     protected IActionResult Created<T>(T data, string message = "建立成功")
