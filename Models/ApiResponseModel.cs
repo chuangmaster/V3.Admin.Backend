@@ -140,7 +140,7 @@ public class PagedApiResponseModel<TItem>
     /// <summary>
     /// 當前頁碼（從 1 開始）
     /// </summary>
-    public int Page { get; set; }
+    public int PageNumber { get; set; }
 
     /// <summary>
     /// 每頁大小
@@ -150,7 +150,7 @@ public class PagedApiResponseModel<TItem>
     /// <summary>
     /// 總筆數
     /// </summary>
-    public long Total { get; set; }
+    public long TotalCount { get; set; }
 
     /// <summary>
     /// 時間戳
@@ -186,10 +186,10 @@ public static class ApiResponseFactory
             Code = code,
             Message = message,
             Items = items ?? Enumerable.Empty<TItem>(),
-            Page = page,
+            PageNumber = page,
             PageSize = pageSize,
-            Total = total,
-            Timestamp = DateTime.UtcNow
+            TotalCount = total,
+            Timestamp = DateTime.UtcNow,
         };
     }
 
@@ -207,10 +207,10 @@ public static class ApiResponseFactory
             Code = code,
             Message = message,
             Items = Enumerable.Empty<TItem>(),
-            Page = 1,
+            PageNumber = 1,
             PageSize = 0,
-            Total = 0,
-            Timestamp = DateTime.UtcNow
+            TotalCount = 0,
+            Timestamp = DateTime.UtcNow,
         };
     }
 }
