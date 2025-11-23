@@ -44,7 +44,9 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            List<Models.Dtos.UserRoleDto> rolesDto = await _userRoleService.GetUserRolesAsync(userId);
+            List<Models.Dtos.UserRoleDto> rolesDto = await _userRoleService.GetUserRolesAsync(
+                userId
+            );
             var response = new UserRoleResponse(rolesDto);
             return Success(response, "查詢成功");
         }
@@ -151,11 +153,24 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            Models.Dtos.UserEffectivePermissionsDto effectivePermissionsDto =
+            // 查詢用戶有效權限，Service DTO 轉換為 Response DTO
+            var effectivePermissionsDto =
                 await _permissionValidationService.GetUserEffectivePermissionsAsync(userId);
-
-            var response = new UserEffectivePermissionsResponse(effectivePermissionsDto);
-            return Success(response, "查詢成功");
+            var responseDto = new Models.Responses.UserEffectivePermissionsResponseDto
+            {
+                UserId = effectivePermissionsDto.UserId,
+                Permissions = effectivePermissionsDto
+                    .Permissions.Select(p => new Models.Responses.PermissionResponseDto
+                    {
+                        Id = p.Id,
+                        PermissionCode = p.PermissionCode,
+                        Name = p.Name,
+                        Description = p.Description,
+                        PermissionType = p.PermissionType,
+                    })
+                    .ToList(),
+            };
+            return Success(responseDto, "查詢成功");
         }
         catch (Exception ex)
         {
