@@ -34,11 +34,12 @@
 
 **Code Quality Excellence**: ✅ C# 13 best practices, XML documentation, Traditional Chinese comments, Database naming (snake_case for DB tables/columns, PascalCase for C# entities)
 **Three-Layer Architecture**: ✅ Controllers/Services/Repositories separation maintained
+**Database Design & Foreign Key Integrity**: ✅ Foreign key constraints with proper ON DELETE/UPDATE behaviors
+**Permission-Based Authorization**: ✅ [RequirePermission] attributes, permission seeding, middleware validation
 **Test-First Development**: ✅ Tests written before implementation, critical path coverage
 **User Experience Consistency**: ✅ ApiResponseModel usage with HTTP status + business codes, standardized error handling, Traditional Chinese messages
 **Performance & Security**: ✅ <200ms simple operations, JWT authentication, role/permission validation, input validation
-**User Management Context**: ✅ Role-based access control, permission management, admin interface standards
-**API Response Design**: ✅ Dual-layer design (HTTP status + business code), TraceId for distributed tracing
+**Controller Response DTO Architecture**: ✅ Response DTOs separate from Service DTOs, no direct Service DTO exposure in API responses
 
 ## Project Structure
 
@@ -78,10 +79,15 @@ Repositories/           # Data Access Layer
     └── I[Feature]Repository.cs
 
 Models/                 # Data models and DTOs
-├── [Entity].cs         # Database entities
-├── [Feature]Request.cs # API request DTOs
-├── [Feature]Response.cs # API response DTOs
-└── BaseResponseModel.cs
+├── Entities/           # Database entities (PascalCase properties)
+│   └── [Entity].cs
+├── Dtos/               # Service Layer DTOs (internal use)
+│   └── [Feature]Dto.cs
+├── Requests/           # API request DTOs
+│   └── [Feature]Request.cs
+├── Responses/          # API response DTOs (separate from Service DTOs)
+│   └── [Feature]ResponseDto.cs
+└── ApiResponseModel.cs # Base response wrapper
 
 Tests/                  # Test projects
 ├── Unit/

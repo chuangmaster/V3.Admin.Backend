@@ -1,24 +1,18 @@
 <!--
 Sync Impact Report:
-Version change: 1.4.0 → 1.5.0 (Foreign Key Integrity & Permission Authorization Standards)
-Added sections: 
-  - Principle III: Database Design & Foreign Key Integrity (NON-NEGOTIABLE)
-  - Principle IV: Permission-Based Authorization Design (NON-NEGOTIABLE)
-Modified principles: 
-  - Renumbered existing Principle III → V (Test-First Development)
-  - Renumbered existing Principle IV → VI (User Experience Consistency & Admin Interface Standards)
-  - Renumbered existing Principle V → VII (Performance & Security Standards for Account Management)
-  - Principle I: Database Naming Standards remain unchanged (established in 1.4.0)
+Version change: 1.5.0 → 1.6.0 (Response DTO Architecture Standards)
+Added sections:
+  - Principle VIII: Controller Response DTO Architecture (NON-NEGOTIABLE)
+Modified principles: None
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Aligned with foreign key requirements and permission design patterns
-  ✅ spec-template.md - Aligned with database integrity and authorization requirements
-  ✅ tasks-template.md - Aligned with migration tasks requiring FK constraints and permission seeding
-  ⚠ Migration files - Require amendment migrations to add missing foreign key constraints (see Principle III for full list)
-  ⚠ Future feature specs - MUST include permission definitions and [RequirePermission] attributes (see Principle IV)
-Follow-up TODOs: 
-  - Create amendment migration(s) to add missing foreign key constraints to existing tables (users.deleted_by, permissions.created_by/updated_by/deleted_by, roles.created_by/updated_by/deleted_by, role_permissions.assigned_by, user_roles.assigned_by/deleted_by, audit_logs.operator_id, permission_failure_logs.user_id)
-  - Update developer documentation to highlight mandatory foreign key and permission design requirements
+  ✅ plan-template.md - Aligned with Response DTO requirements for all API features
+  ✅ spec-template.md - Aligned with Controller-Service DTO separation requirements
+  ✅ tasks-template.md - Aligned with DTO conversion tasks in Controllers
+Follow-up TODOs:
+  - Review existing controllers to ensure Service DTOs are not directly exposed as API responses
+  - Create Response DTOs for all existing API endpoints that currently return Service DTOs
+  - Update developer documentation to emphasize mandatory Response DTO layer
 -->
 
 # V3.Admin.Backend Constitution
@@ -125,6 +119,50 @@ API endpoints MUST respond within 200ms for simple operations (login, single acc
 
 **Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
 
+### VIII. Controller Response DTO Architecture (NON-NEGOTIABLE)
+All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs (e.g., `UserDto`, `PermissionDto`, `UserEffectivePermissionsDto`) as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponseDto` or `xxxApiResponse` pattern) that convert Service DTOs before returning to clients.
+
+**Required Pattern**:
+1. **Service Layer**: Returns business logic DTOs (e.g., `UserEffectivePermissionsDto` with `List<PermissionDto>`)
+2. **Controller Layer**: Converts Service DTOs to Response DTOs (e.g., `UserEffectivePermissionsResponseDto` with `List<PermissionResponseDto>`)
+3. **API Response**: Wraps Response DTO in `ApiResponseModel<T>` using `Success()` helper method
+
+**Implementation Requirements**:
+- Response DTOs MUST be placed in `Models/Responses/` directory
+- Response DTOs SHOULD NOT reference Service DTO types directly in their property declarations
+- Conversion logic from Service DTO to Response DTO MUST be explicit (constructor-based or mapper-based)
+- Even if Response DTO structure is 1:1 identical to Service DTO, the separation MUST be maintained
+- Nested objects (e.g., `PermissionDto` inside `UserEffectivePermissionsDto`) MUST also have corresponding Response DTOs (e.g., `PermissionResponseDto`)
+
+**Example - Correct Pattern**:
+```csharp
+// Service Layer returns Service DTO
+var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
+
+// Controller converts to Response DTO
+var responseDto = new UserEffectivePermissionsResponseDto(serviceDto);
+
+// Wrap in ApiResponseModel and return
+return Success(responseDto, "查詢成功");
+```
+
+**Example - Incorrect Pattern** (DO NOT USE):
+```csharp
+// ❌ WRONG: Directly returning Service DTO
+var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
+return Success(serviceDto, "查詢成功");
+```
+
+**Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits:
+1. **Encapsulation**: Prevents internal business logic structures from leaking into public API contracts, maintaining clear boundaries between layers.
+2. **Flexibility**: Enables independent evolution of API response formats without affecting business logic or requiring Service layer changes.
+3. **Security**: Allows selective field exposure, hiding sensitive internal data or computed properties not meant for external consumption.
+4. **Versioning**: Facilitates API versioning strategies where multiple Response DTO versions can map to the same Service DTO.
+5. **Frontend Stability**: Reduces frontend-backend coupling by providing a stable, purpose-built API contract that can adapt to UI requirements without Service layer refactoring.
+6. **Testability**: Simplifies API contract testing by clearly separating external interface validation from business logic validation.
+
+This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities and evolution cycles.
+
 ## API Response Design Standards
 
 **Dual-Layer Response Model**: All endpoints MUST return ApiResponseModel<T> combining HTTP status codes with business logic codes. HTTP status codes reflect request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes provide fine-grained scenario information using ResponseCodes constants.
@@ -187,4 +225,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.5.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-07
+**Version**: 1.6.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-23

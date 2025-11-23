@@ -94,13 +94,15 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in Models/[Entity1].cs following constitution naming conventions
-- [ ] T013 [P] [US1] Create [Entity2] model in Models/[Entity2].cs with XML documentation
-- [ ] T014 [US1] Implement I[Service] interface in Services/Interfaces/I[Service].cs
-- [ ] T015 [US1] Implement [Service] in Services/[Service].cs with dependency injection (depends on T012, T013, T014)
-- [ ] T016 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel wrapper and appropriate HTTP status + business codes
-- [ ] T017 [US1] Add FluentValidation or data annotations for input validation
-- [ ] T018 [US1] Add Traditional Chinese error handling with proper ResponseCodes and TraceId logging
+- [ ] T012 [P] [US1] Create [Entity1] model in Models/Entities/[Entity1].cs following constitution naming conventions (PascalCase properties)
+- [ ] T013 [P] [US1] Create [Entity2] model in Models/Entities/[Entity2].cs with XML documentation
+- [ ] T014 [P] [US1] Create Service DTO in Models/Dtos/[Feature]Dto.cs for business logic layer data transfer
+- [ ] T015 [P] [US1] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST be separate from Service DTO per Principle VIII)
+- [ ] T016 [US1] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T017 [US1] Implement [Service] in Services/[Service].cs with dependency injection, returning Service DTOs (depends on T012, T013, T014, T016)
+- [ ] T018 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs and wrapping with ApiResponseModel using Success() helper
+- [ ] T019 [US1] Add FluentValidation or data annotations for input validation
+- [ ] T020 [US1] Add Traditional Chinese error handling with proper ResponseCodes and TraceId logging
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -119,11 +121,13 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] Create [Entity] model in Models/[Entity].cs with XML documentation
-- [ ] T022 [US2] Implement I[Service] interface in Services/Interfaces/I[Service].cs
-- [ ] T023 [US2] Implement [Service] in Services/[Service].cs following three-layer architecture
-- [ ] T024 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel and proper business codes
-- [ ] T025 [US2] Integrate with User Story 1 components following dependency injection patterns
+- [ ] T021 [P] [US2] Create [Entity] model in Models/Entities/[Entity].cs with XML documentation
+- [ ] T022 [P] [US2] Create Service DTO in Models/Dtos/[Feature]Dto.cs for business logic layer
+- [ ] T023 [P] [US2] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (separate from Service DTO per Principle VIII)
+- [ ] T024 [US2] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T025 [US2] Implement [Service] in Services/[Service].cs following three-layer architecture, returning Service DTOs
+- [ ] T026 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs with ApiResponseModel and proper business codes
+- [ ] T027 [US2] Integrate with User Story 1 components following dependency injection patterns
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -142,10 +146,12 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Implementation for User Story 3
 
-- [ ] T028 [P] [US3] Create [Entity] model in Models/[Entity].cs with proper nullable annotations
-- [ ] T029 [US3] Implement I[Service] interface in Services/Interfaces/I[Service].cs
-- [ ] T030 [US3] Implement [Service] in Services/[Service].cs with async/await patterns
-- [ ] T031 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs with ApiResponseModel dual-layer design
+- [ ] T028 [P] [US3] Create [Entity] model in Models/Entities/[Entity].cs with proper nullable annotations
+- [ ] T029 [P] [US3] Create Service DTO in Models/Dtos/[Feature]Dto.cs for internal business logic
+- [ ] T030 [P] [US3] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST NOT reference Service DTO types per Principle VIII)
+- [ ] T031 [US3] Implement I[Service] interface in Services/Interfaces/I[Service].cs
+- [ ] T032 [US3] Implement [Service] in Services/[Service].cs with async/await patterns, returning Service DTOs
+- [ ] T033 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs with ApiResponseModel dual-layer design
 
 **Checkpoint**: All user stories should now be independently functional
 
