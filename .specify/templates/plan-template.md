@@ -39,7 +39,7 @@
 **Test-First Development**: ✅ Tests written before implementation, critical path coverage
 **User Experience Consistency**: ✅ ApiResponseModel usage with HTTP status + business codes, standardized error handling, Traditional Chinese messages
 **Performance & Security**: ✅ <200ms simple operations, JWT authentication, role/permission validation, input validation
-**Controller Response DTO Architecture**: ✅ Response DTOs separate from Service DTOs, no direct Service DTO exposure in API responses
+**Controller Response DTO Architecture**: ✅ Response DTOs completely decoupled from Service DTOs (zero type references), explicit Controller-layer mapping, no constructor-based coupling
 
 ## Project Structure
 

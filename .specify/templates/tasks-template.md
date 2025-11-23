@@ -97,10 +97,10 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T012 [P] [US1] Create [Entity1] model in Models/Entities/[Entity1].cs following constitution naming conventions (PascalCase properties)
 - [ ] T013 [P] [US1] Create [Entity2] model in Models/Entities/[Entity2].cs with XML documentation
 - [ ] T014 [P] [US1] Create Service DTO in Models/Dtos/[Feature]Dto.cs for business logic layer data transfer
-- [ ] T015 [P] [US1] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST be separate from Service DTO per Principle VIII)
+- [ ] T015 [P] [US1] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST have ZERO coupling to Service DTO types per Principle VIII)
 - [ ] T016 [US1] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T017 [US1] Implement [Service] in Services/[Service].cs with dependency injection, returning Service DTOs (depends on T012, T013, T014, T016)
-- [ ] T018 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs and wrapping with ApiResponseModel using Success() helper
+- [ ] T018 [US1] Implement [endpoint/feature] in Controllers/[Controller].cs with explicit property-by-property mapping from Service DTOs to Response DTOs (NO constructor coupling) and wrapping with ApiResponseModel using Success() helper
 - [ ] T019 [US1] Add FluentValidation or data annotations for input validation
 - [ ] T020 [US1] Add Traditional Chinese error handling with proper ResponseCodes and TraceId logging
 
@@ -123,10 +123,10 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T021 [P] [US2] Create [Entity] model in Models/Entities/[Entity].cs with XML documentation
 - [ ] T022 [P] [US2] Create Service DTO in Models/Dtos/[Feature]Dto.cs for business logic layer
-- [ ] T023 [P] [US2] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (separate from Service DTO per Principle VIII)
+- [ ] T023 [P] [US2] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (ZERO coupling to Service DTO types per Principle VIII)
 - [ ] T024 [US2] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T025 [US2] Implement [Service] in Services/[Service].cs following three-layer architecture, returning Service DTOs
-- [ ] T026 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs with ApiResponseModel and proper business codes
+- [ ] T026 [US2] Implement [endpoint/feature] in Controllers/[Controller].cs with explicit property mapping from Service DTOs to Response DTOs (NO constructor coupling) with ApiResponseModel and proper business codes
 - [ ] T027 [US2] Integrate with User Story 1 components following dependency injection patterns
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
@@ -148,10 +148,10 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T028 [P] [US3] Create [Entity] model in Models/Entities/[Entity].cs with proper nullable annotations
 - [ ] T029 [P] [US3] Create Service DTO in Models/Dtos/[Feature]Dto.cs for internal business logic
-- [ ] T030 [P] [US3] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST NOT reference Service DTO types per Principle VIII)
+- [ ] T030 [P] [US3] Create Response DTO in Models/Responses/[Feature]ResponseDto.cs (MUST have ZERO coupling: no Service DTO type references in properties, constructors, or methods per Principle VIII)
 - [ ] T031 [US3] Implement I[Service] interface in Services/Interfaces/I[Service].cs
 - [ ] T032 [US3] Implement [Service] in Services/[Service].cs with async/await patterns, returning Service DTOs
-- [ ] T033 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs converting Service DTOs to Response DTOs with ApiResponseModel dual-layer design
+- [ ] T033 [US3] Implement [endpoint/feature] in Controllers/[Controller].cs with explicit Controller-layer property mapping from Service DTOs to Response DTOs (enforcing zero coupling) with ApiResponseModel dual-layer design
 
 **Checkpoint**: All user stories should now be independently functional
 

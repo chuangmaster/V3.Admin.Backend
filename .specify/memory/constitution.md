@@ -1,18 +1,27 @@
 <!--
 Sync Impact Report:
-Version change: 1.5.0 → 1.6.0 (Response DTO Architecture Standards)
-Added sections:
-  - Principle VIII: Controller Response DTO Architecture (NON-NEGOTIABLE)
-Modified principles: None
+Version change: 1.6.1 → 1.7.0 (MINOR - Strengthened Response DTO Decoupling Requirements)
+Modified principles:
+  - Principle VIII: Enhanced to prohibit ALL coupling between Response DTOs and Service DTOs
+  - BREAKING CHANGE: Response DTO constructors MUST NOT accept Service DTO types
+  - NEW REQUIREMENT: Controller layer MUST perform explicit property-by-property mapping
+Added sections: None
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Aligned with Response DTO requirements for all API features
-  ✅ spec-template.md - Aligned with Controller-Service DTO separation requirements
-  ✅ tasks-template.md - Aligned with DTO conversion tasks in Controllers
+  ✅ plan-template.md - Updated Response DTO mapping examples
+  ✅ spec-template.md - Verified alignment with strengthened DTO separation
+  ✅ tasks-template.md - Updated DTO conversion task descriptions
+Critical Architecture Fix:
+  ⚠️ IDENTIFIED: Response DTO constructor dependency on Service DTO violates true decoupling
+  ✅ CORRECTED: Explicit property mapping in Controller enforces zero coupling
+  📋 ACTION REQUIRED: Review all existing Response DTO classes for constructor-based Service DTO dependencies
+  📋 ACTION REQUIRED: Refactor Response DTOs to use parameterless constructors or property-only constructors
+  📋 ACTION REQUIRED: Move all DTO conversion logic from Response DTO constructors to Controller layer
 Follow-up TODOs:
-  - Review existing controllers to ensure Service DTOs are not directly exposed as API responses
-  - Create Response DTOs for all existing API endpoints that currently return Service DTOs
-  - Update developer documentation to emphasize mandatory Response DTO layer
+  - Audit all Response DTO classes in Models/Responses/ for Service DTO type references
+  - Remove any constructors accepting Service DTO parameters
+  - Refactor Controller endpoints to use explicit property mapping instead of constructor-based conversion
+  - Update developer documentation to emphasize ZERO coupling requirement
 -->
 
 # V3.Admin.Backend Constitution
@@ -129,9 +138,10 @@ All Controller endpoints MUST implement a dedicated Response DTO layer that is s
 
 **Implementation Requirements**:
 - Response DTOs MUST be placed in `Models/Responses/` directory
-- Response DTOs SHOULD NOT reference Service DTO types directly in their property declarations
-- Conversion logic from Service DTO to Response DTO MUST be explicit (constructor-based or mapper-based)
-- Even if Response DTO structure is 1:1 identical to Service DTO, the separation MUST be maintained
+- Response DTOs MUST NOT reference Service DTO types in ANY way (not in properties, constructors, or methods)
+- Response DTOs MUST NOT have constructors that accept Service DTO types as parameters
+- Conversion logic from Service DTO to Response DTO MUST be implemented in the Controller layer using explicit property mapping
+- Even if Response DTO structure is 1:1 identical to Service DTO, the separation and independent mapping MUST be maintained
 - Nested objects (e.g., `PermissionDto` inside `UserEffectivePermissionsDto`) MUST also have corresponding Response DTOs (e.g., `PermissionResponseDto`)
 
 **Example - Correct Pattern**:
@@ -139,18 +149,43 @@ All Controller endpoints MUST implement a dedicated Response DTO layer that is s
 // Service Layer returns Service DTO
 var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
 
-// Controller converts to Response DTO
-var responseDto = new UserEffectivePermissionsResponseDto(serviceDto);
+// Controller manually maps Service DTO to Response DTO (NO COUPLING)
+var responseDto = new UserEffectivePermissionsResponseDto
+{
+    UserId = serviceDto.UserId,
+    Username = serviceDto.Username,
+    Permissions = serviceDto.Permissions.Select(p => new PermissionResponseDto
+    {
+        PermissionId = p.PermissionId,
+        PermissionCode = p.PermissionCode,
+        Name = p.Name,
+        Description = p.Description
+    }).ToList()
+};
 
 // Wrap in ApiResponseModel and return
 return Success(responseDto, "查詢成功");
 ```
 
-**Example - Incorrect Pattern** (DO NOT USE):
+**Example - Incorrect Patterns** (DO NOT USE):
 ```csharp
 // ❌ WRONG: Directly returning Service DTO
 var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
 return Success(serviceDto, "查詢成功");
+
+// ❌ WRONG: Response DTO constructor depends on Service DTO type
+public class UserEffectivePermissionsResponseDto
+{
+    public UserEffectivePermissionsResponseDto(UserEffectivePermissionsDto serviceDto)
+    {
+        // This creates coupling between Response DTO and Service DTO
+        UserId = serviceDto.UserId;
+        Username = serviceDto.Username;
+    }
+}
+
+// ❌ WRONG: Using constructor that accepts Service DTO
+var responseDto = new UserEffectivePermissionsResponseDto(serviceDto);
 ```
 
 **Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits:
@@ -225,4 +260,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
 
-**Version**: 1.6.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-23
+**Version**: 1.7.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-24
