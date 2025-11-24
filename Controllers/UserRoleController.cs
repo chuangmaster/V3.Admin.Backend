@@ -156,7 +156,7 @@ public class UserRoleController : BaseApiController
             // 查詢用戶有效權限，Service DTO 轉換為 Response DTO
             var effectivePermissionsDto =
                 await _permissionValidationService.GetUserEffectivePermissionsAsync(userId);
-            var responseDto = new Models.Responses.UserEffectivePermissionsResponseDto
+            var responseDto = new Models.Responses.UserEffectivePermissionsResponse
             {
                 UserId = effectivePermissionsDto.UserId,
                 Permissions = effectivePermissionsDto

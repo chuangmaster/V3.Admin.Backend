@@ -1,28 +1,20 @@
-using V3.Admin.Backend.Models.Dtos;
+using System;
+using System.Collections.Generic;
 
 namespace V3.Admin.Backend.Models.Responses;
 
 /// <summary>
-/// 用戶有效權限回應模型
+/// 用戶有效權限 API Response DTO
 /// </summary>
-public class UserEffectivePermissionsResponse : ApiResponseModel<UserEffectivePermissionsDto>
+public class UserEffectivePermissionsResponse
 {
     /// <summary>
-    /// 初始化 UserEffectivePermissionsResponse
+    /// 用戶 ID
     /// </summary>
-    public UserEffectivePermissionsResponse() { }
+    public Guid UserId { get; set; }
 
     /// <summary>
-    /// 初始化 UserEffectivePermissionsResponse
+    /// 用戶擁有的所有權限列表（聯集）
     /// </summary>
-    public UserEffectivePermissionsResponse(
-        UserEffectivePermissionsDto data,
-        string message = "查詢成功",
-        string code = ResponseCodes.SUCCESS
-    )
-    {
-        Data = data;
-        Message = message;
-        Code = code;
-    }
+    public List<PermissionResponseDto> Permissions { get; set; } = new();
 }
