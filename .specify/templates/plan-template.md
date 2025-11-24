@@ -2,7 +2,6 @@
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-**Language**: This plan MUST be written in Traditional Chinese (zh-TW) per constitution requirements
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
@@ -18,28 +17,21 @@
   the iteration process.
 -->
 
-**Language/Version**: C# 13 / .NET 9
-**Primary Dependencies**: ASP.NET Core 9, Microsoft.AspNetCore.Authentication.JwtBearer  
-**Storage**: [Database to be specified - PostgreSQL recommended for user management]
-**Testing**: xUnit, Moq for mocking, Microsoft.AspNetCore.Mvc.Testing for integration tests
-**Target Platform**: Cross-platform (Windows/Linux/macOS)
-**Project Type**: Web API - ASP.NET Core backend service for v3-admin-frontend
-**Performance Goals**: <200ms simple operations, <2000ms complex user/role/permission operations
-**Constraints**: JWT authentication required, ApiResponseModel for all responses with HTTP status + business codes, Traditional Chinese error messages, role-based authorization, TraceId for distributed tracing
-**Scale/Scope**: User account management system with role and permission management capabilities
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [single/web/mobile - determines source structure]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Code Quality Excellence**: ✅ C# 13 best practices, XML documentation, Traditional Chinese comments, Database naming (snake_case for DB tables/columns, PascalCase for C# entities)
-**Three-Layer Architecture**: ✅ Controllers/Services/Repositories separation maintained
-**Database Design & Foreign Key Integrity**: ✅ Foreign key constraints with proper ON DELETE/UPDATE behaviors
-**Permission-Based Authorization**: ✅ [RequirePermission] attributes, permission seeding, middleware validation
-**Test-First Development**: ✅ Tests written before implementation, critical path coverage
-**User Experience Consistency**: ✅ ApiResponseModel usage with HTTP status + business codes, standardized error handling, Traditional Chinese messages
-**Performance & Security**: ✅ <200ms simple operations, JWT authentication, role/permission validation, input validation
-**Controller Response DTO Architecture**: ✅ Response DTOs completely decoupled from Service DTOs (zero type references), explicit Controller-layer mapping, no constructor-based coupling
+[Gates determined based on constitution file]
 
 ## Project Structure
 
@@ -64,38 +56,43 @@ specs/[###-feature]/
 -->
 
 ```text
-# C# ASP.NET Core Project Structure
-Controllers/            # Presentation Layer - API endpoints
-├── [Feature]Controller.cs
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 
-Services/               # Business Logic Layer  
-├── [Feature]Service.cs
-├── Interfaces/
-    └── I[Feature]Service.cs
+tests/
+├── contract/
+├── integration/
+└── unit/
 
-Repositories/           # Data Access Layer
-├── [Feature]Repository.cs  
-├── Interfaces/
-    └── I[Feature]Repository.cs
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
 
-Models/                 # Data models and DTOs
-├── Entities/           # Database entities (PascalCase properties)
-│   └── [Entity].cs
-├── Dtos/               # Service Layer DTOs (internal use)
-│   └── [Feature]Dto.cs
-├── Requests/           # API request DTOs
-│   └── [Feature]Request.cs
-├── Responses/          # API response DTOs (separate from Service DTOs)
-│   └── [Feature]ResponseDto.cs
-└── ApiResponseModel.cs # Base response wrapper
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
 
-Tests/                  # Test projects
-├── Unit/
-├── Integration/
-└── Contract/
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: C# ASP.NET Core three-layer architecture with Controllers (Presentation), Services (Business Logic), and Repositories (Data Access). All interfaces are placed in respective Interfaces folders to maintain clear separation of concerns.
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
 ## Complexity Tracking
 

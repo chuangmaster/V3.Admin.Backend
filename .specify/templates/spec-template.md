@@ -4,7 +4,6 @@
 **Created**: [DATE]  
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
-**Language**: This specification MUST be written in Traditional Chinese (zh-TW) per constitution requirements
 
 ## User Scenarios & Testing *(mandatory)*
 
