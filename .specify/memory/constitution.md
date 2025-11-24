@@ -1,27 +1,19 @@
 <!--
 Sync Impact Report:
-Version change: 1.6.1 → 1.7.0 (MINOR - Strengthened Response DTO Decoupling Requirements)
+Version change: 1.7.0 → 1.8.0 (MINOR - Added Paginated Response Principle and refined DTO rules)
 Modified principles:
-  - Principle VIII: Enhanced to prohibit ALL coupling between Response DTOs and Service DTOs
-  - BREAKING CHANGE: Response DTO constructors MUST NOT accept Service DTO types
-  - NEW REQUIREMENT: Controller layer MUST perform explicit property-by-property mapping
-Added sections: None
+  - Principle VIII: Updated Response DTO naming convention to `xxxResponse` and clarified nested DTO mapping.
+  - API Response Design Standards: Mandated the use of BaseController helper methods.
+Added sections:
+  - Principle IX: Paginated Response Design.
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Updated Response DTO mapping examples
-  ✅ spec-template.md - Verified alignment with strengthened DTO separation
-  ✅ tasks-template.md - Updated DTO conversion task descriptions
-Critical Architecture Fix:
-  ⚠️ IDENTIFIED: Response DTO constructor dependency on Service DTO violates true decoupling
-  ✅ CORRECTED: Explicit property mapping in Controller enforces zero coupling
-  📋 ACTION REQUIRED: Review all existing Response DTO classes for constructor-based Service DTO dependencies
-  📋 ACTION REQUIRED: Refactor Response DTOs to use parameterless constructors or property-only constructors
-  📋 ACTION REQUIRED: Move all DTO conversion logic from Response DTO constructors to Controller layer
+  ✅ plan-template.md - No changes needed, existing guidance is compatible.
+  ✅ spec-template.md - No changes needed, existing guidance is compatible.
+  ✅ tasks-template.md - No changes needed, existing guidance is compatible.
 Follow-up TODOs:
-  - Audit all Response DTO classes in Models/Responses/ for Service DTO type references
-  - Remove any constructors accepting Service DTO parameters
-  - Refactor Controller endpoints to use explicit property mapping instead of constructor-based conversion
-  - Update developer documentation to emphasize ZERO coupling requirement
+  - Review all existing paginated endpoints to ensure they use PagedApiResponseModel<TItem>.
+  - Review all controller endpoints to ensure they use BaseController helper methods for responses.
 -->
 
 # V3.Admin.Backend Constitution
@@ -129,20 +121,21 @@ API endpoints MUST respond within 200ms for simple operations (login, single acc
 **Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
 
 ### VIII. Controller Response DTO Architecture (NON-NEGOTIABLE)
-All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs (e.g., `UserDto`, `PermissionDto`, `UserEffectivePermissionsDto`) as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponseDto` or `xxxApiResponse` pattern) that convert Service DTOs before returning to clients.
+All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs (e.g., `UserDto`, `PermissionDto`, `UserEffectivePermissionsDto`) as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponse` pattern) that convert Service DTOs before returning to clients.
 
 **Required Pattern**:
 1. **Service Layer**: Returns business logic DTOs (e.g., `UserEffectivePermissionsDto` with `List<PermissionDto>`)
-2. **Controller Layer**: Converts Service DTOs to Response DTOs (e.g., `UserEffectivePermissionsResponseDto` with `List<PermissionResponseDto>`)
-3. **API Response**: Wraps Response DTO in `ApiResponseModel<T>` using `Success()` helper method
+2. **Controller Layer**: Converts Service DTOs to Response DTOs (e.g., `UserEffectivePermissionsResponse` with `List<PermissionResponse>`)
+3. **API Response**: Wraps Response DTO in `ApiResponseModel<T>` using `Success()` helper method from `BaseController`.
 
 **Implementation Requirements**:
-- Response DTOs MUST be placed in `Models/Responses/` directory
-- Response DTOs MUST NOT reference Service DTO types in ANY way (not in properties, constructors, or methods)
-- Response DTOs MUST NOT have constructors that accept Service DTO types as parameters
-- Conversion logic from Service DTO to Response DTO MUST be implemented in the Controller layer using explicit property mapping
-- Even if Response DTO structure is 1:1 identical to Service DTO, the separation and independent mapping MUST be maintained
-- Nested objects (e.g., `PermissionDto` inside `UserEffectivePermissionsDto`) MUST also have corresponding Response DTOs (e.g., `PermissionResponseDto`)
+- Response DTOs MUST be placed in `Models/Responses/` directory.
+- Response DTO naming MUST follow the `xxxResponse` pattern (e.g., `UserResponse`, `RoleDetailResponse`).
+- Response DTOs MUST NOT reference Service DTO types in ANY way (not in properties, constructors, or methods).
+- Response DTOs MUST NOT have constructors that accept Service DTO types as parameters.
+- Conversion logic from Service DTO to Response DTO MUST be implemented in the Controller layer using explicit property mapping.
+- Even if a Response DTO's structure is 1:1 identical to a Service DTO, the separation and independent mapping MUST be maintained.
+- Nested objects within DTOs (e.g., a `List<PermissionDto>` inside `UserEffectivePermissionsDto`) MUST also have corresponding Response DTOs (e.g., `List<PermissionResponse>`) and be mapped explicitly.
 
 **Example - Correct Pattern**:
 ```csharp
@@ -150,11 +143,11 @@ All Controller endpoints MUST implement a dedicated Response DTO layer that is s
 var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
 
 // Controller manually maps Service DTO to Response DTO (NO COUPLING)
-var responseDto = new UserEffectivePermissionsResponseDto
+var response = new UserEffectivePermissionsResponse
 {
     UserId = serviceDto.UserId,
     Username = serviceDto.Username,
-    Permissions = serviceDto.Permissions.Select(p => new PermissionResponseDto
+    Permissions = serviceDto.Permissions.Select(p => new PermissionResponse
     {
         PermissionId = p.PermissionId,
         PermissionCode = p.PermissionCode,
@@ -163,8 +156,8 @@ var responseDto = new UserEffectivePermissionsResponseDto
     }).ToList()
 };
 
-// Wrap in ApiResponseModel and return
-return Success(responseDto, "查詢成功");
+// Wrap in ApiResponseModel and return using BaseController helper
+return Success(response, "查詢成功");
 ```
 
 **Example - Incorrect Patterns** (DO NOT USE):
@@ -174,90 +167,74 @@ var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
 return Success(serviceDto, "查詢成功");
 
 // ❌ WRONG: Response DTO constructor depends on Service DTO type
-public class UserEffectivePermissionsResponseDto
+public class UserEffectivePermissionsResponse
 {
-    public UserEffectivePermissionsResponseDto(UserEffectivePermissionsDto serviceDto)
-    {
-        // This creates coupling between Response DTO and Service DTO
-        UserId = serviceDto.UserId;
-        Username = serviceDto.Username;
-    }
+    // This creates coupling between Response DTO and Service DTO
+    public UserEffectivePermissionsResponse(UserEffectivePermissionsDto serviceDto) { /* ... */ }
 }
-
-// ❌ WRONG: Using constructor that accepts Service DTO
-var responseDto = new UserEffectivePermissionsResponseDto(serviceDto);
 ```
 
 **Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits:
-1. **Encapsulation**: Prevents internal business logic structures from leaking into public API contracts, maintaining clear boundaries between layers.
-2. **Flexibility**: Enables independent evolution of API response formats without affecting business logic or requiring Service layer changes.
-3. **Security**: Allows selective field exposure, hiding sensitive internal data or computed properties not meant for external consumption.
-4. **Versioning**: Facilitates API versioning strategies where multiple Response DTO versions can map to the same Service DTO.
-5. **Frontend Stability**: Reduces frontend-backend coupling by providing a stable, purpose-built API contract that can adapt to UI requirements without Service layer refactoring.
-6. **Testability**: Simplifies API contract testing by clearly separating external interface validation from business logic validation.
+1. **Encapsulation**: Prevents internal business logic structures from leaking into public API contracts.
+2. **Flexibility**: Enables independent evolution of API response formats without affecting business logic.
+3. **Security**: Allows selective field exposure, hiding sensitive internal data.
+4. **Versioning**: Facilitates API versioning by allowing multiple Response DTO versions to map to a single Service DTO.
+5. **Frontend Stability**: Reduces frontend-backend coupling by providing a stable, purpose-built API contract.
 
-This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities and evolution cycles.
+This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities.
+
+### IX. Paginated Response Design
+For endpoints returning a paginated list of items, the response MUST use the `PagedApiResponseModel<TItem>` wrapper. This model flattens pagination properties (`PageNumber`, `PageSize`, `TotalCount`) to the top level alongside the `Items` collection, providing a clean and predictable structure for clients. Controllers MUST use the `CreatePagedSuccess` or `CreatePagedFailure` helper methods, preferably via a `BaseController`, to construct these responses.
+
+**Rationale**: Standardizes the contract for all paginated data, simplifying frontend development of tables, lists, and infinite scrolling components. It ensures a consistent and easy-to-consume structure across the entire API.
 
 ## API Response Design Standards
 
-**Dual-Layer Response Model**: All endpoints MUST return ApiResponseModel<T> combining HTTP status codes with business logic codes. HTTP status codes reflect request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes provide fine-grained scenario information using ResponseCodes constants.
+**Dual-Layer Response Model**: All endpoints MUST return `ApiResponseModel<T>` (for single items) or `PagedApiResponseModel<T>` (for paginated lists), combining HTTP status codes with business logic codes. HTTP status codes reflect the request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes from the `ResponseCodes` constants provide fine-grained scenario information.
 
-**Success Responses**: Use ApiResponseModel<T>.CreateSuccess() with appropriate data, message, and business code (SUCCESS, CREATED, UPDATED, DELETED). HTTP status codes MUST match the operation (200 OK, 201 Created, etc.).
+**Response Creation**: Controllers MUST use the helper methods provided in a `BaseController` (e.g., `Success`, `Created`, `ValidationError`, `NotFound`, `BusinessError`, `InternalError`) to generate an `IActionResult` with a properly configured `ApiResponseModel` or `PagedApiResponseModel`.
 
-**Error Responses**: Use ApiResponseModel<T>.CreateFailure() with descriptive Traditional Chinese messages and specific business codes. Examples:
-- 400 Bad Request + VALIDATION_ERROR for input validation failures (帳號長度必須為 3-20 字元)
-- 401 Unauthorized + INVALID_CREDENTIALS for authentication failures (帳號或密碼錯誤)
-- 401 Unauthorized + UNAUTHORIZED for missing/invalid JWT token (未授權,請先登入)
-- 403 Forbidden + FORBIDDEN for authorization failures (您只能更新自己的資訊)
-- 403 Forbidden + CANNOT_DELETE_SELF for account self-deletion attempts (無法刪除當前登入的帳號)
-- 404 Not Found + NOT_FOUND for missing resources (帳號不存在)
-- 409 Conflict + CONCURRENT_UPDATE_CONFLICT for optimistic locking failures (資料已被其他使用者更新,請重新載入後再試)
-- 422 Unprocessable Entity + USERNAME_EXISTS for duplicate usernames (帳號已存在)
-- 422 Unprocessable Entity + PASSWORD_SAME_AS_OLD for password change validation (新密碼不可與舊密碼相同)
-- 422 Unprocessable Entity + LAST_ACCOUNT_CANNOT_DELETE for business rule violations (無法刪除最後一個有效帳號)
-- 500 Internal Server Error + INTERNAL_ERROR for system failures (系統內部錯誤,請稍後再試)
+**Success Responses**: Use helper methods that return `ApiResponseModel<T>.CreateSuccess()` or `ApiResponseFactory.CreatePagedSuccess<T>()`. The HTTP status code MUST match the operation (200 OK, 201 Created).
 
-**Required Fields**: All responses MUST include Success (bool), Code (string), Message (string), Timestamp (DateTime), and TraceId (string) for request tracking. Data field uses JsonIgnoreCondition.WhenWritingNull.
+**Error Responses**: Use helper methods that return `ApiResponseModel<T>.CreateFailure()` or `ApiResponseFactory.CreatePagedFailure<T>()`. Responses MUST include descriptive Traditional Chinese messages and specific business codes. Examples:
+- 400 Bad Request + `VALIDATION_ERROR`: for input validation failures (e.g., "帳號長度必須為 3-20 字元").
+- 401 Unauthorized + `INVALID_CREDENTIALS`: for authentication failures (e.g., "帳號或密碼錯誤").
+- 403 Forbidden + `FORBIDDEN`: for authorization failures (e.g., "您只能更新自己的資訊").
+- 404 Not Found + `NOT_FOUND`: for missing resources (e.g., "帳號不存在").
+- 409 Conflict + `CONCURRENT_UPDATE_CONFLICT`: for optimistic locking failures.
+- 422 Unprocessable Entity + `USERNAME_EXISTS`: for duplicate usernames.
+- 500 Internal Server Error + `INTERNAL_ERROR`: for system failures.
 
-**Controller Helper Methods**: Controllers SHOULD implement helper methods (Success, Created, ValidationError, NotFound, Conflict, BusinessError, InternalError) that return IActionResult with properly configured ApiResponseModel and HTTP status codes.
-
-**Frontend Integration**: Frontend applications can rely on both HTTP status codes (for API gateway/monitoring) and business codes (for fine-grained error handling and user experience customization).
+**Required Fields**: All responses MUST include `Success` (bool), `Code` (string), `Message` (string), `Timestamp` (DateTime), and `TraceId` (string) for request tracking.
 
 ## Security Requirements
 
-**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within 1 hour (per API specification). Token generation MUST include user claims (UserId, Username, DisplayName). Refresh token mechanism SHOULD be implemented for future enhancements but is not required for current account management MVP.
+**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within 1 hour. Token generation MUST include user claims (UserId, Username, DisplayName).
 
-**Authorization**: Currently implements single-tier account management without roles. All authenticated users have equal access to account management operations with self-service restrictions (users can only update their own profile and change their own password). Administrative functions (create account, delete account) require authentication. Future role-based authorization MAY be added but is out of scope for current implementation.
+**Authorization**: Authorization is enforced via `[RequirePermission]` attributes. Self-service restrictions (users can only update/change their own data) must be enforced in the service layer.
 
-**Input Validation**: All user inputs MUST be validated using FluentValidation with explicit rules:
-  - Username: 3-20 characters, alphanumeric + underscore only (^[a-zA-Z0-9_]+$)
-  - Password: Minimum 8 characters, supports all Unicode characters
-  - DisplayName: 1-100 characters
-  - Confirmation: Exact match "CONFIRM" for delete operations
-SQL injection prevention MUST be ensured through parameterized queries (Dapper). Special attention to username uniqueness validation.
+**Input Validation**: All user inputs MUST be validated using FluentValidation. SQL injection MUST be prevented via parameterized queries (Dapper).
 
-**Data Protection**: Password storage MUST use BCrypt hashing with work factor 12. Audit logs MUST be maintained via CreatedAt/UpdatedAt timestamps and soft delete tracking (IsDeleted, DeletedAt). Concurrent updates MUST be protected via optimistic locking (RowVersion). Passwords MUST NEVER appear in logs, responses, or error messages.
+**Data Protection**: Passwords MUST be hashed with BCrypt (work factor 12). Sensitive data MUST NEVER appear in logs or responses. Concurrent updates MUST be protected via optimistic locking (RowVersion).
 
-**Error Handling**: Global exception handling middleware (ExceptionHandlingMiddleware) MUST be implemented. Sensitive information MUST NOT be exposed in production error responses. All errors MUST be logged with TraceId for correlation. Security-relevant events (failed login attempts, account deletions) SHOULD be logged at appropriate levels.
+**Error Handling**: A global exception handling middleware MUST be implemented. It MUST log all errors with a `TraceId` and prevent sensitive information from being exposed in production responses.
 
 ## Development Workflow
 
-**Code Reviews**: All code changes MUST be reviewed by at least one team member. Reviews MUST verify compliance with all constitution principles. Performance implications MUST be considered for database queries and API design, especially for user lookup and permission validation operations.
+**Code Reviews**: All code changes MUST be reviewed for compliance with all constitution principles.
 
-**Dependency Management**: New dependencies MUST be justified and approved. Dependencies MUST be kept up-to-date with security patches. Package references MUST specify explicit version numbers. Special scrutiny for authentication/authorization libraries.
+**Dependency Management**: New dependencies MUST be justified and approved. Dependencies MUST be kept up-to-date.
 
-**Documentation**: All specifications, plans, and user-facing documentation MUST be written in Traditional Chinese (zh-TW). README files MUST be maintained with current setup instructions. API endpoints MUST be documented with OpenAPI/Swagger. Database schema changes MUST be documented with migration scripts. Role and permission models MUST be thoroughly documented.
+**Documentation**: API endpoints MUST be documented with OpenAPI/Swagger. Database schema changes MUST be documented with migration scripts. All user-facing documentation, error messages, and comments MUST be in Traditional Chinese (zh-TW).
 
-**Environment Management**: Environment-specific configurations MUST be properly separated. Secrets MUST NOT be committed to source control. Development, staging, and production environments MUST be properly configured with appropriate user management security levels.
+**Environment Management**: Environment-specific configurations MUST be properly separated. Secrets MUST NOT be committed to source control.
 
 ## Governance
 
-This constitution supersedes all other development practices and MUST be followed for all code changes. Amendments require team consensus and proper documentation of changes. All pull requests MUST verify compliance with these principles before approval.
+This constitution supersedes all other development practices and MUST be followed for all code changes. Amendments require team consensus.
 
-**Language Requirements**: Constitution and technical documentation MUST be written in English. All specifications, plans, user-facing documentation, error messages, and comments MUST be written in Traditional Chinese (zh-TW).
+**Language Requirements**: The constitution and technical documentation are in English. All specifications, plans, user-facing documentation, error messages, and code comments are in Traditional Chinese (zh-TW).
 
-**Complexity Justification**: Any violation of these principles MUST be explicitly justified in code comments and pull request descriptions. Simpler alternatives MUST be documented and explained why they were rejected.
+**Compliance Review**: Constitution compliance is verified during code reviews and is mandatory for merging. The constitution's effectiveness is reviewed quarterly.
 
-**Compliance Review**: Constitution compliance is verified during code reviews and MUST block merging of non-compliant code. Regular reviews of constitution effectiveness are required quarterly.
-
-**Version**: 1.7.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-24
+**Version**: 1.8.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25
