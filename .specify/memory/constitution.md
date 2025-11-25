@@ -1,19 +1,21 @@
 <!--
 Sync Impact Report:
-Version change: 1.7.0 → 1.8.0 (MINOR - Added Paginated Response Principle and refined DTO rules)
+Version change: 1.8.0 → 1.9.0 (MINOR - Added mandatory language requirements for documentation artifacts)
 Modified principles:
-  - Principle VIII: Updated Response DTO naming convention to `xxxResponse` and clarified nested DTO mapping.
-  - API Response Design Standards: Mandated the use of BaseController helper methods.
+  - Governance section: Added explicit Language Requirements for all documentation artifacts.
 Added sections:
-  - Principle IX: Paginated Response Design.
+  - Language Requirements: Mandates Traditional Chinese (zh-TW) for all spec documents, plans, tasks, research, and quickstart guides.
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - No changes needed, existing guidance is compatible.
-  ✅ spec-template.md - No changes needed, existing guidance is compatible.
-  ✅ tasks-template.md - No changes needed, existing guidance is compatible.
+  ✅ plan-template.md - Compatible, template already language-agnostic; implementations must follow zh-TW rule.
+  ✅ spec-template.md - Compatible, template already language-agnostic; implementations must follow zh-TW rule.
+  ✅ tasks-template.md - Compatible, template already language-agnostic; implementations must follow zh-TW rule.
+  ✅ agent-file-template.md - Compatible, no changes needed.
+  ✅ checklist-template.md - Compatible, no changes needed.
 Follow-up TODOs:
-  - Review all existing paginated endpoints to ensure they use PagedApiResponseModel<TItem>.
-  - Review all controller endpoints to ensure they use BaseController helper methods for responses.
+  - All future plan.md, tasks.md, research.md, quickstart.md files MUST be written in Traditional Chinese (zh-TW).
+  - Existing documentation files should be audited and migrated to zh-TW where applicable.
+  - Constitution.md remains in English as the foundational governance document.
 -->
 
 # V3.Admin.Backend Constitution
@@ -233,8 +235,19 @@ For endpoints returning a paginated list of items, the response MUST use the `Pa
 
 This constitution supersedes all other development practices and MUST be followed for all code changes. Amendments require team consensus.
 
-**Language Requirements**: The constitution and technical documentation are in English. All specifications, plans, user-facing documentation, error messages, and code comments are in Traditional Chinese (zh-TW).
+**Language Requirements**: 
+- **Constitution and Core Documentation**: The constitution (this file) and foundational technical reference documents are written in English to maintain consistency and precision in governance terminology.
+- **Feature Documentation (MANDATORY)**: All feature-specific documentation files MUST be written in **Traditional Chinese (zh-TW)**. This includes but is not limited to:
+  - `plan.md` - Implementation plans
+  - `tasks.md` - Task lists
+  - `research.md` - Research documents
+  - `quickstart.md` - Quickstart guides
+  - `spec.md` - Feature specifications
+  - `data-model.md` - Data model documentation
+  - Any other feature-specific documentation in `/specs/` directories
+- **Code and API**: All error messages, API responses, code comments, and user-facing strings MUST be in Traditional Chinese (zh-TW).
+- **Rationale**: Traditional Chinese documentation ensures accessibility for the development team and stakeholders while maintaining technical precision through English governance documents.
 
 **Compliance Review**: Constitution compliance is verified during code reviews and is mandatory for merging. The constitution's effectiveness is reviewed quarterly.
 
-**Version**: 1.8.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25
+**Version**: 1.9.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25
