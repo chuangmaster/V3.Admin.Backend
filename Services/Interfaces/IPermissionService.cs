@@ -22,7 +22,7 @@ public interface IPermissionService
     /// <summary>
     /// 取得所有權限 (分頁)
     /// </summary>
-    Task<(List<PermissionDto> Items, int TotalCount)> GetPermissionsAsync(int pageNumber, int pageSize, string? searchKeyword = null, string? permissionType = null);
+    Task<PagedResultDto<PermissionDto>> GetPermissionsAsync(int pageNumber, int pageSize, string? searchKeyword = null, string? permissionType = null);
 
     /// <summary>
     /// 更新權限

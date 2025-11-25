@@ -25,4 +25,13 @@ public class PagedResultDto<T>
     /// 每頁的項目數。
     /// </summary>
     public int PageSize { get; set; }
+
+    /// <summary>
+    /// 支援解構語法 (e.g. var (items, total) = pagedResult)
+    /// </summary>
+    public void Deconstruct(out List<T> items, out long totalCount)
+    {
+        items = Items?.ToList() ?? new List<T>();
+        totalCount = TotalCount;
+    }
 }

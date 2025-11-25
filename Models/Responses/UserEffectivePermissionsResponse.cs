@@ -16,5 +16,5 @@ public class UserEffectivePermissionsResponse
     /// <summary>
     /// 用戶擁有的所有權限列表（聯集）
     /// </summary>
-    public List<PermissionResponseDto> Permissions { get; set; } = new();
+    public List<PermissionResponse> Permissions { get; set; } = new();
 }

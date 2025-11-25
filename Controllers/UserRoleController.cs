@@ -160,7 +160,7 @@ public class UserRoleController : BaseApiController
             {
                 UserId = effectivePermissionsDto.UserId,
                 Permissions = effectivePermissionsDto
-                    .Permissions.Select(p => new Models.Responses.PermissionResponseDto
+                    .Permissions.Select(p => new Models.Responses.PermissionResponse
                     {
                         Id = p.Id,
                         PermissionCode = p.PermissionCode,

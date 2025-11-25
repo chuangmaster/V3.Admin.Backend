@@ -37,9 +37,6 @@ public partial class Program
         builder.Services.Configure<JwtSettings>(
             builder.Configuration.GetSection(JwtSettings.SectionName)
         );
-        JwtSettings? jwtSettings = builder
-            .Configuration.GetSection(JwtSettings.SectionName)
-            .Get<JwtSettings>();
 
         // ===== Dapper 配置 =====
         // 設定 Dapper 的命名規則轉換 (snake_case <-> PascalCase)
@@ -84,6 +81,8 @@ public partial class Program
             })
             .AddJwtBearer(options =>
             {
+                // 直接從 Configuration 在此處讀取 JwtSettings，確保測試時由 CustomWebApplicationFactory 注入的設定會被使用
+                var cfg = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -91,10 +90,10 @@ public partial class Program
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ClockSkew = TimeSpan.Zero,
-                    ValidIssuer = jwtSettings?.Issuer,
-                    ValidAudience = jwtSettings?.Audience,
+                    ValidIssuer = cfg?.Issuer,
+                    ValidAudience = cfg?.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? string.Empty)
+                        Encoding.UTF8.GetBytes(cfg?.SecretKey ?? string.Empty)
                     ),
                 };
 
@@ -111,6 +110,8 @@ public partial class Program
                             context.Exception.Message,
                             context.HttpContext.TraceIdentifier
                         );
+                        // Debug: also write to console to ensure test runner captures this
+                        Console.WriteLine($"[JWT DEBUG] Authentication failed: {context.Exception}");
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
@@ -127,6 +128,8 @@ public partial class Program
                             claims,
                             context.HttpContext.TraceIdentifier
                         );
+                        // Debug: also write to console so tests can see token claims
+                        Console.WriteLine($"[JWT DEBUG] Token validated. Claims: {claims}");
                         return Task.CompletedTask;
                     },
                 };
