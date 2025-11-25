@@ -6,17 +6,18 @@
 
 在 API 回應中表示單一權限實體。此 DTO 是一個純粹的資料容器，不包含業務邏輯。
 
-| Field          | Type   | Description (說明)       | Constraints (限制) | Example                  |
-|----------------|--------|--------------------------|--------------------|--------------------------|
-| `PermissionId` | `int`  | 權限的唯一識別碼         | Required, > 0      | `101`                    |
-| `PermissionCode`| `string`| 權限的程式碼 (e.g., `role.read`) | Required, Not empty | `"role.read"`            |
-| `Name`         | `string`| 權限的顯示名稱 (中文)    | Required, Not empty | `"查詢角色"`             |
-| `Description`  | `string`| 權限的詳細描述           | Optional           | `"允許使用者查看角色列表"`|
+| 欄位             | 型別   | 說明 (說明)                     | 限制 (限制)          | 範例                     |
+|------------------|--------|---------------------------------|----------------------|--------------------------|
+| `PermissionId`   | `int`  | 權限的唯一識別碼                | 必需, > 0            | `101`                    |
+| `PermissionCode` | `string`| 權限的程式碼 (e.g., `role.read`) | 必需, 不為空         | `"role.read"`            |
+| `Name`           | `string`| 權限的顯示名稱 (中文)           | 必需, 不為空         | `"查詢角色"`             |
+| `Description`    | `string`| 權限的詳細描述                  | 選填                 | `"允許使用者查看角色列表"`|
+| `PermissionType` | `string`| 權限類型 (`view` 或 `function`) | 必需, `view`或`function` | `"function"`             |
 
 ## 2. PermissionListResponse
 
-Represents a list of permissions, typically for endpoints that return multiple permissions.
+表示權限列表，通常用於返回多個權限的端點。
 
-| Field   | Type                     | Description (說明) | Constraints (限制) |
+| 欄位   | 型別                     | 說明 (說明) | 限制 (限制) |
 |---------|--------------------------|--------------------|--------------------|
-| `Items` | `List<PermissionResponse>`| 權限物件列表       | Required, not null |
+| `Items` | `List<PermissionResponse>`| 權限物件列表       | 必需, 不為 null |

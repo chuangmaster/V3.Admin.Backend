@@ -7,7 +7,7 @@
 
 ## 總結
 
-本計畫旨在重構 `PermissionController` 及其相關 API，使其完全符合專案 constitution 中定義的 `Principle VIII: Controller Response DTO Architecture`。核心任務是將目前直接回傳服務層 DTO 的端點，改為在 Controller 層手動映射到專用的 `xxxResponse` DTO，以達成 API 合約與內部業務邏輯的徹底解耦。
+本計畫旨在重構 `PermissionController` 及其相關 API，使其完全符合專案 constitution 中定義的 `Principle VIII: Controller Response DTO Architecture`。核心任務是將目前直接回傳服務層 DTO 的端點，改為在 Controller 層手動映射到專用的 `xxxResponse` DTO，以達成 API 合約與內部業務邏輯的徹底解耦。根據最新需求，`PermissionResponse` DTO 將包含 `PermissionType` 欄位。
 
 ## 技術背景
 

@@ -23,7 +23,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 **預期成功回應 (200 OK)：**
 
-`data` 欄位應包含與 `PermissionResponse` 結構相符的物件列表。
+`data` 欄位應包含與 `PermissionResponse` 結構相符的物件列表，現在包含 `permissionType` 欄位。
 
 ```json
 {
@@ -35,13 +35,15 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
       "permissionId": 1,
       "permissionCode": "account.create",
       "name": "新增帳號",
-      "description": "允許新增使用者帳號"
+      "description": "允許新增使用者帳號",
+      "permissionType": "function"
     },
     {
       "permissionId": 2,
       "permissionCode": "account.read",
       "name": "查詢帳號",
-      "description": "允許查詢使用者帳號"
+      "description": "允許查詢使用者帳號",
+      "permissionType": "function"
     }
     // ... 其他權限
   ],
@@ -55,8 +57,9 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 - **開啟 `Controllers/PermissionController.cs`**：
   - 確認沒有方法直接返回 `PermissionDto` 或 `List<PermissionDto>`。
   - 確認所有 `return` 語句都使用 `BaseController` 輔助方法，例如 `Success(...)`。
-  - 確認在 Controller 方法內部，有明確的程式碼將 `PermissionDto` 映射到 `PermissionResponse`。
+  - 確認在 Controller 方法內部，有明確的程式碼將 `PermissionDto` 映射到 `PermissionResponse`，包含 `PermissionType` (`view` 或 `function`)。
 - **開啟 `Models/Responses/PermissionResponse.cs`**：
   - 確認此檔案存在，並且在其屬性、建構函式或方法中沒有引用 `PermissionDto` 或任何其他服務層 DTO。
+  - 確認 `PermissionType` 屬性已加入。
 
 透過遵循這些步驟，您可以確認重構符合功能規格和專案 constitution 中定義的要求。
