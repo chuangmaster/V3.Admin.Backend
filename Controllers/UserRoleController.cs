@@ -44,11 +44,10 @@ public class UserRoleController : BaseApiController
     {
         try
         {
-            List<Models.Dtos.UserRoleDto> rolesDto = await _userRoleService.GetUserRolesAsync(
-                userId
-            );
-            var response = new UserRoleResponse(rolesDto);
-            return Success(response, "查詢成功");
+                List<Models.Dtos.UserRoleDto> rolesDto = await _userRoleService.GetUserRolesAsync(
+                    userId
+                );
+                return Success(rolesDto, "查詢成功");
         }
         catch (KeyNotFoundException ex)
         {
@@ -129,7 +128,7 @@ public class UserRoleController : BaseApiController
                 return NotFound("用戶或角色不存在");
             }
 
-            return NoContent();
+            return Success("角色移除成功");
         }
         catch (KeyNotFoundException ex)
         {

@@ -94,6 +94,8 @@ public class PermissionController : BaseApiController
                             Name = dto.Name,
                             Description = dto.Description,
                             PermissionType = dto.PermissionType,
+                            Version = dto.Version,
+                            CreatedAt = dto.CreatedAt,
                         })
                         .ToList()
                     : new List<PermissionResponse>();

@@ -7,15 +7,6 @@ namespace V3.Admin.Backend.Models.Responses;
 /// </summary>
 public class PermissionResponse
 {
-    /// <summary>
-    /// API 回應碼（此 DTO 同時支援被序列化成 API wrapper 的情況）
-    /// </summary>
-    public string? Code { get; set; }
-
-    /// <summary>
-    /// 當此類被當作 API wrapper 反序列化時，Data 會包含實際的 PermissionResponse 資料
-    /// </summary>
-    public PermissionResponse? Data { get; set; }
 
     /// <summary>
     /// 權限唯一識別碼
