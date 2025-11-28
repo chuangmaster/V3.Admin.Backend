@@ -46,6 +46,38 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         command.Parameters.AddWithValue("display_name", "Permission Tester");
         await command.ExecuteNonQueryAsync();
 
+        // Ensure test role and permission exist and are assigned to the test user
+                var seedSql = @"
+                        INSERT INTO roles (role_name, description, version, is_deleted, created_at, updated_at)
+                        SELECT 'test-role', 'Role for integration tests', 1, false, NOW(), NOW()
+                        WHERE NOT EXISTS (SELECT 1 FROM roles WHERE role_name = 'test-role' AND is_deleted = FALSE);
+
+                        INSERT INTO permissions (permission_code, name, description, permission_type, version, is_deleted, created_at, updated_at)
+                        SELECT 'permission.read', 'Permission Read', 'Read permissions', 'function', 1, false, NOW(), NOW()
+                        WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE permission_code = 'permission.read' AND is_deleted = FALSE);
+
+                        -- link role and permission
+                        INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+                        SELECT r.id, p.id, NULL
+                        FROM roles r, permissions p
+                        WHERE r.role_name = 'test-role' AND p.permission_code = 'permission.read'
+                            AND NOT EXISTS (
+                                SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id AND rp.permission_id = p.id AND rp.is_deleted = FALSE
+                            );
+
+                        -- assign role to user
+                        INSERT INTO user_roles (user_id, role_id, assigned_by)
+                        SELECT u.id, r.id, NULL
+                        FROM users u, roles r
+                        WHERE u.username = 'permission_test_user' AND r.role_name = 'test-role'
+                            AND NOT EXISTS (
+                                SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id AND ur.is_deleted = FALSE
+                            );
+                ";
+
+        await using var seedCmd = new Npgsql.NpgsqlCommand(seedSql, connection);
+        await seedCmd.ExecuteNonQueryAsync();
+
         // Login to get token
         var loginRequest = new LoginRequest
         {
@@ -54,16 +86,22 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         };
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var content = await loginResponse.Content.ReadAsStringAsync();
+        Console.WriteLine($"[TEST DEBUG] /api/auth/login status: {loginResponse.StatusCode}, body: {content}");
         if (loginResponse.IsSuccessStatusCode)
         {
-            var content = await loginResponse.Content.ReadAsStringAsync();
             var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(content, _jsonOptions);
             _testToken = apiResponse?.Data?.Token;
-            
+
             if (!string.IsNullOrEmpty(_testToken))
             {
                 _client.DefaultRequestHeaders.Authorization = 
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _testToken);
+                Console.WriteLine($"[TEST DEBUG] Authorization header set: {_client.DefaultRequestHeaders.Authorization}");
+            }
+            else
+            {
+                Console.WriteLine("[TEST DEBUG] login succeeded but token is null or empty");
             }
         }
     }
@@ -81,6 +119,13 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             permCommand.Parameters.AddWithValue("id", _testPermissionId);
             await permCommand.ExecuteNonQueryAsync();
         }
+
+        // Cleanup any user_roles that reference the test user to avoid FK constraint issues
+        var cleanupUserRoles = @"
+            DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE username = 'permission_test_user');
+        ";
+        await using var cleanupCmd = new Npgsql.NpgsqlCommand(cleanupUserRoles, connection);
+        await cleanupCmd.ExecuteNonQueryAsync();
 
         var deleteUserSql = "DELETE FROM users WHERE username = 'permission_test_user';";
         await using var command = new Npgsql.NpgsqlCommand(deleteUserSql, connection);
@@ -103,18 +148,22 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
     [Fact]
     public async Task GetPermissions_WithValidToken_ReturnsSuccessWithEmptyList()
     {
-        // Act
+        // Act - quick auth check: call an endpoint that requires only authentication
+        var authCheck = await _client.GetAsync("/api/account");
+        var authCheckBody = await authCheck.Content.ReadAsStringAsync();
+        Console.WriteLine($"[TEST DEBUG] /api/account returned {authCheck.StatusCode}: {authCheckBody}");
+
         var response = await _client.GetAsync("/api/permission?pageNumber=1&pageSize=20");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonSerializer.Deserialize<PermissionListResponse>(content, _jsonOptions);
+        var apiResponse = JsonSerializer.Deserialize<PagedApiResponseModel<PermissionResponse>>(content, _jsonOptions);
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
-        apiResponse.Items.Should().NotBeNull();
+        apiResponse.Data.Should().NotBeNull();
     }
 
     [Fact]
@@ -136,10 +185,10 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonSerializer.Deserialize<PermissionResponse>(content, _jsonOptions);
+        var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(content, _jsonOptions);
 
         apiResponse.Should().NotBeNull();
-        apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
+        apiResponse!.Code.Should().Be(ResponseCodes.CREATED);
         apiResponse.Data.Should().NotBeNull();
         apiResponse.Data!.PermissionCode.Should().Be("test.permission.read");
 
@@ -162,7 +211,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var firstContent = await firstResponse.Content.ReadAsStringAsync();
-        var firstApiResponse = JsonSerializer.Deserialize<PermissionResponse>(firstContent, _jsonOptions);
+        var firstApiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(firstContent, _jsonOptions);
         _testPermissionId = firstApiResponse!.Data!.Id;
 
         // Arrange second request with duplicate code
@@ -178,7 +227,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         var response = await _client.PostAsJsonAsync("/api/permission", secondRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
 
         var content = await response.Content.ReadAsStringAsync();
         var apiResponse = JsonSerializer.Deserialize<ApiResponseModel>(content, _jsonOptions);
@@ -201,7 +250,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
         var createContent = await createResponse.Content.ReadAsStringAsync();
-        var createApiResponse = JsonSerializer.Deserialize<PermissionResponse>(createContent, _jsonOptions);
+        var createApiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(createContent, _jsonOptions);
         var permissionId = createApiResponse!.Data!.Id;
         _testPermissionId = permissionId;
 
@@ -212,7 +261,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonSerializer.Deserialize<PermissionResponse>(content, _jsonOptions);
+        var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(content, _jsonOptions);
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
@@ -254,7 +303,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
         var createContent = await createResponse.Content.ReadAsStringAsync();
-        var createApiResponse = JsonSerializer.Deserialize<PermissionResponse>(createContent, _jsonOptions);
+        var createApiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(createContent, _jsonOptions);
         var permissionId = createApiResponse!.Data!.Id;
         var version = createApiResponse.Data.Version;
         _testPermissionId = permissionId;
@@ -274,7 +323,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonSerializer.Deserialize<PermissionResponse>(content, _jsonOptions);
+        var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(content, _jsonOptions);
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
@@ -297,7 +346,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
         var createContent = await createResponse.Content.ReadAsStringAsync();
-        var createApiResponse = JsonSerializer.Deserialize<PermissionResponse>(createContent, _jsonOptions);
+        var createApiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(createContent, _jsonOptions);
         var permissionId = createApiResponse!.Data!.Id;
         _testPermissionId = permissionId;
 
@@ -336,7 +385,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
         var createResponse = await _client.PostAsJsonAsync("/api/permission", createRequest);
         var createContent = await createResponse.Content.ReadAsStringAsync();
-        var createApiResponse = JsonSerializer.Deserialize<PermissionResponse>(createContent, _jsonOptions);
+        var createApiResponse = JsonSerializer.Deserialize<ApiResponseModel<PermissionResponse>>(createContent, _jsonOptions);
         var permissionId = createApiResponse!.Data!.Id;
         var version = createApiResponse.Data.Version;
 
@@ -346,8 +395,12 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             Version = version
         };
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/permission/{permissionId}");
+        // Act - send DELETE with JSON body (controller requires version in body)
+        var deleteMessage = new HttpRequestMessage(HttpMethod.Delete, $"/api/permission/{permissionId}")
+        {
+            Content = JsonContent.Create(deleteRequest),
+        };
+        var response = await _client.SendAsync(deleteMessage);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

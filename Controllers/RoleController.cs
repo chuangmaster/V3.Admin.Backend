@@ -33,7 +33,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequirePermission("role.read")]
-    [ProducesResponseType(typeof(RoleListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedApiResponseModel<RoleResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20
@@ -51,15 +51,21 @@ public class RoleController : BaseApiController
                 pageSize
             );
 
-            var response = new RoleListResponse
-            {
-                Items = roles,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-            };
+            var items =
+                roles != null
+                    ? roles
+                        .Select(r => new RoleResponse
+                        {
+                            Id = r.Id,
+                            RoleName = r.RoleName,
+                            Description = r.Description,
+                            CreatedAt = r.CreatedAt,
+                            Version = r.Version,
+                        })
+                        .ToList()
+                    : new List<RoleResponse>();
 
-            return Success(response, "查詢成功");
+            return PagedSuccess(items, pageNumber, pageSize, totalCount, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -73,7 +79,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpPost]
     [RequirePermission("role.create")]
-    [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponseModel<RoleResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
     {
         try
@@ -85,7 +91,11 @@ public class RoleController : BaseApiController
             Models.Dtos.RoleDto roleDto = await _roleService.CreateRoleAsync(request, userId.Value);
             var response = new RoleResponse
             {
-                Data = roleDto,
+                Id = roleDto.Id,
+                RoleName = roleDto.RoleName,
+                Description = roleDto.Description,
+                CreatedAt = roleDto.CreatedAt,
+                Version = roleDto.Version,
             };
             return Created(response, "角色建立成功");
         }
@@ -110,7 +120,7 @@ public class RoleController : BaseApiController
     /// 根據 ID 取得角色
     /// </summary>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponseModel<RoleResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoleById(Guid id)
     {
         try
@@ -121,7 +131,11 @@ public class RoleController : BaseApiController
 
             var response = new RoleResponse
             {
-                Data = roleDto,
+                Id = roleDto.Id,
+                RoleName = roleDto.RoleName,
+                Description = roleDto.Description,
+                CreatedAt = roleDto.CreatedAt,
+                Version = roleDto.Version,
             };
             return Success(response, "查詢成功");
         }
@@ -136,10 +150,7 @@ public class RoleController : BaseApiController
     /// 取得角色詳細資訊（包含權限）
     /// </summary>
     [HttpGet("{id}/permissions")]
-    [ProducesResponseType(
-        typeof(ApiResponseModel<Models.Dtos.RoleDetailDto>),
-        StatusCodes.Status200OK
-    )]
+    [ProducesResponseType(typeof(ApiResponseModel<RoleDetailResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoleDetail(Guid id)
     {
         try
@@ -148,11 +159,29 @@ public class RoleController : BaseApiController
             if (roleDetailDto == null)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
-            var response = new RoleDetailResponse
+            var responseData = new RoleDetailResponse
             {
-                Data = roleDetailDto,
+                Id = roleDetailDto.Id,
+                RoleName = roleDetailDto.RoleName,
+                Description = roleDetailDto.Description,
+                CreatedAt = roleDetailDto.CreatedAt,
+                Version = roleDetailDto.Version,
+                Permissions =
+                    roleDetailDto
+                        .Permissions?.Select(p => new PermissionResponse
+                        {
+                            Id = p.Id,
+                            PermissionCode = p.PermissionCode,
+                            Name = p.Name,
+                            Description = p.Description,
+                            PermissionType = p.PermissionType,
+                            CreatedAt = p.CreatedAt,
+                            Version = p.Version,
+                        })
+                        .ToList() ?? new List<PermissionResponse>(),
             };
-            return Success(response, "查詢成功");
+
+            return Success(responseData, "查詢成功");
         }
         catch (Exception ex)
         {
@@ -166,7 +195,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpPut("{id}")]
     [RequirePermission("role.update")]
-    [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponseModel<RoleResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request)
     {
         try
@@ -180,10 +209,16 @@ public class RoleController : BaseApiController
                 request,
                 userId.Value
             );
+
             var response = new RoleResponse
             {
-                Data = roleDto,
+                Id = roleDto.Id,
+                RoleName = roleDto.RoleName,
+                Description = roleDto.Description,
+                CreatedAt = roleDto.CreatedAt,
+                Version = roleDto.Version,
             };
+
             return Success(response, "角色更新成功");
         }
         catch (FluentValidation.ValidationException ex)
@@ -254,7 +289,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpPost("{roleId}/permissions")]
     [RequirePermission("permission.assign")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignPermissions(
         Guid roleId,
         [FromBody] AssignRolePermissionsRequest request
@@ -267,6 +302,9 @@ public class RoleController : BaseApiController
                 return UnauthorizedResponse();
 
             bool success = await _roleService.AssignPermissionsAsync(roleId, request, userId.Value);
+            if (!success)
+                return NotFound("角色或權限不存在");
+
             ApiResponseModel response = ApiResponseModel.CreateSuccess(
                 "角色權限分配成功",
                 ResponseCodes.SUCCESS

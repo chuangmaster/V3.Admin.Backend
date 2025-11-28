@@ -92,7 +92,7 @@ public class PermissionService : IPermissionService
         return permission != null ? MapToDto(permission) : null;
     }
 
-    public async Task<(List<PermissionDto> Items, int TotalCount)> GetPermissionsAsync(
+    public async Task<PagedResultDto<PermissionDto>> GetPermissionsAsync(
         int pageNumber,
         int pageSize,
         string? searchKeyword = null,
@@ -105,7 +105,13 @@ public class PermissionService : IPermissionService
             searchKeyword,
             permissionType
         );
-        return (items.Select(MapToDto).ToList(), totalCount);
+        return new PagedResultDto<PermissionDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+        };
     }
 
     public async Task<PermissionDto> UpdatePermissionAsync(

@@ -24,6 +24,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             // 移除現有的設定
             config.Sources.Clear();
 
+            // 如果尚未初始化 DatabaseFixture，在這裡同步啟動以取得 ConnectionString，
+            // 因為 ConfigureWebHost 可能在 InitializeAsync() 之前被呼叫
+            if (string.IsNullOrEmpty(ConnectionString))
+            {
+                _databaseFixture ??= new DatabaseFixture();
+                _databaseFixture.InitializeAsync().GetAwaiter().GetResult();
+            }
+
             // 加入測試用的設定
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {

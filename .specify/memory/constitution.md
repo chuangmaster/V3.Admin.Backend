@@ -1,19 +1,26 @@
 <!--
 Sync Impact Report:
-Version change: 1.7.0 → 1.8.0 (MINOR - Added Paginated Response Principle and refined DTO rules)
+Version change: 1.10.0 → 1.10.1 (PATCH - Reorganized pagination principles for improved clarity and structure)
 Modified principles:
-  - Principle VIII: Updated Response DTO naming convention to `xxxResponse` and clarified nested DTO mapping.
-  - API Response Design Standards: Mandated the use of BaseController helper methods.
-Added sections:
-  - Principle IX: Paginated Response Design.
-Removed sections: None
+  - Principle IX: Merged former Principles IX (Paginated Response Design) and X (Pagination Query & Layer Responsibility) into a single cohesive principle "Pagination Architecture & Layer Responsibility". Eliminated redundant content while preserving all technical requirements.
+  - Principle X: Removed (merged into Principle IX).
+Added sections: None (reorganization only)
+Removed sections:
+  - Former standalone Principle X content (now integrated into Principle IX)
 Templates requiring updates:
-  ✅ plan-template.md - No changes needed, existing guidance is compatible.
-  ✅ spec-template.md - No changes needed, existing guidance is compatible.
-  ✅ tasks-template.md - No changes needed, existing guidance is compatible.
+  ✅ plan-template.md - No changes needed, pagination requirements remain identical.
+  ✅ spec-template.md - No changes needed, pagination architecture patterns unchanged.
+  ✅ tasks-template.md - References to "Principle X" should now reference "Principle IX".
+  ✅ agent-file-template.md - Compatible, no changes needed.
+  ✅ checklist-template.md - Pagination validation checklist items should reference "Principle IX".
 Follow-up TODOs:
-  - Review all existing paginated endpoints to ensure they use PagedApiResponseModel<TItem>.
-  - Review all controller endpoints to ensure they use BaseController helper methods for responses.
+  - Create PagedResultDto<T> class in Models/Responses/PagedResultDto.cs if not already present.
+  - Audit existing paginated endpoints to ensure compliance with Principle IX (Service returns PagedResultDto, Controller maps to PagedApiResponseModel).
+  - Update any Service methods returning PagedApiResponseModel to return PagedResultDto instead.
+  - Verify all Repository methods use LIMIT/OFFSET for pagination queries.
+  - Add unit tests for PagedResultDto mapping and Controller pagination parameter validation.
+  - Update any documentation referencing "Principle X" to reference "Principle IX" instead.
+  - Constitution.md version updated to 1.10.1 with Last Amended date: 2025-11-25.
 -->
 
 # V3.Admin.Backend Constitution
@@ -183,10 +190,138 @@ public class UserEffectivePermissionsResponse
 
 This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities.
 
-### IX. Paginated Response Design
-For endpoints returning a paginated list of items, the response MUST use the `PagedApiResponseModel<TItem>` wrapper. This model flattens pagination properties (`PageNumber`, `PageSize`, `TotalCount`) to the top level alongside the `Items` collection, providing a clean and predictable structure for clients. Controllers MUST use the `CreatePagedSuccess` or `CreatePagedFailure` helper methods, preferably via a `BaseController`, to construct these responses.
+### IX. Pagination Architecture & Layer Responsibility (NON-NEGOTIABLE)
+All paginated endpoints MUST implement strict layer separation to ensure database-level pagination execution, consistent response formats, and API layer testability. Service layers execute pagination at the database level and return internal business DTOs wrapped in `PagedResultDto<T>`. Controller layers validate parameters, map Service DTOs to Response DTOs, and format responses using `PagedApiResponseModel<TItem>`.
 
-**Rationale**: Standardizes the contract for all paginated data, simplifying frontend development of tables, lists, and infinite scrolling components. It ensures a consistent and easy-to-consume structure across the entire API.
+**Layer Responsibilities**:
+
+1. **Repository Layer**:
+   - MUST accept `pageNumber` and `pageSize` parameters for paginated queries.
+   - MUST execute SQL queries with `LIMIT` and `OFFSET` clauses to retrieve only the requested page.
+   - MUST provide separate method to calculate `TotalCount` efficiently (via COUNT query).
+
+2. **Service Layer**:
+   - MUST return `PagedResultDto<TDto>` containing:
+     - `Items`: `IEnumerable<T>` - The paginated result set
+     - `TotalCount`: `long` - Total record count for pagination calculation
+     - `PageNumber`: `int` - Current page number (1-based)
+     - `PageSize`: `int` - Page size
+   - MUST execute pagination logic in SQL queries (via Repository) to prevent loading entire datasets into memory.
+   - MUST calculate `TotalCount` via separate COUNT query before applying LIMIT/OFFSET.
+   - MUST return business logic DTOs (e.g., `PermissionDto`, `UserDto`) within `PagedResultDto<T>`, NOT API response models.
+
+3. **Controller (API) Layer**:
+   - MUST validate pagination parameters (`pageNumber >= 1`, `pageSize` within configured limits, typically 1-100).
+   - MUST encapsulate query parameters into request objects (e.g., `PermissionQueryRequest`).
+   - MUST map Service DTOs (e.g., `PermissionDto`) to API Response DTOs (e.g., `PermissionResponse`) before returning.
+   - MUST use `PagedApiResponseModel<TItem>` wrapper via helper methods (e.g., `BaseApiController.PagedSuccess()`) to format responses.
+   - MUST NOT pull entire collections into memory and paginate in-memory.
+
+**Naming Conventions**:
+- **Internal Business Model**: `PagedResultDto<T>` (Service layer return type) - Located in `Models/Responses/PagedResultDto.cs` or `Models/`.
+- **API Response Model**: `PagedApiResponseModel<TItem>` (API layer wrapper) - Located in `Models/ApiResponseModel.cs`.
+
+**Prohibited Patterns**:
+- Service returning `PagedApiResponseModel<TItem>` (violates layer separation).
+- Controller loading entire dataset into memory before pagination (violates performance requirements).
+- Service accepting or returning API-specific models (violates encapsulation).
+- Direct return of Service DTOs from Controllers without mapping to Response DTOs (violates Principle VIII).
+
+**Implementation Pattern**:
+
+```csharp
+// 1. PagedResultDto<T> definition (Models/Responses/PagedResultDto.cs)
+public class PagedResultDto<T>
+{
+    public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
+    public long TotalCount { get; set; }
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+}
+
+// 2. Repository: Database-level pagination with LIMIT/OFFSET
+public async Task<IEnumerable<Permission>> GetPagedPermissionsAsync(
+    int pageNumber, int pageSize, PermissionFilters filters, CancellationToken ct)
+{
+    var offset = (pageNumber - 1) * pageSize;
+    var sql = @"
+        SELECT permission_id, permission_code, name, description, permission_type
+        FROM permissions WHERE is_deleted = false
+        ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
+    
+    return await _connection.QueryAsync<Permission>(
+        new CommandDefinition(sql, new { PageSize = pageSize, Offset = offset }, cancellationToken: ct)
+    );
+}
+
+public async Task<long> CountPermissionsAsync(PermissionFilters filters, CancellationToken ct)
+{
+    var sql = "SELECT COUNT(*) FROM permissions WHERE is_deleted = false";
+    return await _connection.ExecuteScalarAsync<long>(
+        new CommandDefinition(sql, cancellationToken: ct)
+    );
+}
+
+// 3. Service: Returns PagedResultDto<TDto>
+public async Task<PagedResultDto<PermissionDto>> GetPermissionsAsync(
+    PermissionQuery query, CancellationToken ct)
+{
+    var totalCount = await _repository.CountPermissionsAsync(query.Filters, ct);
+    var entities = await _repository.GetPagedPermissionsAsync(
+        query.PageNumber, query.PageSize, query.Filters, ct
+    );
+    
+    return new PagedResultDto<PermissionDto>
+    {
+        Items = entities.Select(MapToDto),
+        TotalCount = totalCount,
+        PageNumber = query.PageNumber,
+        PageSize = query.PageSize
+    };
+}
+
+// 4. Controller: Validates, maps DTOs, wraps in PagedApiResponseModel
+[HttpGet]
+[RequirePermission("permission.read")]
+public async Task<IActionResult> GetPermissions(
+    [FromQuery] PermissionQueryRequest request, CancellationToken ct)
+{
+    // Validate pagination parameters
+    if (request.PageNumber < 1 || request.PageSize < 1 || request.PageSize > 100)
+        return ValidationError("分頁參數無效");
+    
+    // Call service (returns PagedResultDto<PermissionDto>)
+    var query = new PermissionQuery 
+    { 
+        PageNumber = request.PageNumber, 
+        PageSize = request.PageSize,
+        Filters = request.Filters
+    };
+    var paged = await _permissionService.GetPermissionsAsync(query, ct);
+    
+    // Map Service DTO to API Response DTO
+    var responseItems = paged.Items
+        .Select(dto => new PermissionResponse
+        {
+            PermissionId = dto.PermissionId,
+            PermissionCode = dto.PermissionCode,
+            Name = dto.Name,
+            Description = dto.Description
+        })
+        .ToList();
+    
+    // Return wrapped in PagedApiResponseModel using BaseController helper
+    return PagedSuccess(
+        responseItems, 
+        paged.PageNumber, 
+        paged.PageSize, 
+        paged.TotalCount, 
+        "查詢成功"
+    );
+}
+```
+
+**Rationale**: Enforces clear separation of concerns between business logic (Service) and API presentation (Controller). Database-level pagination prevents memory overflow on large datasets and ensures optimal query performance. Standardized `PagedResultDto<T>` enables consistent business logic testing without coupling to HTTP concerns. The `PagedApiResponseModel<TItem>` wrapper provides a clean, predictable API contract for frontend pagination components (tables, infinite scrolling). Mandatory DTO mapping maintains API contract independence from internal models, enabling independent evolution of business logic and API contracts. This pattern ensures pagination queries are safe, performant, testable, and maintainable across all features.
 
 ## API Response Design Standards
 
@@ -233,8 +368,19 @@ For endpoints returning a paginated list of items, the response MUST use the `Pa
 
 This constitution supersedes all other development practices and MUST be followed for all code changes. Amendments require team consensus.
 
-**Language Requirements**: The constitution and technical documentation are in English. All specifications, plans, user-facing documentation, error messages, and code comments are in Traditional Chinese (zh-TW).
+**Language Requirements**: 
+- **Constitution and Core Documentation**: The constitution (this file) and foundational technical reference documents are written in English to maintain consistency and precision in governance terminology.
+- **Feature Documentation (MANDATORY)**: All feature-specific documentation files MUST be written in **Traditional Chinese (zh-TW)**. This includes but is not limited to:
+  - `plan.md` - Implementation plans
+  - `tasks.md` - Task lists
+  - `research.md` - Research documents
+  - `quickstart.md` - Quickstart guides
+  - `spec.md` - Feature specifications
+  - `data-model.md` - Data model documentation
+  - Any other feature-specific documentation in `/specs/` directories
+- **Code and API**: All error messages, API responses, code comments, and user-facing strings MUST be in Traditional Chinese (zh-TW).
+- **Rationale**: Traditional Chinese documentation ensures accessibility for the development team and stakeholders while maintaining technical precision through English governance documents.
 
 **Compliance Review**: Constitution compliance is verified during code reviews and is mandatory for merging. The constitution's effectiveness is reviewed quarterly.
 
-**Version**: 1.8.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25
+**Version**: 1.10.1 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25

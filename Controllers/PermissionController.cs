@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
+using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
 using V3.Admin.Backend.Repositories.Interfaces;
@@ -53,7 +54,10 @@ public class PermissionController : BaseApiController
     /// <returns>分頁權限清單</returns>
     [HttpGet]
     [RequirePermission("permission.read")]
-    [ProducesResponseType(typeof(PermissionListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(
+        typeof(PagedApiResponseModel<PermissionResponse>),
+        StatusCodes.Status200OK
+    )]
     public async Task<IActionResult> GetPermissions(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
@@ -73,22 +77,36 @@ public class PermissionController : BaseApiController
                 pageSize = 20;
             }
 
-            var (items, totalCount) = await _permissionService.GetPermissionsAsync(
+            var paged = await _permissionService.GetPermissionsAsync(
                 pageNumber,
                 pageSize,
                 searchKeyword,
                 permissionType
             );
 
-            var response = new PermissionListResponse
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-            };
+            var items =
+                paged.Items != null
+                    ? paged
+                        .Items.Select(dto => new PermissionResponse
+                        {
+                            Id = dto.Id,
+                            PermissionCode = dto.PermissionCode,
+                            Name = dto.Name,
+                            Description = dto.Description,
+                            PermissionType = dto.PermissionType,
+                            Version = dto.Version,
+                            CreatedAt = dto.CreatedAt,
+                        })
+                        .ToList()
+                    : new List<PermissionResponse>();
 
-            return Success(response, "Query successful");
+            return PagedSuccess(
+                items,
+                paged.PageNumber,
+                paged.PageSize,
+                paged.TotalCount,
+                "Query successful"
+            );
         }
         catch (Exception ex)
         {
@@ -108,7 +126,7 @@ public class PermissionController : BaseApiController
     /// <returns>建立的權限詳細資訊</returns>
     [HttpPost]
     [RequirePermission("permission.create")]
-    [ProducesResponseType(typeof(PermissionResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponseModel<PermissionResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
     {
@@ -124,8 +142,17 @@ public class PermissionController : BaseApiController
                 request,
                 userId.Value
             );
-            var response = new PermissionResponse { Data = permissionDto };
-            return Created(response, "建立成功");
+            var responseData = new PermissionResponse
+            {
+                Id = permissionDto.Id,
+                PermissionCode = permissionDto.PermissionCode,
+                Name = permissionDto.Name,
+                Description = permissionDto.Description,
+                PermissionType = permissionDto.PermissionType,
+                CreatedAt = permissionDto.CreatedAt,
+                Version = permissionDto.Version
+            };
+            return Created(responseData, "建立成功");
         }
         catch (InvalidOperationException ex)
         {
@@ -153,7 +180,7 @@ public class PermissionController : BaseApiController
     /// <param name="id">權限 ID</param>
     /// <returns>權限詳細資訊</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(PermissionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponseModel<PermissionResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPermission([FromRoute] Guid id)
     {
@@ -165,7 +192,16 @@ public class PermissionController : BaseApiController
                 return NotFound("Permission not found", ResponseCodes.PERMISSION_NOT_FOUND);
             }
 
-            var response = new PermissionResponse { Data = permissionDto };
+            var response = new PermissionResponse
+            {
+                Id = permissionDto.Id,
+                PermissionCode = permissionDto.PermissionCode,
+                Name = permissionDto.Name,
+                Description = permissionDto.Description,
+                PermissionType = permissionDto.PermissionType,
+                CreatedAt = permissionDto.CreatedAt,
+                Version = permissionDto.Version
+            };
             return Success(response, "Query successful");
         }
         catch (Exception ex)
@@ -212,7 +248,16 @@ public class PermissionController : BaseApiController
                 request,
                 userId.Value
             );
-            var response = new PermissionResponse { Data = permissionDto };
+            var response = new PermissionResponse 
+            {
+                Id = permissionDto.Id,
+                PermissionCode = permissionDto.PermissionCode,
+                Name = permissionDto.Name,
+                Description = permissionDto.Description,
+                PermissionType = permissionDto.PermissionType,
+                CreatedAt = permissionDto.CreatedAt,
+                Version = permissionDto.Version
+            };
             return Success(response, "Update successful");
         }
         catch (KeyNotFoundException ex)

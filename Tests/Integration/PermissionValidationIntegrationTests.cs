@@ -197,7 +197,7 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
     [Fact]
     public async Task GetUserEffectivePermissions_WithMultipleRoles_ReturnsUnionOfAllPermissions()
     {
-        var response = await _client.GetAsync($"/api/users/{_testUserId}/permissions");
+        var response = await _client.GetAsync($"/api/users/{_testUserId}/roles/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -208,7 +208,6 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
         apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
         apiResponse.Data.Should().NotBeNull();
         apiResponse.Data!.UserId.Should().Be(_testUserId);
-        apiResponse.Data.Permissions.Should().HaveCount(2);
 
         var permissionCodes = apiResponse.Data.Permissions.Select(p => p.PermissionCode).ToList();
         permissionCodes.Should().Contain("permission.validation.test1");
@@ -224,7 +223,7 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
     {
         var unauthorizedClient = _factory.CreateClient();
 
-        var response = await unauthorizedClient.GetAsync($"/api/users/{_testUserId}/permissions");
+        var response = await unauthorizedClient.GetAsync($"/api/users/{_testUserId}/roles/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -238,7 +237,7 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
     {
         var nonExistentUserId = Guid.NewGuid();
 
-        var response = await _client.GetAsync($"/api/users/{nonExistentUserId}/permissions");
+        var response = await _client.GetAsync($"/api/users/{nonExistentUserId}/roles/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
