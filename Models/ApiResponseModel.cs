@@ -133,9 +133,9 @@ public class PagedApiResponseModel<TItem>
     public string Message { get; set; } = string.Empty;
 
     /// <summary>
-    /// 分頁項目清單（直接在頂層，不再巢狀於 Data）
+    /// 分頁項目清單
     /// </summary>
-    public IEnumerable<TItem> Items { get; set; } = Enumerable.Empty<TItem>();
+    public IEnumerable<TItem> Data { get; set; } = Enumerable.Empty<TItem>();
 
     /// <summary>
     /// 當前頁碼（從 1 開始）
@@ -169,10 +169,10 @@ public class PagedApiResponseModel<TItem>
 public static class ApiResponseFactory
 {
     /// <summary>
-    /// 建立分頁成功回應，回傳 PagedApiResponseModel&lt;TItem&gt;，避免巢狀 Data.Items
+    /// 建立分頁成功回應，回傳 PagedApiResponseModel&lt;TItem&gt;
     /// </summary>
     public static PagedApiResponseModel<TItem> CreatePagedSuccess<TItem>(
-        IEnumerable<TItem>? items,
+        IEnumerable<TItem>? data,
         int page,
         int pageSize,
         long total,
@@ -185,7 +185,7 @@ public static class ApiResponseFactory
             Success = true,
             Code = code,
             Message = message,
-            Items = items ?? Enumerable.Empty<TItem>(),
+            Data = data ?? Enumerable.Empty<TItem>(),
             PageNumber = page,
             PageSize = pageSize,
             TotalCount = total,
@@ -206,7 +206,7 @@ public static class ApiResponseFactory
             Success = false,
             Code = code,
             Message = message,
-            Items = Enumerable.Empty<TItem>(),
+            Data = Enumerable.Empty<TItem>(),
             PageNumber = 1,
             PageSize = 0,
             TotalCount = 0,

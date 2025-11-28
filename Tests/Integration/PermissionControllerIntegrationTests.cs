@@ -159,11 +159,11 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var content = await response.Content.ReadAsStringAsync();
-        var apiResponse = JsonSerializer.Deserialize<PermissionListResponse>(content, _jsonOptions);
+        var apiResponse = JsonSerializer.Deserialize<PagedApiResponseModel<PermissionResponse>>(content, _jsonOptions);
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Code.Should().Be(ResponseCodes.SUCCESS);
-        apiResponse.Items.Should().NotBeNull();
+        apiResponse.Data.Should().NotBeNull();
     }
 
     [Fact]
