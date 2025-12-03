@@ -97,6 +97,7 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="pageNumber">頁碼 (預設 1)</param>
     /// <param name="pageSize">每頁數量 (預設 10)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫，選填)</param>
     /// <returns>帳號列表</returns>
     /// <response code="200">查詢成功</response>
     /// <response code="401">未授權</response>
@@ -105,12 +106,17 @@ public class AccountController : BaseApiController
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
     public async Task<IActionResult> GetAccounts(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchKeyword = null
     )
     {
         try
         {
-            AccountListDto result = await _accountService.GetAccountsAsync(pageNumber, pageSize);
+            AccountListDto result = await _accountService.GetAccountsAsync(
+                pageNumber,
+                pageSize,
+                searchKeyword
+            );
 
             AccountListResponse response = new AccountListResponse
             {

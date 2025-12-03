@@ -232,24 +232,41 @@ public class AccountService : IAccountService
     }
 
     /// <summary>
-    /// 查詢帳號列表 (分頁)
-    /// </summary>
+    /// 查詢帳號列表 (分頁，支援 searchKeyword 搜尋)
+    /// /// </summary>
     /// <param name="pageNumber">頁碼 (從 1 開始)</param>
     /// <param name="pageSize">每頁數量</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
     /// <returns>帳號列表</returns>
-    public async Task<AccountListDto> GetAccountsAsync(int pageNumber, int pageSize)
+    public async Task<AccountListDto> GetAccountsAsync(
+        int pageNumber,
+        int pageSize,
+        string? searchKeyword = null
+    )
     {
         // 確保頁碼與每頁數量合理
         if (pageNumber < 1)
+        {
             pageNumber = 1;
-        if (pageSize < 1)
-            pageSize = 10;
-        if (pageSize > 100)
-            pageSize = 100;
+        }
 
-        // 查詢帳號列表
-        IEnumerable<User> users = await _userRepository.GetAllAsync(pageNumber, pageSize);
-        int totalCount = await _userRepository.CountActiveAsync();
+        if (pageSize < 1)
+        {
+            pageSize = 10;
+        }
+
+        if (pageSize > 100)
+        {
+            pageSize = 100;
+        }
+
+        // 查詢帳號列表 (搜尋時傳遞 searchKeyword 參數)
+        IEnumerable<User> users = await _userRepository.SearchAsync(
+            pageNumber,
+            pageSize,
+            searchKeyword
+        );
+        int totalCount = await _userRepository.CountAsync(searchKeyword);
 
         // 轉換為 DTO
         List<AccountDto> items = users
@@ -355,7 +372,10 @@ public class AccountService : IAccountService
                 {
                     var perms = await _rolePermissionRepository.GetRolePermissionsAsync(ur.RoleId);
                     if (perms is null)
+                    {
                         continue;
+                    }
+
                     foreach (var p in perms)
                     {
                         if (!string.IsNullOrWhiteSpace(p.PermissionCode))

@@ -59,14 +59,30 @@ public class UserRepository : IUserRepository
     /// <inheritdoc />
     public async Task<IEnumerable<User>> GetAllAsync(int pageNumber, int pageSize)
     {
+        return await SearchAsync(pageNumber, pageSize, null);
+    }
+
+    /// <summary>
+    /// 使用 searchKeyword 搜尋帳號 (分頁)
+    /// </summary>
+    /// <param name="pageNumber">頁碼 (從 1 開始)</param>
+    /// <param name="pageSize">每頁數量</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <returns>符合條件的帳號清單</returns>
+    public async Task<IEnumerable<User>> SearchAsync(int pageNumber, int pageSize, string? searchKeyword)
+    {
         const string sql = @"
             SELECT id, username, password_hash AS PasswordHash, display_name AS DisplayName, 
                    created_at AS CreatedAt, updated_at AS UpdatedAt, 
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
-            FROM users WHERE is_deleted = false ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
+            FROM users 
+            WHERE is_deleted = false
+            AND (@SearchKeyword IS NULL OR LOWER(username) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))
+            ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
 
         int offset = (pageNumber - 1) * pageSize;
-        return await _connection.QueryAsync<User>(sql, new { PageSize = pageSize, Offset = offset });
+        var searchKeywordPattern = string.IsNullOrWhiteSpace(searchKeyword) ? null : $"%{searchKeyword}%";
+        return await _connection.QueryAsync<User>(sql, new { SearchKeyword = searchKeywordPattern, PageSize = pageSize, Offset = offset });
     }
 
     /// <inheritdoc />
@@ -128,7 +144,22 @@ public class UserRepository : IUserRepository
     /// <inheritdoc />
     public async Task<int> CountActiveAsync()
     {
-        const string sql = "SELECT COUNT(*) FROM users WHERE is_deleted = false";
-        return await _connection.ExecuteScalarAsync<int>(sql);
+        return await CountAsync(null);
+    }
+
+    /// <summary>
+    /// 搜尋符合 searchKeyword 的有效帳號總數
+    /// </summary>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <returns>符合條件的帳號總數</returns>
+    public async Task<int> CountAsync(string? searchKeyword)
+    {
+        const string sql = @"
+            SELECT COUNT(*) FROM users 
+            WHERE is_deleted = false
+            AND (@SearchKeyword IS NULL OR LOWER(username) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))";
+
+        var searchKeywordPattern = string.IsNullOrWhiteSpace(searchKeyword) ? null : $"%{searchKeyword}%";
+        return await _connection.ExecuteScalarAsync<int>(sql, new { SearchKeyword = searchKeywordPattern });
     }
 }

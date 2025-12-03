@@ -37,6 +37,15 @@ public interface IUserRepository
     Task<IEnumerable<User>> GetAllAsync(int pageNumber, int pageSize);
 
     /// <summary>
+    /// 使用 searchKeyword 搜尋使用者 (分頁)
+    /// </summary>
+    /// <param name="pageNumber">頁碼 (從 1 開始)</param>
+    /// <param name="pageSize">每頁筆數</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <returns>符合條件的使用者清單</returns>
+    Task<IEnumerable<User>> SearchAsync(int pageNumber, int pageSize, string? searchKeyword);
+
+    /// <summary>
     /// 建立新使用者
     /// </summary>
     /// <param name="user">使用者實體</param>
@@ -64,4 +73,11 @@ public interface IUserRepository
     /// </summary>
     /// <returns>有效帳號數量</returns>
     Task<int> CountActiveAsync();
+
+    /// <summary>
+    /// 搜尋符合 searchKeyword 的有效帳號總數
+    /// </summary>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <returns>符合條件的帳號總數</returns>
+    Task<int> CountAsync(string? searchKeyword);
 }

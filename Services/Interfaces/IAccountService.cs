@@ -46,12 +46,13 @@ public interface IAccountService
     Task<AccountDto> GetAccountByIdAsync(Guid id);
 
     /// <summary>
-    /// 查詢帳號列表 (分頁)
+    /// 查詢帳號列表 (分頁，支援 searchKeyword 搜尋)
     /// </summary>
     /// <param name="pageNumber">頁碼 (從 1 開始)</param>
     /// <param name="pageSize">每頁數量</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫，可為 null)</param>
     /// <returns>帳號列表</returns>
-    Task<AccountListDto> GetAccountsAsync(int pageNumber, int pageSize);
+    Task<AccountListDto> GetAccountsAsync(int pageNumber, int pageSize, string? searchKeyword = null);
 
     /// <summary>
     /// 刪除帳號 (軟刪除)

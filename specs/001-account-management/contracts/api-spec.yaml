@@ -154,7 +154,8 @@ paths:
         - Accounts
       summary: 查詢帳號列表
       description: |
-        查詢所有有效 (未刪除) 的帳號列表,支援分頁。
+        查詢所有有效 (未刪除) 的帳號列表,支援分頁與關鍵字搜尋。
+        searchKeyword 參數可用於模糊搜尋帳號名稱 (username) 和顯示名稱 (display_name)，不區分大小寫。
         需要 JWT 身份驗證。
       operationId: listAccounts
       security:
@@ -177,6 +178,13 @@ paths:
             minimum: 1
             maximum: 100
             default: 10
+        - name: searchKeyword
+          in: query
+          description: 搜尋關鍵字 (比對 username 和 display_name，不區分大小寫，選填)
+          required: false
+          schema:
+            type: string
+            maxLength: 100
       responses:
         '200':
           description: 查詢成功
