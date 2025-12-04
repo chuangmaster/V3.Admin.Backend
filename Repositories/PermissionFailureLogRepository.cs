@@ -37,12 +37,13 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
             @"
             INSERT INTO permission_failure_logs 
             (id, user_id, username, attempted_resource, failure_reason, attempted_at, ip_address, user_agent, trace_id)
-            VALUES (@Id, @UserId, @Username, @AttemptedResource, @FailureReason, @AttemptedAt, @IpAddress, @UserAgent, @TraceId);
+            VALUES (@Id, @UserId, @Username, @AttemptedResource, @FailureReason, @AttemptedAt, @IpAddress, @UserAgent, @TraceId)
+            RETURNING id;
         ";
 
         try
         {
-            int result = await _dbConnection.ExecuteAsync(
+            var result = await _dbConnection.QuerySingleAsync<Guid>(
                 sql,
                 new
                 {
@@ -58,7 +59,7 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
                 }
             );
 
-            return result > 0;
+            return result != Guid.Empty;
         }
         catch (Exception ex)
         {
