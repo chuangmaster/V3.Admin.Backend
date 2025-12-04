@@ -352,7 +352,7 @@ public class RoleController : BaseApiController
             if (!success)
                 return NotFound("角色或權限不存在");
 
-            return NoContent();
+            return Success();
         }
         catch (KeyNotFoundException ex)
         {
