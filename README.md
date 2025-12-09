@@ -1,11 +1,22 @@
-# V3.Admin.Backend - 帳號管理系統
+# V3.Admin.Backend - 後台管理系統後端
 
-[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-46_Passing-success)](Tests/)
 
-現代化的帳號管理系統後端 API,基於 ASP.NET Core 9 與 PostgreSQL 構建,提供完整的帳號認證、新增、修改與刪除功能。
+[English](README_EN.md) | 繁體中文
+
+現代化的後台管理系統後端 API，基於 ASP.NET Core 10 與 PostgreSQL 構建。本專案配合 [V3 Admin Vite](https://github.com/chuangmaster/v3-admin-vite) 前端專案，快速打造完整的企業級後台管理系統，提供帳號認證、權限管理、角色控制等核心功能。
+
+## 🎯 專案特色
+
+本專案是配合 **[V3 Admin Vite](https://github.com/chuangmaster/v3-admin-vite)** 前端框架設計的後端系統，可快速搭建具備以下特色的企業級後台：
+
+- 🚀 **開箱即用** - 完整的前後端整合方案，快速啟動專案開發
+- 🎨 **現代化前端** - Vue 3 + TypeScript + Element Plus 管理介面
+- ⚡ **高效能後端** - .NET 10 + PostgreSQL 提供穩定高效的 API 服務
+- 🔐 **完整權限系統** - RBAC 角色權限控制，細粒度權限管理
 
 ## ✨ 功能特色
 
@@ -20,11 +31,17 @@
 - 🌐 **繁體中文** - 完整繁體中文錯誤訊息與文件
 - 🐳 **Docker 支援** - 容器化部署就緒
 
-## 🚀 快速開始
+## � 相關專案
+
+- **前端專案**: [V3 Admin Vite](https://github.com/chuangmaster/v3-admin-vite) - Vue 3 + TypeScript + Element Plus 管理後台
+
+本專案提供完整的 RESTful API，可與前端專案無縫整合，快速構建企業級後台管理系統。
+
+## �🚀 快速開始
 
 ### 前置需求
 
-- [.NET SDK 9.0+](https://dotnet.microsoft.com/download)
+- [.NET SDK 10.0+](https://dotnet.microsoft.com/download)
 - [PostgreSQL 15+](https://www.postgresql.org/download/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (選用,用於整合測試)
 
@@ -124,8 +141,8 @@ curl -X POST https://localhost:5001/api/accounts \
 
 ### 技術堆疊
 
-- **框架**: ASP.NET Core 9.0 (Web API)
-- **語言**: C# 13
+- **框架**: ASP.NET Core 10.0 (Web API)
+- **語言**: C# 14
 - **資料庫**: PostgreSQL 15+
 - **ORM**: Dapper (Micro-ORM)
 - **身份驗證**: JWT Bearer Token
@@ -322,7 +339,9 @@ git push origin feature/your-feature-name
 
 ## 🤝 貢獻
 
-歡迎貢獻! 請遵循以下步驟:
+歡迎貢獻！本專案與 [V3 Admin Vite](https://github.com/chuangmaster/v3-admin-vite) 前端專案共同維護，致力於提供最佳的全端後台解決方案。
+
+請遵循以下步驟:
 
 1. Fork 本專案
 2. 建立 feature branch (`git checkout -b feature/amazing-feature`)
@@ -360,12 +379,13 @@ git push origin feature/your-feature-name
 
 本專案採用 [MIT License](LICENSE) 授權 - 詳見 LICENSE 檔案
 
-## 📞 支援
 
-- 📧 Email: support@example.com
-- 💬 GitHub Issues: [提交問題](https://github.com/your-org/V3.Admin.Backend/issues)
-- 📖 Wiki: [專案 Wiki](https://github.com/your-org/V3.Admin.Backend/wiki)
+## 🌟 相關資源
+
+- [V3 Admin Vite (前端)](https://github.com/chuangmaster/v3-admin-vite) - Vue 3 管理後台前端專案
+- [線上文件](https://github.com/chuangmaster/V3.Admin.Backend/wiki) - 詳細的開發文件
+- [問題回報](https://github.com/chuangmaster/V3.Admin.Backend/issues) - 回報問題或功能建議
 
 ---
 
-⭐ 如果這個專案對您有幫助,請給我們一個 Star!
+⭐ 如果這個專案對您有幫助，請給我們一個 Star！同時也歡迎查看配套的[前端專案](https://github.com/chuangmaster/v3-admin-vite)！
