@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# 建置輸出
+bin/
+obj/
+out/
+logs/
+
+# 測試
+Tests/
+**/*.Tests/
+**/TestResults/
+
+# IDE 設定
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# 開發設定檔案（生產環境應使用環境變數或掛載設定）
+appsettings.Development.json
+*.http
+
+# 其他
+README*.md
+LICENSE
+specs/
+*.md
