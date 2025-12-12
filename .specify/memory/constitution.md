@@ -1,26 +1,32 @@
 <!--
 Sync Impact Report:
-Version change: 1.10.0 → 1.10.1 (PATCH - Reorganized pagination principles for improved clarity and structure)
+Version change: 1.10.1 → 1.11.0 (MINOR - Separated technical implementation details from governance principles)
 Modified principles:
-  - Principle IX: Merged former Principles IX (Paginated Response Design) and X (Pagination Query & Layer Responsibility) into a single cohesive principle "Pagination Architecture & Layer Responsibility". Eliminated redundant content while preserving all technical requirements.
-  - Principle X: Removed (merged into Principle IX).
-Added sections: None (reorganization only)
+  - All Principles (I-IX): Removed detailed code examples, SQL patterns, and implementation guides. Replaced with cross-references to technical-reference.md.
+  - Principle I: Retained high-level code quality requirements. Moved naming conventions and database standards to Technical Reference §1.
+  - Principle III: Retained foreign key integrity requirements. Moved ON DELETE/UPDATE behavior rules and complete foreign key list to Technical Reference §2.
+  - Principle IV: Retained permission-based authorization design. Moved SQL seed scripts and RequirePermission examples to Technical Reference §3.
+  - Principle VIII: Retained DTO separation requirements. Moved complete code examples and mapping patterns to Technical Reference §4.
+  - Principle IX: Retained pagination architecture requirements. Moved 105-line implementation pattern to Technical Reference §5.
+  - API Response Design Standards: Retained dual-layer response model concept. Moved HTTP status code mapping table to Technical Reference §6.
+  - Security Requirements: Retained security standards. Moved specific parameters (BCrypt work factor, JWT expiration) to Technical Reference §7.
+Added sections:
+  - New file: technical-reference.md - Contains all extracted technical implementation details organized into 8 chapters.
 Removed sections:
-  - Former standalone Principle X content (now integrated into Principle IX)
+  - ~220 lines of code examples, SQL scripts, and implementation patterns moved to technical-reference.md.
 Templates requiring updates:
-  ✅ plan-template.md - No changes needed, pagination requirements remain identical.
-  ✅ spec-template.md - No changes needed, pagination architecture patterns unchanged.
-  ✅ tasks-template.md - References to "Principle X" should now reference "Principle IX".
-  ✅ agent-file-template.md - Compatible, no changes needed.
-  ✅ checklist-template.md - Pagination validation checklist items should reference "Principle IX".
+  ✅ plan-template.md - Update to reference technical-reference.md for implementation details.
+  ✅ spec-template.md - Update to reference technical-reference.md for code patterns.
+  ✅ tasks-template.md - No changes needed, tasks reference principles which remain unchanged.
+  ✅ agent-file-template.md - Update to include technical-reference.md as a required resource.
+  ✅ checklist-template.md - Update validation checklists to reference technical-reference.md sections.
 Follow-up TODOs:
-  - Create PagedResultDto<T> class in Models/Responses/PagedResultDto.cs if not already present.
-  - Audit existing paginated endpoints to ensure compliance with Principle IX (Service returns PagedResultDto, Controller maps to PagedApiResponseModel).
-  - Update any Service methods returning PagedApiResponseModel to return PagedResultDto instead.
-  - Verify all Repository methods use LIMIT/OFFSET for pagination queries.
-  - Add unit tests for PagedResultDto mapping and Controller pagination parameter validation.
-  - Update any documentation referencing "Principle X" to reference "Principle IX" instead.
-  - Constitution.md version updated to 1.10.1 with Last Amended date: 2025-11-25.
+  - Verify all cross-references between constitution.md and technical-reference.md are correct.
+  - Update developer onboarding documentation to include technical-reference.md as a key resource.
+  - Review technical-reference.md quarterly for accuracy and completeness.
+  - Consider creating a quick-reference card summarizing constitution principles + technical-reference sections.
+  - Constitution.md version updated to 1.11.0 with Last Amended date: 2025-12-13.
+  - Created technical-reference.md version 1.0.0.
 -->
 
 # V3.Admin.Backend Constitution
@@ -36,15 +42,9 @@ This backend project serves as the API foundation for v3-admin-frontend, providi
 ## Core Principles
 
 ### I. Code Quality Excellence (NON-NEGOTIABLE)
-Code MUST adhere to C# 13 best practices with comprehensive XML documentation for all public APIs. Every public method, class, and property requires Traditional Chinese comments explaining purpose and usage. Code MUST follow PascalCase for public members, camelCase for private fields, and prefix interfaces with "I". Nullable reference types are mandatory - declare variables non-nullable and use `is null`/`is not null` checks. Pattern matching and switch expressions MUST be used wherever applicable. File-scoped namespaces and single-line using directives are required.
+Code MUST adhere to C# 13 best practices with comprehensive XML documentation for all public APIs. Every public method, class, and property requires Traditional Chinese comments explaining purpose and usage. Code MUST follow established naming conventions, use nullable reference types with proper null checks, leverage pattern matching and switch expressions, and use file-scoped namespaces. Database objects MUST use snake_case naming convention while C# code uses PascalCase to maintain PostgreSQL best practices while preserving .NET conventions.
 
-**Database Naming Standards**: Database objects MUST use snake_case naming convention while C# code uses PascalCase. This separation maintains PostgreSQL best practices while preserving C# conventions:
-- **Tables**: snake_case plural nouns (e.g., `users`, `user_roles`, `permission_assignments`)
-- **Columns**: snake_case (e.g., `id`, `username`, `password_hash`, `created_at`, `is_deleted`)
-- **Indexes**: `idx_tablename_columnname` pattern (e.g., `idx_users_username`, `idx_users_createdat`)
-- **Constraints**: `chk_tablename_description` for checks, `fk_tablename_column` for foreign keys (e.g., `chk_username_length`, `fk_users_deletedrby`)
-- **C# Entities**: PascalCase properties that map to snake_case columns (e.g., `Id` → `id`, `CreatedAt` → `created_at`, `IsDeleted` → `is_deleted`)
-- **ORM Mapping**: Use explicit column name mapping in Dapper queries or Entity Framework configurations to bridge naming conventions
+**Implementation Details**: See [Technical Reference §1: Code Style Guide](technical-reference.md#1-code-style-guide) for detailed naming conventions, nullable reference type patterns, modern C# features usage, and complete database-to-C# mapping examples.
 
 **Rationale**: Maintains consistent, readable, and maintainable codebase that supports long-term evolution and team collaboration in an admin system requiring high reliability. Snake_case database naming follows PostgreSQL community standards and improves SQL readability, while PascalCase C# code follows .NET conventions.
 
@@ -54,61 +54,16 @@ All features MUST implement the three-layer architecture: Presentation (Controll
 **Rationale**: Ensures separation of concerns, testability, and maintainable architecture that scales with user management complexity and role/permission requirements.
 
 ### III. Database Design & Foreign Key Integrity (NON-NEGOTIABLE)
-All database tables MUST maintain referential integrity through properly defined foreign key constraints. Every column that references another table's primary key MUST have an explicit foreign key constraint. Foreign key constraints MUST specify appropriate `ON DELETE` and `ON UPDATE` behaviors:
-- **Cascade deletion** (`ON DELETE CASCADE`): Use for strong ownership relationships (e.g., `role_permissions.role_id` → `roles.id`, `user_roles.user_id` → `users.id`) where child records should be automatically removed when parent is deleted.
-- **Restrict deletion** (`ON DELETE RESTRICT` or `ON DELETE NO ACTION`): Use for audit/tracking columns (e.g., `users.deleted_by` → `users.id`, `permissions.created_by` → `users.id`) to prevent deletion of users who have performed operations in the system. These should use `ON DELETE SET NULL` if the relationship is optional.
-- **Set null** (`ON DELETE SET NULL`): Use for optional references where the relationship can be broken without losing data integrity (e.g., audit columns like `created_by`, `updated_by`, `deleted_by`, `assigned_by`).
+All database tables MUST maintain referential integrity through properly defined foreign key constraints. Every column that references another table's primary key MUST have an explicit foreign key constraint with appropriate `ON DELETE` and `ON UPDATE` behaviors. Use CASCADE for strong ownership relationships, RESTRICT for required references, and SET NULL for optional audit/tracking columns. Constraint names MUST follow the `fk_tablename_columnname` pattern. All foreign key constraints MUST be added in the same migration file where the table is created or in a dedicated amendment migration.
 
-**Mandatory Foreign Keys** (examples from current schema):
-- `users.deleted_by` → `users.id` (ON DELETE SET NULL)
-- `permissions.created_by`, `permissions.updated_by`, `permissions.deleted_by` → `users.id` (ON DELETE SET NULL)
-- `roles.created_by`, `roles.updated_by`, `roles.deleted_by` → `users.id` (ON DELETE SET NULL)
-- `role_permissions.role_id` → `roles.id` (ON DELETE CASCADE)
-- `role_permissions.permission_id` → `permissions.id` (ON DELETE CASCADE)
-- `role_permissions.assigned_by` → `users.id` (ON DELETE SET NULL)
-- `user_roles.user_id` → `users.id` (ON DELETE CASCADE)
-- `user_roles.role_id` → `roles.id` (ON DELETE CASCADE)
-- `user_roles.assigned_by`, `user_roles.deleted_by` → `users.id` (ON DELETE SET NULL)
-- `audit_logs.operator_id` → `users.id` (ON DELETE SET NULL)
-- `permission_failure_logs.user_id` → `users.id` (ON DELETE SET NULL)
-
-**Migration Requirements**: All foreign key constraints MUST be added in the same migration file where the table is created or in a dedicated amendment migration. Constraint names MUST follow the pattern `fk_tablename_columnname` (e.g., `fk_users_deletedby`, `fk_permissions_createdby`).
+**Implementation Details**: See [Technical Reference §2: Database Design Patterns](technical-reference.md#2-database-design-patterns) for the complete foreign key reference list (all 15+ constraints), ON DELETE/UPDATE behavior decision tree, and migration templates with examples.
 
 **Rationale**: Foreign key constraints ensure data integrity, prevent orphaned records, maintain audit trail reliability, and make the database schema self-documenting. They catch referential integrity violations at the database level rather than application level, providing a critical defense against data corruption. Proper `ON DELETE` behaviors prevent cascade failures in audit systems while maintaining cleanup automation for transactional data.
 
 ### IV. Permission-Based Authorization Design (NON-NEGOTIABLE)
-All new features MUST implement permission-based authorization following the established pattern. Every protected endpoint MUST be decorated with `[RequirePermission("resource.action")]` attribute where `resource` is the feature domain (e.g., `permission`, `role`, `account`, `inventory`) and `action` is the operation (e.g., `create`, `read`, `update`, `delete`, `assign`, `remove`). Permission codes MUST follow the dot notation format `resource.action` and be pre-defined in the `seed_permissions.sql` script before feature deployment.
+All new features MUST implement permission-based authorization following the established pattern. Every protected endpoint MUST be decorated with `[RequirePermission("resource.action")]` attribute where `resource` is the feature domain (e.g., `permission`, `role`, `account`, `inventory`) and `action` is the operation (e.g., `create`, `read`, `update`, `delete`, `assign`, `remove`). Permission codes MUST follow the dot notation format `resource.action` and be pre-defined in the `seed_permissions.sql` script before feature deployment. The `PermissionAuthorizationMiddleware` automatically validates permissions by extracting user ID from JWT claims, querying user permissions, returning 403 Forbidden on failures, and logging permission failures.
 
-**Required Permission Pattern**:
-1. Define permissions in `Database/Scripts/seed_permissions.sql` using the format:
-   ```sql
-   INSERT INTO permissions (permission_code, name, description, permission_type) 
-   VALUES 
-       ('resource.read', '查詢[資源]', '允許查詢[資源]資訊', 'function'),
-       ('resource.create', '新增[資源]', '允許創建新的[資源]', 'function'),
-       ('resource.update', '修改[資源]', '允許編輯[資源]資訊', 'function'),
-       ('resource.delete', '刪除[資源]', '允許刪除[資源]', 'function')
-   ON CONFLICT (permission_code) DO NOTHING;
-   ```
-
-2. Apply `[RequirePermission]` attribute to controller endpoints:
-   ```csharp
-   [HttpGet]
-   [RequirePermission("resource.read")]
-   public async Task<IActionResult> GetResources() { ... }
-   
-   [HttpPost]
-   [RequirePermission("resource.create")]
-   public async Task<IActionResult> CreateResource() { ... }
-   ```
-
-3. Middleware `PermissionAuthorizationMiddleware` automatically validates permissions by:
-   - Extracting user ID from JWT claims (`sub` claim)
-   - Querying user's permissions through `IPermissionValidationService`
-   - Returning 403 Forbidden if permission check fails
-   - Logging permission failures to `permission_failure_logs` table
-
-**Standard Permission Actions**: `create`, `read`, `update`, `delete` for CRUD operations; `assign`, `remove` for relationship management (e.g., role assignments); custom actions as needed (e.g., `export`, `import`, `approve`).
+**Implementation Details**: See [Technical Reference §3: Authorization Implementation](technical-reference.md#3-authorization-implementation) for the complete permission setup workflow (seed script templates, RequirePermission attribute examples, middleware flow diagram), standard permission actions reference (CRUD + custom actions), and permission naming conventions.
 
 **Rationale**: Standardized permission design ensures consistent security across features, enables fine-grained access control, supports role-based authorization (RBAC), facilitates audit compliance, and makes security requirements explicit in code through declarative attributes. The `resource.action` naming convention maintains clarity and prevents permission code collisions across different domains.
 
@@ -128,198 +83,22 @@ API endpoints MUST respond within 200ms for simple operations (login, single acc
 **Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
 
 ### VIII. Controller Response DTO Architecture (NON-NEGOTIABLE)
-All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs (e.g., `UserDto`, `PermissionDto`, `UserEffectivePermissionsDto`) as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponse` pattern) that convert Service DTOs before returning to clients.
+All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponse` pattern, placed in `Models/Responses/`) that convert Service DTOs before returning to clients. Response DTOs MUST NOT reference Service DTO types in properties, constructors, or methods. Conversion logic MUST be implemented in the Controller layer using explicit property mapping. Even for 1:1 identical structures, the separation and independent mapping MUST be maintained. Nested objects within DTOs MUST also have corresponding Response DTOs and be mapped explicitly.
 
-**Required Pattern**:
-1. **Service Layer**: Returns business logic DTOs (e.g., `UserEffectivePermissionsDto` with `List<PermissionDto>`)
-2. **Controller Layer**: Converts Service DTOs to Response DTOs (e.g., `UserEffectivePermissionsResponse` with `List<PermissionResponse>`)
-3. **API Response**: Wraps Response DTO in `ApiResponseModel<T>` using `Success()` helper method from `BaseController`.
+**Required Pattern**: Service Layer returns business logic DTOs → Controller Layer manually maps to Response DTOs → API Response wraps Response DTO in `ApiResponseModel<T>` using `BaseController` helper methods.
 
-**Implementation Requirements**:
-- Response DTOs MUST be placed in `Models/Responses/` directory.
-- Response DTO naming MUST follow the `xxxResponse` pattern (e.g., `UserResponse`, `RoleDetailResponse`).
-- Response DTOs MUST NOT reference Service DTO types in ANY way (not in properties, constructors, or methods).
-- Response DTOs MUST NOT have constructors that accept Service DTO types as parameters.
-- Conversion logic from Service DTO to Response DTO MUST be implemented in the Controller layer using explicit property mapping.
-- Even if a Response DTO's structure is 1:1 identical to a Service DTO, the separation and independent mapping MUST be maintained.
-- Nested objects within DTOs (e.g., a `List<PermissionDto>` inside `UserEffectivePermissionsDto`) MUST also have corresponding Response DTOs (e.g., `List<PermissionResponse>`) and be mapped explicitly.
+**Implementation Details**: See [Technical Reference §4: DTO Mapping Patterns](technical-reference.md#4-dto-mapping-patterns) for complete code examples demonstrating correct Service DTO → Response DTO mapping patterns, prohibited patterns (constructor coupling, direct Service DTO returns), and nested object mapping with LINQ transformations.
 
-**Example - Correct Pattern**:
-```csharp
-// Service Layer returns Service DTO
-var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
-
-// Controller manually maps Service DTO to Response DTO (NO COUPLING)
-var response = new UserEffectivePermissionsResponse
-{
-    UserId = serviceDto.UserId,
-    Username = serviceDto.Username,
-    Permissions = serviceDto.Permissions.Select(p => new PermissionResponse
-    {
-        PermissionId = p.PermissionId,
-        PermissionCode = p.PermissionCode,
-        Name = p.Name,
-        Description = p.Description
-    }).ToList()
-};
-
-// Wrap in ApiResponseModel and return using BaseController helper
-return Success(response, "查詢成功");
-```
-
-**Example - Incorrect Patterns** (DO NOT USE):
-```csharp
-// ❌ WRONG: Directly returning Service DTO
-var serviceDto = await _service.GetUserEffectivePermissionsAsync(userId);
-return Success(serviceDto, "查詢成功");
-
-// ❌ WRONG: Response DTO constructor depends on Service DTO type
-public class UserEffectivePermissionsResponse
-{
-    // This creates coupling between Response DTO and Service DTO
-    public UserEffectivePermissionsResponse(UserEffectivePermissionsDto serviceDto) { /* ... */ }
-}
-```
-
-**Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits:
-1. **Encapsulation**: Prevents internal business logic structures from leaking into public API contracts.
-2. **Flexibility**: Enables independent evolution of API response formats without affecting business logic.
-3. **Security**: Allows selective field exposure, hiding sensitive internal data.
-4. **Versioning**: Facilitates API versioning by allowing multiple Response DTO versions to map to a single Service DTO.
-5. **Frontend Stability**: Reduces frontend-backend coupling by providing a stable, purpose-built API contract.
-
-This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities.
+**Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits: (1) Encapsulation - prevents internal business logic structures from leaking into public API contracts, (2) Flexibility - enables independent evolution of API response formats without affecting business logic, (3) Security - allows selective field exposure, hiding sensitive internal data, (4) Versioning - facilitates API versioning by allowing multiple Response DTO versions to map to a single Service DTO, (5) Frontend Stability - reduces frontend-backend coupling by providing a stable, purpose-built API contract. This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities.
 
 ### IX. Pagination Architecture & Layer Responsibility (NON-NEGOTIABLE)
-All paginated endpoints MUST implement strict layer separation to ensure database-level pagination execution, consistent response formats, and API layer testability. Service layers execute pagination at the database level and return internal business DTOs wrapped in `PagedResultDto<T>`. Controller layers validate parameters, map Service DTOs to Response DTOs, and format responses using `PagedApiResponseModel<TItem>`.
+All paginated endpoints MUST implement strict layer separation to ensure database-level pagination execution, consistent response formats, and API layer testability. Repository layers MUST execute SQL queries with `LIMIT` and `OFFSET` clauses and provide separate COUNT queries. Service layers MUST return `PagedResultDto<TDto>` containing Items, TotalCount, PageNumber, and PageSize, executing pagination logic at the database level to prevent loading entire datasets into memory. Controller layers MUST validate pagination parameters, encapsulate query parameters into request objects, map Service DTOs to Response DTOs, and use `PagedApiResponseModel<TItem>` wrapper via `BaseApiController.PagedSuccess()` helper methods.
 
-**Layer Responsibilities**:
+**Naming Conventions**: `PagedResultDto<T>` (Service layer return type in Models/Responses/), `PagedApiResponseModel<TItem>` (API layer wrapper in Models/ApiResponseModel.cs).
 
-1. **Repository Layer**:
-   - MUST accept `pageNumber` and `pageSize` parameters for paginated queries.
-   - MUST execute SQL queries with `LIMIT` and `OFFSET` clauses to retrieve only the requested page.
-   - MUST provide separate method to calculate `TotalCount` efficiently (via COUNT query).
+**Prohibited Patterns**: Service returning `PagedApiResponseModel<TItem>` (violates layer separation), Controller loading entire dataset into memory before pagination (violates performance requirements), Service accepting/returning API-specific models (violates encapsulation), Direct return of Service DTOs from Controllers without mapping to Response DTOs (violates Principle VIII).
 
-2. **Service Layer**:
-   - MUST return `PagedResultDto<TDto>` containing:
-     - `Items`: `IEnumerable<T>` - The paginated result set
-     - `TotalCount`: `long` - Total record count for pagination calculation
-     - `PageNumber`: `int` - Current page number (1-based)
-     - `PageSize`: `int` - Page size
-   - MUST execute pagination logic in SQL queries (via Repository) to prevent loading entire datasets into memory.
-   - MUST calculate `TotalCount` via separate COUNT query before applying LIMIT/OFFSET.
-   - MUST return business logic DTOs (e.g., `PermissionDto`, `UserDto`) within `PagedResultDto<T>`, NOT API response models.
-
-3. **Controller (API) Layer**:
-   - MUST validate pagination parameters (`pageNumber >= 1`, `pageSize` within configured limits, typically 1-100).
-   - MUST encapsulate query parameters into request objects (e.g., `PermissionQueryRequest`).
-   - MUST map Service DTOs (e.g., `PermissionDto`) to API Response DTOs (e.g., `PermissionResponse`) before returning.
-   - MUST use `PagedApiResponseModel<TItem>` wrapper via helper methods (e.g., `BaseApiController.PagedSuccess()`) to format responses.
-   - MUST NOT pull entire collections into memory and paginate in-memory.
-
-**Naming Conventions**:
-- **Internal Business Model**: `PagedResultDto<T>` (Service layer return type) - Located in `Models/Responses/PagedResultDto.cs` or `Models/`.
-- **API Response Model**: `PagedApiResponseModel<TItem>` (API layer wrapper) - Located in `Models/ApiResponseModel.cs`.
-
-**Prohibited Patterns**:
-- Service returning `PagedApiResponseModel<TItem>` (violates layer separation).
-- Controller loading entire dataset into memory before pagination (violates performance requirements).
-- Service accepting or returning API-specific models (violates encapsulation).
-- Direct return of Service DTOs from Controllers without mapping to Response DTOs (violates Principle VIII).
-
-**Implementation Pattern**:
-
-```csharp
-// 1. PagedResultDto<T> definition (Models/Responses/PagedResultDto.cs)
-public class PagedResultDto<T>
-{
-    public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
-    public long TotalCount { get; set; }
-    public int PageNumber { get; set; }
-    public int PageSize { get; set; }
-}
-
-// 2. Repository: Database-level pagination with LIMIT/OFFSET
-public async Task<IEnumerable<Permission>> GetPagedPermissionsAsync(
-    int pageNumber, int pageSize, PermissionFilters filters, CancellationToken ct)
-{
-    var offset = (pageNumber - 1) * pageSize;
-    var sql = @"
-        SELECT permission_id, permission_code, name, description, permission_type
-        FROM permissions WHERE is_deleted = false
-        ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
-    
-    return await _connection.QueryAsync<Permission>(
-        new CommandDefinition(sql, new { PageSize = pageSize, Offset = offset }, cancellationToken: ct)
-    );
-}
-
-public async Task<long> CountPermissionsAsync(PermissionFilters filters, CancellationToken ct)
-{
-    var sql = "SELECT COUNT(*) FROM permissions WHERE is_deleted = false";
-    return await _connection.ExecuteScalarAsync<long>(
-        new CommandDefinition(sql, cancellationToken: ct)
-    );
-}
-
-// 3. Service: Returns PagedResultDto<TDto>
-public async Task<PagedResultDto<PermissionDto>> GetPermissionsAsync(
-    PermissionQuery query, CancellationToken ct)
-{
-    var totalCount = await _repository.CountPermissionsAsync(query.Filters, ct);
-    var entities = await _repository.GetPagedPermissionsAsync(
-        query.PageNumber, query.PageSize, query.Filters, ct
-    );
-    
-    return new PagedResultDto<PermissionDto>
-    {
-        Items = entities.Select(MapToDto),
-        TotalCount = totalCount,
-        PageNumber = query.PageNumber,
-        PageSize = query.PageSize
-    };
-}
-
-// 4. Controller: Validates, maps DTOs, wraps in PagedApiResponseModel
-[HttpGet]
-[RequirePermission("permission.read")]
-public async Task<IActionResult> GetPermissions(
-    [FromQuery] PermissionQueryRequest request, CancellationToken ct)
-{
-    // Validate pagination parameters
-    if (request.PageNumber < 1 || request.PageSize < 1 || request.PageSize > 100)
-        return ValidationError("分頁參數無效");
-    
-    // Call service (returns PagedResultDto<PermissionDto>)
-    var query = new PermissionQuery 
-    { 
-        PageNumber = request.PageNumber, 
-        PageSize = request.PageSize,
-        Filters = request.Filters
-    };
-    var paged = await _permissionService.GetPermissionsAsync(query, ct);
-    
-    // Map Service DTO to API Response DTO
-    var responseItems = paged.Items
-        .Select(dto => new PermissionResponse
-        {
-            PermissionId = dto.PermissionId,
-            PermissionCode = dto.PermissionCode,
-            Name = dto.Name,
-            Description = dto.Description
-        })
-        .ToList();
-    
-    // Return wrapped in PagedApiResponseModel using BaseController helper
-    return PagedSuccess(
-        responseItems, 
-        paged.PageNumber, 
-        paged.PageSize, 
-        paged.TotalCount, 
-        "查詢成功"
-    );
-}
-```
+**Implementation Details**: See [Technical Reference §5: Pagination Implementation Guide](technical-reference.md#5-pagination-implementation-guide) for the complete three-layer implementation pattern (Repository LIMIT/OFFSET queries, Service PagedResultDto construction, Controller validation and mapping), PagedResultDto<T> class definition, performance optimization strategies (COUNT query optimization, pagination index strategy), and common pitfalls to avoid.
 
 **Rationale**: Enforces clear separation of concerns between business logic (Service) and API presentation (Controller). Database-level pagination prevents memory overflow on large datasets and ensures optimal query performance. Standardized `PagedResultDto<T>` enables consistent business logic testing without coupling to HTTP concerns. The `PagedApiResponseModel<TItem>` wrapper provides a clean, predictable API contract for frontend pagination components (tables, infinite scrolling). Mandatory DTO mapping maintains API contract independence from internal models, enabling independent evolution of business logic and API contracts. This pattern ensures pagination queries are safe, performant, testable, and maintainable across all features.
 
@@ -327,20 +106,9 @@ public async Task<IActionResult> GetPermissions(
 
 **Dual-Layer Response Model**: All endpoints MUST return `ApiResponseModel<T>` (for single items) or `PagedApiResponseModel<T>` (for paginated lists), combining HTTP status codes with business logic codes. HTTP status codes reflect the request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes from the `ResponseCodes` constants provide fine-grained scenario information.
 
-**Response Creation**: Controllers MUST use the helper methods provided in a `BaseController` (e.g., `Success`, `Created`, `ValidationError`, `NotFound`, `BusinessError`, `InternalError`) to generate an `IActionResult` with a properly configured `ApiResponseModel` or `PagedApiResponseModel`.
+**Response Creation**: Controllers MUST use helper methods from `BaseController` (e.g., `Success`, `Created`, `ValidationError`, `NotFound`, `BusinessError`, `InternalError`) to generate properly configured responses. All responses MUST include `Success` (bool), `Code` (string), `Message` (string in Traditional Chinese), `Timestamp` (DateTime), and `TraceId` (string) for request tracking.
 
-**Success Responses**: Use helper methods that return `ApiResponseModel<T>.CreateSuccess()` or `ApiResponseFactory.CreatePagedSuccess<T>()`. The HTTP status code MUST match the operation (200 OK, 201 Created).
-
-**Error Responses**: Use helper methods that return `ApiResponseModel<T>.CreateFailure()` or `ApiResponseFactory.CreatePagedFailure<T>()`. Responses MUST include descriptive Traditional Chinese messages and specific business codes. Examples:
-- 400 Bad Request + `VALIDATION_ERROR`: for input validation failures (e.g., "帳號長度必須為 3-20 字元").
-- 401 Unauthorized + `INVALID_CREDENTIALS`: for authentication failures (e.g., "帳號或密碼錯誤").
-- 403 Forbidden + `FORBIDDEN`: for authorization failures (e.g., "您只能更新自己的資訊").
-- 404 Not Found + `NOT_FOUND`: for missing resources (e.g., "帳號不存在").
-- 409 Conflict + `CONCURRENT_UPDATE_CONFLICT`: for optimistic locking failures.
-- 422 Unprocessable Entity + `USERNAME_EXISTS`: for duplicate usernames.
-- 500 Internal Server Error + `INTERNAL_ERROR`: for system failures.
-
-**Required Fields**: All responses MUST include `Success` (bool), `Code` (string), `Message` (string), `Timestamp` (DateTime), and `TraceId` (string) for request tracking.
+**Implementation Details**: See [Technical Reference §6: API Response Patterns](technical-reference.md#6-api-response-patterns) for the complete HTTP Status Code + Business Code mapping table (200-500 status codes with corresponding business codes and example messages) and BaseController helper methods with usage examples.
 
 ## Security Requirements
 
@@ -348,11 +116,13 @@ public async Task<IActionResult> GetPermissions(
 
 **Authorization**: Authorization is enforced via `[RequirePermission]` attributes. Self-service restrictions (users can only update/change their own data) must be enforced in the service layer.
 
-**Input Validation**: All user inputs MUST be validated using FluentValidation. SQL injection MUST be prevented via parameterized queries (Dapper).
+**Input Validation**: All user inputs MUST be validated using FluentValidation with clear validation rules. SQL injection MUST be prevented via parameterized queries (Dapper).
 
-**Data Protection**: Passwords MUST be hashed with BCrypt (work factor 12). Sensitive data MUST NEVER appear in logs or responses. Concurrent updates MUST be protected via optimistic locking (RowVersion).
+**Data Protection**: Passwords MUST be hashed with BCrypt using appropriate work factor. Sensitive data MUST NEVER appear in logs or responses. Concurrent updates MUST be protected via optimistic locking (RowVersion).
 
 **Error Handling**: A global exception handling middleware MUST be implemented. It MUST log all errors with a `TraceId` and prevent sensitive information from being exposed in production responses.
+
+**Implementation Details**: See [Technical Reference §7: Security Implementation](technical-reference.md#7-security-implementation) for JWT token generation/validation code examples, BCrypt password hashing patterns with work factor configuration, FluentValidation rule examples (username, password, displayName constraints), SQL injection prevention with Dapper parameterized queries, and sensitive data protection best practices (logging and error response guidelines).
 
 ## Development Workflow
 
@@ -383,4 +153,4 @@ This constitution supersedes all other development practices and MUST be followe
 
 **Compliance Review**: Constitution compliance is verified during code reviews and is mandatory for merging. The constitution's effectiveness is reviewed quarterly.
 
-**Version**: 1.10.1 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-11-25
+**Version**: 1.11.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-12-13
