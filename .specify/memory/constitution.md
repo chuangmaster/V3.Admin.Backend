@@ -1,156 +1,346 @@
+# V3.Admin.Backend Project Constitution
+
 <!--
-Sync Impact Report:
-Version change: 1.10.1 → 1.11.0 (MINOR - Separated technical implementation details from governance principles)
-Modified principles:
-  - All Principles (I-IX): Removed detailed code examples, SQL patterns, and implementation guides. Replaced with cross-references to technical-reference.md.
-  - Principle I: Retained high-level code quality requirements. Moved naming conventions and database standards to Technical Reference §1.
-  - Principle III: Retained foreign key integrity requirements. Moved ON DELETE/UPDATE behavior rules and complete foreign key list to Technical Reference §2.
-  - Principle IV: Retained permission-based authorization design. Moved SQL seed scripts and RequirePermission examples to Technical Reference §3.
-  - Principle VIII: Retained DTO separation requirements. Moved complete code examples and mapping patterns to Technical Reference §4.
-  - Principle IX: Retained pagination architecture requirements. Moved 105-line implementation pattern to Technical Reference §5.
-  - API Response Design Standards: Retained dual-layer response model concept. Moved HTTP status code mapping table to Technical Reference §6.
-  - Security Requirements: Retained security standards. Moved specific parameters (BCrypt work factor, JWT expiration) to Technical Reference §7.
-Added sections:
-  - New file: technical-reference.md - Contains all extracted technical implementation details organized into 8 chapters.
-Removed sections:
-  - ~220 lines of code examples, SQL scripts, and implementation patterns moved to technical-reference.md.
-Templates requiring updates:
-  ✅ plan-template.md - Update to reference technical-reference.md for implementation details.
-  ✅ spec-template.md - Update to reference technical-reference.md for code patterns.
-  ✅ tasks-template.md - No changes needed, tasks reference principles which remain unchanged.
-  ✅ agent-file-template.md - Update to include technical-reference.md as a required resource.
-  ✅ checklist-template.md - Update validation checklists to reference technical-reference.md sections.
-Follow-up TODOs:
-  - Verify all cross-references between constitution.md and technical-reference.md are correct.
-  - Update developer onboarding documentation to include technical-reference.md as a key resource.
-  - Review technical-reference.md quarterly for accuracy and completeness.
-  - Consider creating a quick-reference card summarizing constitution principles + technical-reference sections.
-  - Constitution.md version updated to 1.11.0 with Last Amended date: 2025-12-13.
-  - Created technical-reference.md version 1.0.0.
+Sync Impact Report
+================================================================================
+Version Change: None → v1.0.0
+Change Type: Initial Creation
+Change Date: 2025-12-13
+
+New Sections:
+- Project Mission
+- Five Core Principles:
+  1. Simplicity First
+  2. Test-Driven Quality
+  3. Security Non-Negotiable
+  4. Observability First
+  5. Documentation as Code
+- Governance Procedures (Amendment Process, Versioning Policy, Compliance Review)
+- Project Scope (Tech Stack, Architecture Patterns, Core Features)
+- Technical Debt Management
+- Relationship with Technical Reference Documentation
+
+Template Update Status:
+✅ spec-template.md - Verified, aligns with constitution requirements (independently testable user stories, prioritization)
+✅ plan-template.md - Updated
+   - Added detailed constitution checklist (specific checkpoints for five principles)
+   - Updated Technical Context to V3.Admin.Backend's concrete tech stack
+   - Updated Project Structure to actual project structure (three-tier architecture, folder organization)
+✅ tasks-template.md - Verified, aligns with constitution requirements (test-first, user story organization)
+✅ technical-reference.md - Verified, complements constitution (HOW vs WHY/WHAT)
+
+Related Documents Check:
+✅ README.md - Verified, aligns with constitution principles (Traditional Chinese, security documentation, test coverage)
+✅ copilot-instructions.md - Verified, aligns with constitution principles (three-tier architecture, testing, security)
+
+Follow-up Actions:
+- No pending items
+- All templates aligned with constitution principles
+- Recommendation: Use constitution checklist for validation in next feature development
+- Recommendation: Conduct quarterly constitution compliance review
+
+Version History:
+v1.0.0 (2025-12-13) - Initial Creation
+- Added five core principles (Simplicity First, Test-Driven, Security, Observability, Documentation as Code)
+- Added governance procedures (amendment process, versioning policy, compliance review)
+- Defined project scope (tech stack, architecture patterns, feature boundaries)
+- Added technical debt management mechanisms (allowed types, forbidden types, repayment strategy)
+- Integrated with technical reference documentation (WHY/WHAT vs HOW)
+- Updated plan-template.md to include detailed constitution checklist
+================================================================================
 -->
 
-# V3.Admin.Backend Constitution
+**Constitution Version**: 1.0.0  
+**Ratification Date**: 2025-12-13  
+**Last Amended**: 2025-12-13  
+**Project**: V3.Admin.Backend - Enterprise-Grade Admin System Backend API
 
-## Project Background
+---
 
-This backend project serves as the API foundation for v3-admin-frontend, providing comprehensive user account management functionality. The system delivers web API services for user authentication, authorization, role management, and permission control. Core capabilities include user lifecycle management, role-based access control (RBAC), and fine-grained permission assignments that enable secure, scalable administrative operations for frontend applications.
+## Project Mission
 
-**Target Users**: System administrators, application users requiring authenticated access, and frontend applications consuming admin APIs.
+Build a modern, secure, high-performance enterprise-grade admin system API providing comprehensive authentication, permission management, and audit functionality. This project uses .NET 10 and PostgreSQL, follows three-tier architecture and industry best practices, delivering reliable backend services for the [V3 Admin Vite](https://github.com/chuangmaster/v3-admin-vite) frontend.
 
-**Core Domains**: User Management, Role Management, Permission Management, Authentication Services, Authorization Services.
+---
 
 ## Core Principles
 
-### I. Code Quality Excellence (NON-NEGOTIABLE)
-Code MUST adhere to C# 13 best practices with comprehensive XML documentation for all public APIs. Every public method, class, and property requires Traditional Chinese comments explaining purpose and usage. Code MUST follow established naming conventions, use nullable reference types with proper null checks, leverage pattern matching and switch expressions, and use file-scoped namespaces. Database objects MUST use snake_case naming convention while C# code uses PascalCase to maintain PostgreSQL best practices while preserving .NET conventions.
+### Principle 1: Simplicity First
 
-**Implementation Details**: See [Technical Reference §1: Code Style Guide](technical-reference.md#1-code-style-guide) for detailed naming conventions, nullable reference type patterns, modern C# features usage, and complete database-to-C# mapping examples.
+**Definition**: Choose the simplest solution that solves the problem, avoiding over-engineering and unnecessary abstractions.
 
-**Rationale**: Maintains consistent, readable, and maintainable codebase that supports long-term evolution and team collaboration in an admin system requiring high reliability. Snake_case database naming follows PostgreSQL community standards and improves SQL readability, while PascalCase C# code follows .NET conventions.
+**Implementation Rules**:
 
-### II. Three-Layer Architecture Compliance
-All features MUST implement the three-layer architecture: Presentation (Controllers + DTOs), Business Logic (Services), and Data Access (Repositories + Entities). Controllers MUST only handle HTTP concerns and delegate business logic to services. Services MUST use DTOs for data transfer and inject repositories via dependency injection. Repositories MUST work with entity models and handle all data persistence concerns. All dependencies MUST be registered in Program.cs using dependency injection.
+- **MUST** Prioritize .NET built-in features, avoid introducing third-party packages unless clearly necessary
+- **MUST** Adopt three-tier architecture (Controller → Service → Repository), no additional abstraction layers allowed
+- **MUST** Use Dapper as data access technology, maintaining SQL transparency and control
+- **MUST** Provide explicit rationale documentation for each new design pattern or architectural component
+- **SHOULD** Code comments in Traditional Chinese, clearly explaining design decisions and business logic
 
-**Rationale**: Ensures separation of concerns, testability, and maintainable architecture that scales with user management complexity and role/permission requirements.
+**Rationale**: Simple systems are easier to understand, maintain, and debug. Over-engineering increases cognitive load, reduces development velocity, and raises long-term maintenance costs. In enterprise projects, code readability and maintainability take priority over demonstrating technical prowess.
 
-### III. Database Design & Foreign Key Integrity (NON-NEGOTIABLE)
-All database tables MUST maintain referential integrity through properly defined foreign key constraints. Every column that references another table's primary key MUST have an explicit foreign key constraint with appropriate `ON DELETE` and `ON UPDATE` behaviors. Use CASCADE for strong ownership relationships, RESTRICT for required references, and SET NULL for optional audit/tracking columns. Constraint names MUST follow the `fk_tablename_columnname` pattern. All foreign key constraints MUST be added in the same migration file where the table is created or in a dedicated amendment migration.
+**Checkpoints**:
 
-**Implementation Details**: See [Technical Reference §2: Database Design Patterns](technical-reference.md#2-database-design-patterns) for the complete foreign key reference list (all 15+ constraints), ON DELETE/UPDATE behavior decision tree, and migration templates with examples.
+- During new feature design reviews, must answer: "Is this the simplest way to solve this problem?"
+- Pull Requests must include design decision explanations (if introducing new patterns or abstractions)
+- During technical debt assessment, prioritize removal of unused abstractions and complexity
 
-**Rationale**: Foreign key constraints ensure data integrity, prevent orphaned records, maintain audit trail reliability, and make the database schema self-documenting. They catch referential integrity violations at the database level rather than application level, providing a critical defense against data corruption. Proper `ON DELETE` behaviors prevent cascade failures in audit systems while maintaining cleanup automation for transactional data.
+---
 
-### IV. Permission-Based Authorization Design (NON-NEGOTIABLE)
-All new features MUST implement permission-based authorization following the established pattern. Every protected endpoint MUST be decorated with `[RequirePermission("resource.action")]` attribute where `resource` is the feature domain (e.g., `permission`, `role`, `account`, `inventory`) and `action` is the operation (e.g., `create`, `read`, `update`, `delete`, `assign`, `remove`). Permission codes MUST follow the dot notation format `resource.action` and be pre-defined in the `seed_permissions.sql` script before feature deployment. The `PermissionAuthorizationMiddleware` automatically validates permissions by extracting user ID from JWT claims, querying user permissions, returning 403 Forbidden on failures, and logging permission failures.
+### Principle 2: Test-Driven Quality
 
-**Implementation Details**: See [Technical Reference §3: Authorization Implementation](technical-reference.md#3-authorization-implementation) for the complete permission setup workflow (seed script templates, RequirePermission attribute examples, middleware flow diagram), standard permission actions reference (CRUD + custom actions), and permission naming conventions.
+**Definition**: Ensure code quality through comprehensive test coverage; every feature must be testable and validated through tests.
 
-**Rationale**: Standardized permission design ensures consistent security across features, enables fine-grained access control, supports role-based authorization (RBAC), facilitates audit compliance, and makes security requirements explicit in code through declarative attributes. The `resource.action` naming convention maintains clarity and prevents permission code collisions across different domains.
+**Implementation Rules**:
 
-### V. Test-First Development (NON-NEGOTIABLE)
-Tests MUST be written before implementation. Critical paths MUST have unit tests with clear naming conventions matching existing style. Integration tests are required for API endpoints, authentication flows, role assignments, permission validations, and cross-layer interactions. Test coverage MUST be maintained for business logic layers. Tests MUST be independently executable and not depend on external resources without proper mocking.
+- **MUST** All critical paths must have unit test coverage
+- **MUST** All API endpoints must have integration tests, using Testcontainers to provide real database environment
+- **MUST** Tests must be written before implementation (TDD), ensuring tests fail before implementation begins
+- **MUST** Validators must achieve 100% test coverage (all validation rules and error messages)
+- **MUST** Test files follow project naming conventions, do not use "Act", "Arrange", "Assert" comments
+- **SHOULD** When delivering new features, all related tests must pass
 
-**Rationale**: Prevents regressions, ensures reliability, and documents expected behavior for future maintainers in security-critical user management operations.
+**Rationale**: Testing is the cornerstone of quality assurance, preventing regressions, accelerating refactoring, and providing living documentation. Integration tests ensure system-level correctness, unit tests ensure component-level logic correctness.
 
-### VI. User Experience Consistency & Admin Interface Standards
-All API responses MUST use ApiResponseModel wrapper with consistent Success, Code, Message, Data, Timestamp, and TraceId properties. The dual-layer design combining HTTP status codes (reflecting request processing state) and business logic codes (providing fine-grained business scenarios) is MANDATORY. Error responses MUST follow standardized format with appropriate HTTP status codes AND meaningful business codes from ResponseCodes constants. Authentication flows MUST provide clear, actionable error messages in Traditional Chinese. API endpoints MUST implement proper validation with meaningful error responses using appropriate business codes (e.g., VALIDATION_ERROR, INVALID_CREDENTIALS, USERNAME_EXISTS, PASSWORD_SAME_AS_OLD, CANNOT_DELETE_SELF, LAST_ACCOUNT_CANNOT_DELETE). Account management operations MUST provide detailed feedback on business rule violations (e.g., cannot delete last account, cannot delete current logged-in account) using specific business codes. Response times MUST be predictable and documented (<200ms for simple operations like login, <2000ms for complex operations like paginated list queries). Admin interface operations MUST maintain consistent patterns across all account management endpoints (login, create, update, delete, change password, list accounts). TraceId MUST be included in all responses for distributed tracing and troubleshooting.
+**Checkpoints**:
 
-**Rationale**: Provides predictable, reliable API behavior that enables consistent frontend integration, fine-grained error handling, and positive administrative user experience across all account management functions while supporting monitoring and debugging capabilities. Specific business codes for account operations enable frontend to provide contextual, user-friendly error messages.
+- CI/CD pipeline must execute all tests, blocking merges when tests fail
+- Code Review must check test coverage and test quality
+- Quarterly review of test coverage reports, identifying uncovered critical paths
 
-### VII. Performance & Security Standards for Account Management
-API endpoints MUST respond within 200ms for simple operations (login, single account query) and 2000ms for complex operations (paginated account lists). Asynchronous programming patterns are mandatory for I/O operations. JWT authentication MUST be properly implemented with secure token generation, validation, and 1-hour expiration. All user inputs MUST be validated using FluentValidation with clear validation rules (username 3-20 chars alphanumeric+underscore, password min 8 chars, displayName 1-100 chars). Sensitive information (passwords, tokens) MUST NOT be logged or exposed in error messages - passwords MUST be hashed with BCrypt (work factor 12) before storage. Database queries MUST be optimized to prevent N+1 problems, especially for account list pagination. Concurrent updates MUST be handled with optimistic locking (RowVersion) to prevent data conflicts. Soft delete mechanism MUST be implemented for account deletion with business rules (cannot delete self, cannot delete last account). Rate limiting SHOULD be considered for authentication endpoints to prevent brute-force attacks.
+---
 
-**Rationale**: Ensures application remains responsive under administrative load while maintaining security standards appropriate for account management systems. BCrypt password hashing, JWT tokens, and validation rules align with industry best practices and the implemented API specification.
+### Principle 3: Security Non-Negotiable
 
-### VIII. Controller Response DTO Architecture (NON-NEGOTIABLE)
-All Controller endpoints MUST implement a dedicated Response DTO layer that is separate from Service layer DTOs. Controllers MUST NOT directly return Service DTOs as API responses. Instead, Controllers MUST create Response DTOs (named using `xxxResponse` pattern, placed in `Models/Responses/`) that convert Service DTOs before returning to clients. Response DTOs MUST NOT reference Service DTO types in properties, constructors, or methods. Conversion logic MUST be implemented in the Controller layer using explicit property mapping. Even for 1:1 identical structures, the separation and independent mapping MUST be maintained. Nested objects within DTOs MUST also have corresponding Response DTOs and be mapped explicitly.
+**Definition**: Security is core to system design, not a feature added afterward. All data processing, authentication, and authorization must follow industry standards.
 
-**Required Pattern**: Service Layer returns business logic DTOs → Controller Layer manually maps to Response DTOs → API Response wraps Response DTO in `ApiResponseModel<T>` using `BaseController` helper methods.
+**Implementation Rules**:
 
-**Implementation Details**: See [Technical Reference §4: DTO Mapping Patterns](technical-reference.md#4-dto-mapping-patterns) for complete code examples demonstrating correct Service DTO → Response DTO mapping patterns, prohibited patterns (constructor coupling, direct Service DTO returns), and nested object mapping with LINQ transformations.
+- **MUST** All API endpoints (except login) must pass JWT Bearer Token authentication
+- **MUST** Passwords use BCrypt hashing (work factor 12), plain text storage forbidden
+- **MUST** All database queries use parameterized queries (Dapper parameters), preventing SQL injection
+- **MUST** Input validation uses FluentValidation, all request models must have corresponding validators
+- **MUST** All delete operations adopt soft delete (marking `is_deleted`), preserving audit trail
+- **MUST** Concurrent updates use optimistic locking (`version` field), preventing data races
+- **MUST** Sensitive configuration (JWT SecretKey, database passwords) use environment variables or Azure Key Vault
+- **MUST** All response error messages avoid leaking internal system information (use unified error format)
 
-**Rationale**: Separating Controller Response DTOs from Service DTOs provides critical architectural benefits: (1) Encapsulation - prevents internal business logic structures from leaking into public API contracts, (2) Flexibility - enables independent evolution of API response formats without affecting business logic, (3) Security - allows selective field exposure, hiding sensitive internal data, (4) Versioning - facilitates API versioning by allowing multiple Response DTO versions to map to a single Service DTO, (5) Frontend Stability - reduces frontend-backend coupling by providing a stable, purpose-built API contract. This principle ensures long-term maintainability in a three-layer architecture where each layer has distinct responsibilities.
+**Rationale**: Security vulnerabilities can lead to data breaches, system intrusion, and legal liability. Enterprise systems must build in security from the design phase, not rely on post-implementation patches.
 
-### IX. Pagination Architecture & Layer Responsibility (NON-NEGOTIABLE)
-All paginated endpoints MUST implement strict layer separation to ensure database-level pagination execution, consistent response formats, and API layer testability. Repository layers MUST execute SQL queries with `LIMIT` and `OFFSET` clauses and provide separate COUNT queries. Service layers MUST return `PagedResultDto<TDto>` containing Items, TotalCount, PageNumber, and PageSize, executing pagination logic at the database level to prevent loading entire datasets into memory. Controller layers MUST validate pagination parameters, encapsulate query parameters into request objects, map Service DTOs to Response DTOs, and use `PagedApiResponseModel<TItem>` wrapper via `BaseApiController.PagedSuccess()` helper methods.
+**Checkpoints**:
 
-**Naming Conventions**: `PagedResultDto<T>` (Service layer return type in Models/Responses/), `PagedApiResponseModel<TItem>` (API layer wrapper in Models/ApiResponseModel.cs).
+- Each new feature must pass security checklist (authentication, authorization, input validation, data protection)
+- Quarterly security audit, reviewing dependency vulnerabilities and system weaknesses
+- Before penetration testing, must confirm all security rules are implemented
 
-**Prohibited Patterns**: Service returning `PagedApiResponseModel<TItem>` (violates layer separation), Controller loading entire dataset into memory before pagination (violates performance requirements), Service accepting/returning API-specific models (violates encapsulation), Direct return of Service DTOs from Controllers without mapping to Response DTOs (violates Principle VIII).
+---
 
-**Implementation Details**: See [Technical Reference §5: Pagination Implementation Guide](technical-reference.md#5-pagination-implementation-guide) for the complete three-layer implementation pattern (Repository LIMIT/OFFSET queries, Service PagedResultDto construction, Controller validation and mapping), PagedResultDto<T> class definition, performance optimization strategies (COUNT query optimization, pagination index strategy), and common pitfalls to avoid.
+### Principle 4: Observability First
 
-**Rationale**: Enforces clear separation of concerns between business logic (Service) and API presentation (Controller). Database-level pagination prevents memory overflow on large datasets and ensures optimal query performance. Standardized `PagedResultDto<T>` enables consistent business logic testing without coupling to HTTP concerns. The `PagedApiResponseModel<TItem>` wrapper provides a clean, predictable API contract for frontend pagination components (tables, infinite scrolling). Mandatory DTO mapping maintains API contract independence from internal models, enabling independent evolution of business logic and API contracts. This pattern ensures pagination queries are safe, performant, testable, and maintainable across all features.
+**Definition**: System must provide sufficient logging, tracing, and monitoring capabilities for rapid problem diagnosis and resolution.
 
-## API Response Design Standards
+**Implementation Rules**:
 
-**Dual-Layer Response Model**: All endpoints MUST return `ApiResponseModel<T>` (for single items) or `PagedApiResponseModel<T>` (for paginated lists), combining HTTP status codes with business logic codes. HTTP status codes reflect the request processing state (2xx success, 4xx client errors, 5xx server errors). Business logic codes from the `ResponseCodes` constants provide fine-grained scenario information.
+- **MUST** All HTTP requests must include `TraceId` (generated by `TraceIdMiddleware`)
+- **MUST** All exceptions must log complete stack trace and context information
+- **MUST** Critical operations (login, permission changes, data modifications) must write to audit log (`audit_logs` table)
+- **MUST** Structured logging uses Serilog or built-in `ILogger`, including necessary context (user ID, operation type, timestamp)
+- **SHOULD** API responses include unified format (`ApiResponseModel<T>`), containing `traceId` and `timestamp`
+- **SHOULD** Production environment log level at `Information` or above, avoiding excessive logging affecting performance
 
-**Response Creation**: Controllers MUST use helper methods from `BaseController` (e.g., `Success`, `Created`, `ValidationError`, `NotFound`, `BusinessError`, `InternalError`) to generate properly configured responses. All responses MUST include `Success` (bool), `Code` (string), `Message` (string in Traditional Chinese), `Timestamp` (DateTime), and `TraceId` (string) for request tracking.
+**Rationale**: In distributed systems, observability is key to rapidly diagnosing problems, tracing request flow, and analyzing performance bottlenecks. Complete logging and tracing reduce Mean Time To Repair (MTTR).
 
-**Implementation Details**: See [Technical Reference §6: API Response Patterns](technical-reference.md#6-api-response-patterns) for the complete HTTP Status Code + Business Code mapping table (200-500 status codes with corresponding business codes and example messages) and BaseController helper methods with usage examples.
+**Checkpoints**:
 
-## Security Requirements
+- Code Review must check if critical paths have appropriate logging
+- Each exception handling must log sufficient information to reproduce the problem
+- Production environment issues must be traceable through TraceId for complete request chain
 
-**Authentication**: JWT Bearer token authentication is mandatory for protected endpoints. Tokens MUST expire within 1 hour. Token generation MUST include user claims (UserId, Username, DisplayName).
+---
 
-**Authorization**: Authorization is enforced via `[RequirePermission]` attributes. Self-service restrictions (users can only update/change their own data) must be enforced in the service layer.
+### Principle 5: Documentation as Code
 
-**Input Validation**: All user inputs MUST be validated using FluentValidation with clear validation rules. SQL injection MUST be prevented via parameterized queries (Dapper).
+**Definition**: Documentation is as important as code, must be updated synchronously with code, written in Traditional Chinese, and version controlled.
 
-**Data Protection**: Passwords MUST be hashed with BCrypt using appropriate work factor. Sensitive data MUST NEVER appear in logs or responses. Concurrent updates MUST be protected via optimistic locking (RowVersion).
+**Implementation Rules**:
 
-**Error Handling**: A global exception handling middleware MUST be implemented. It MUST log all errors with a `TraceId` and prevent sensitive information from being exposed in production responses.
+- **MUST** All public APIs must have XML comment documentation (including `<summary>`, `<param>`, `<returns>`)
+- **MUST** Each feature must have specification document (`spec.md`), implementation plan (`plan.md`), quickstart guide (`quickstart.md`)
+- **MUST** Specification documents must include prioritized user stories (P1, P2, P3...), each story independently testable
+- **MUST** API contract document (`api-spec.yaml`) must be synchronized with implementation, using OpenAPI 3.0 format
+- **MUST** All user-facing documents (specs, guides, README) written in Traditional Chinese
+- **MUST** Code comments in Traditional Chinese, clearly explaining business logic and design decisions
+- **SHOULD** Swagger UI must provide complete API examples and descriptions
 
-**Implementation Details**: See [Technical Reference §7: Security Implementation](technical-reference.md#7-security-implementation) for JWT token generation/validation code examples, BCrypt password hashing patterns with work factor configuration, FluentValidation rule examples (username, password, displayName constraints), SQL injection prevention with Dapper parameterized queries, and sensitive data protection best practices (logging and error response guidelines).
+**Rationale**: Documentation is the foundation of knowledge transfer and team collaboration. Outdated or missing documentation leads to knowledge silos, increases onboarding time for new members, and raises maintenance costs. Traditional Chinese documentation reduces communication costs for local teams.
 
-## Development Workflow
+**Checkpoints**:
 
-**Code Reviews**: All code changes MUST be reviewed for compliance with all constitution principles.
+- Each Pull Request must include related documentation updates
+- API changes must synchronously update OpenAPI specs and Swagger annotations
+- Quarterly documentation review, confirming documentation-implementation consistency
 
-**Dependency Management**: New dependencies MUST be justified and approved. Dependencies MUST be kept up-to-date.
-
-**Documentation**: API endpoints MUST be documented with OpenAPI/Swagger. Database schema changes MUST be documented with migration scripts. All user-facing documentation, error messages, and comments MUST be in Traditional Chinese (zh-TW).
-
-**Environment Management**: Environment-specific configurations MUST be properly separated. Secrets MUST NOT be committed to source control.
+---
 
 ## Governance
 
-This constitution supersedes all other development practices and MUST be followed for all code changes. Amendments require team consensus.
+### Constitution Amendment Process
 
-**Language Requirements**: 
-- **Constitution and Core Documentation**: The constitution (this file) and foundational technical reference documents are written in English to maintain consistency and precision in governance terminology.
-- **Feature Documentation (MANDATORY)**: All feature-specific documentation files MUST be written in **Traditional Chinese (zh-TW)**. This includes but is not limited to:
-  - `plan.md` - Implementation plans
-  - `tasks.md` - Task lists
-  - `research.md` - Research documents
-  - `quickstart.md` - Quickstart guides
-  - `spec.md` - Feature specifications
-  - `data-model.md` - Data model documentation
-  - Any other feature-specific documentation in `/specs/` directories
-- **Code and API**: All error messages, API responses, code comments, and user-facing strings MUST be in Traditional Chinese (zh-TW).
-- **Rationale**: Traditional Chinese documentation ensures accessibility for the development team and stakeholders while maintaining technical precision through English governance documents.
+1. **Proposal**: Any team member can propose constitution amendments, must include:
+   - Rationale for amendment and problem description
+   - Amendment content (specific changes)
+   - Impact assessment (effects on existing project and development processes)
 
-**Compliance Review**: Constitution compliance is verified during code reviews and is mandatory for merging. The constitution's effectiveness is reviewed quarterly.
+2. **Discussion**: Proposal discussed in team meeting, collecting feedback and suggestions
 
-**Version**: 1.11.0 | **Ratified**: 2025-10-25 | **Last Amended**: 2025-12-13
+3. **Approval**: Requires Tech Lead approval, major changes need team consensus
+
+4. **Implementation**:
+   - Update constitution version number (following semantic versioning)
+   - Update `LAST_AMENDED_DATE`
+   - Generate Sync Impact Report
+   - Update related templates and documents (`spec-template.md`, `plan-template.md`, `tasks-template.md`)
+   - Notify all team members
+
+### Versioning Policy
+
+Constitution version format: `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes incompatible with previous versions (removing or redefining core principles)
+  - Examples: Removing a core principle, changing architecture pattern requirements
+- **MINOR**: Adding principles or significantly expanding existing guidance
+  - Examples: Adding new core principle, expanding security requirements
+- **PATCH**: Clarifications, wording adjustments, bug fixes
+  - Examples: Fixing typos, improving clarity of descriptions, adding examples
+
+### Compliance Review
+
+- **Project Level**: Each new feature must pass "Constitution Check", confirming compliance with all core principles
+- **Code Review**: All Pull Requests must check compliance with constitution requirements
+- **Quarterly Review**: Conduct comprehensive review each quarter, identifying violations and improvement opportunities
+- **Technical Debt Management**: If deviation from constitution principles is necessary, must be documented in `plan.md`'s "Complexity Tracking" section, including rationale and alternative solution evaluation
+
+---
+
+## Project Scope
+
+### Tech Stack
+
+- **Language**: C# 13
+- **Framework**: ASP.NET Core 10.0
+- **Database**: PostgreSQL 15+
+- **ORM**: Dapper (Micro-ORM)
+- **Authentication**: JWT Bearer Token
+- **Password Hashing**: BCrypt.Net-Next
+- **Input Validation**: FluentValidation
+- **API Documentation**: Swagger/OpenAPI 3.0
+- **Testing Framework**: xUnit, Moq, FluentAssertions, Testcontainers
+- **Logging**: Serilog / Microsoft.Extensions.Logging
+
+### Architecture Patterns
+
+- **Three-Tier Architecture**: Controller → Service → Repository
+- **DTO Pattern**: API layer and business layer data transfer objects separated
+- **Repository Pattern**: Abstract data access logic
+- **Middleware Pipeline**: Centralized exception handling, TraceId, permission validation
+- **Unified Response Format**: `ApiResponseModel<T>` wrapping all API responses
+
+### Core Feature Scope
+
+1. **Authentication**: Login, JWT Token issuance and validation
+2. **Account Management**: CRUD operations, password management, soft delete
+3. **Permission Management**: Permission definition, assignment, validation
+4. **Role Management**: Role CRUD, role-permission association
+5. **Audit Logging**: Operation recording, querying, tracking
+
+### Project Boundaries
+
+**In Scope**:
+
+- Backend API development (RESTful)
+- Database design and migrations
+- Unit testing and integration testing
+- API documentation and technical documentation
+- Docker containerization
+
+**Out of Scope**:
+
+- Frontend development (handled by V3 Admin Vite project)
+- Email notification system (planned for future version)
+- Two-factor authentication (planned for future version)
+- File upload and storage (to be evaluated based on requirements)
+
+---
+
+## Technical Debt Management
+
+### Debt Definition
+
+Technical debt refers to non-optimal solutions adopted to accelerate delivery, increasing future maintenance costs.
+
+### Allowed Debt Types
+
+1. **Deliberate Debt**:
+   - Must be documented in `plan.md`'s "Complexity Tracking" section
+   - Needs rationale, impact scope, and repayment plan
+   - Example: Temporarily using in-memory cache instead of Redis (planned for performance optimization phase)
+
+2. **Temporary Debt**:
+   - Used for rapid concept validation or prototyping
+   - Must be repaid before official release
+   - Example: Using hardcoded test data for Demo
+
+### Forbidden Debt Types
+
+1. **Security Debt**: Cannot omit security measures due to schedule pressure (violates Principle 3)
+2. **Undocumented Debt**: Cannot deliver features without documentation (violates Principle 5)
+3. **Untested Debt**: Cannot skip critical path testing (violates Principle 2)
+
+### Debt Repayment
+
+- Each Sprint must allocate time to repay technical debt (recommended 20% of time)
+- Debt items must be tracked in backlog with priority marking
+- Quarterly technical debt review, assessing accumulated risk
+
+---
+
+## Relationship with Technical Reference Documentation
+
+This constitution defines "**WHY**" and "**WHAT**", while the [Technical Reference](technical-reference.md) defines "**HOW**".
+
+- **Constitution**: Core principles, governance procedures, project scope, non-functional requirements
+- **Technical Reference**: Code examples, naming conventions, database design patterns, implementation details
+
+The two documents complement each other, forming the project's knowledge foundation. When technical implementation approaches change (e.g., using a different ORM), only the technical reference needs updating; when core principles change, the constitution needs revision.
+
+---
+
+## Appendices
+
+### Related Documents
+
+- [Technical Reference](technical-reference.md) - Implementation details and code examples
+- [README.md](../../README.md) - Project overview and quick start
+- [Spec Template](./../templates/spec-template.md) - Feature specification writing guide
+- [Plan Template](./../templates/plan-template.md) - Implementation plan writing guide
+- [Tasks Template](./../templates/tasks-template.md) - Task list organization guide
+
+### Glossary
+
+- **Three-Tier Architecture**: Controller (Presentation) → Service (Business Logic) → Repository (Data Access)
+- **DTO** (Data Transfer Object): Data transfer objects for inter-layer data passing
+- **Soft Delete**: Mark data as deleted rather than actually deleting, preserving audit trail
+- **Optimistic Locking**: Use version numbers to prevent concurrent update conflicts
+- **TraceId**: Request tracking identifier for correlating related logs in distributed systems
+
+### Version History
+
+| Version | Date | Change Summary |
+|---------|------|----------------|
+| 1.0.0 | 2025-12-13 | Initial creation - Defined five core principles, governance procedures, technical debt management |
+
+---
+
+**Document End**
+
+*This constitution is a Living Document and should be continuously updated as the project evolves. All team members are responsible for following constitution principles and proposing improvements.*

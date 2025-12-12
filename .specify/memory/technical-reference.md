@@ -122,6 +122,93 @@ var sql = @"
 var user = await _connection.QueryFirstOrDefaultAsync<User>(sql, new { UserId = userId });
 ```
 
+### 1.3 DTO Naming Standards
+
+**Service Layer DTOs** (Business Logic):
+- **Location**: `Models/Dtos/` directory
+- **Naming Pattern**: `{Entity}Dto` (e.g., `UserDto`, `PermissionDto`, `RoleDto`)
+- **Purpose**: Internal data transfer between Service and Repository layers
+- **Example**: 
+  ```csharp
+  // Models/Dtos/UserDto.cs
+  public class UserDto
+  {
+      public int UserId { get; set; }
+      public string Username { get; set; } = string.Empty;
+      public string DisplayName { get; set; } = string.Empty;
+  }
+  ```
+
+**API Response DTOs** (Presentation Layer):
+- **Location**: `Models/Responses/` directory
+- **Naming Pattern**: `{Entity}Response` (e.g., `UserResponse`, `PermissionResponse`, `RoleDetailResponse`)
+- **Purpose**: API contract for external consumers, decoupled from internal Service DTOs
+- **Rule**: MUST NOT reference Service DTO types in any way
+- **Example**:
+  ```csharp
+  // Models/Responses/UserResponse.cs
+  public class UserResponse
+  {
+      public int UserId { get; set; }
+      public string Username { get; set; } = string.Empty;
+      public string DisplayName { get; set; } = string.Empty;
+  }
+  ```
+
+**Request DTOs** (API Input):
+- **Location**: `Models/Requests/` directory
+- **Naming Pattern**: `{Action}{Entity}Request` (e.g., `CreateUserRequest`, `UpdatePermissionRequest`, `PermissionQueryRequest`)
+- **Purpose**: API input validation and parameter binding
+- **Example**:
+  ```csharp
+  // Models/Requests/CreateUserRequest.cs
+  public class CreateUserRequest
+  {
+      public string Username { get; set; } = string.Empty;
+      public string Password { get; set; } = string.Empty;
+      public string DisplayName { get; set; } = string.Empty;
+  }
+  ```
+
+**Pagination DTOs**:
+- **Service Layer**: `PagedResultDto<T>` - Internal pagination result wrapper (in `Models/Responses/` or `Models/`)
+  ```csharp
+  public class PagedResultDto<T>
+  {
+      public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
+      public long TotalCount { get; set; }
+      public int PageNumber { get; set; }
+      public int PageSize { get; set; }
+  }
+  ```
+
+- **API Layer**: `PagedApiResponseModel<TItem>` - API pagination response wrapper (in `Models/ApiResponseModel.cs`)
+  ```csharp
+  public class PagedApiResponseModel<TItem>
+  {
+      public bool Success { get; set; }
+      public string Code { get; set; } = string.Empty;
+      public string Message { get; set; } = string.Empty;
+      public List<TItem> Items { get; set; } = new();
+      public int PageNumber { get; set; }
+      public int PageSize { get; set; }
+      public long TotalCount { get; set; }
+      public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+      public DateTime Timestamp { get; set; }
+      public string TraceId { get; set; } = string.Empty;
+  }
+  ```
+
+**Naming Rules Summary**:
+
+| DTO Type | Pattern | Location | Example |
+|----------|---------|----------|----------|
+| Service DTO | `{Entity}Dto` | `Models/Dtos/` | `UserDto`, `PermissionDto` |
+| Response DTO | `{Entity}Response` | `Models/Responses/` | `UserResponse`, `PermissionResponse` |
+| Request DTO | `{Action}{Entity}Request` | `Models/Requests/` | `CreateUserRequest`, `UpdateRoleRequest` |
+| Pagination (Service) | `PagedResultDto<T>` | `Models/Responses/` | `PagedResultDto<PermissionDto>` |
+| Pagination (API) | `PagedApiResponseModel<T>` | `Models/` | `PagedApiResponseModel<PermissionResponse>` |
+
 ---
 
 ## 2. Database Design Patterns
