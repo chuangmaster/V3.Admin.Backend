@@ -48,7 +48,7 @@ public class PermissionController : BaseApiController
     /// 需要具有 "permission.read" 權限。
     /// </remarks>
     /// <param name="pageNumber">頁碼（從 1 開始）</param>
-    /// <param name="pageSize">每頁筆數（最大 100）</param>
+    /// <param name="pageSize">每頁筆數</param>
     /// <param name="searchKeyword">搜尋關鍵字（按權限代碼或名稱篩選）</param>
     /// <param name="permissionType">權限類型篩選（route 或 function）</param>
     /// <returns>分頁權限清單</returns>
@@ -72,7 +72,7 @@ public class PermissionController : BaseApiController
                 pageNumber = 1;
             }
 
-            if (pageSize < 1 || pageSize > 100)
+            if (pageSize < 1)
             {
                 pageSize = 20;
             }
