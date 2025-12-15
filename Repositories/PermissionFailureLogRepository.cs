@@ -36,18 +36,17 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
         const string sql =
             @"
             INSERT INTO permission_failure_logs 
-            (id, user_id, username, attempted_resource, failure_reason, attempted_at, ip_address, user_agent, trace_id)
-            VALUES (@Id, @UserId, @Username, @AttemptedResource, @FailureReason, @AttemptedAt, @IpAddress, @UserAgent, @TraceId)
-            RETURNING id;
+            (user_id, username, attempted_resource, failure_reason, attempted_at, ip_address, user_agent, trace_id)
+            VALUES (@UserId, @Username, @AttemptedResource, @FailureReason, @AttemptedAt, @IpAddress, @UserAgent, @TraceId);
         ";
 
         try
         {
-            var result = await _dbConnection.QuerySingleAsync<Guid>(
+            // 使用自動產生的 UUID，不需要手動指定 Id
+            var rowsAffected = await _dbConnection.ExecuteAsync(
                 sql,
                 new
                 {
-                    Id = Guid.NewGuid(),
                     log.UserId,
                     log.Username,
                     log.AttemptedResource,
@@ -59,7 +58,7 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
                 }
             );
 
-            return result != Guid.Empty;
+            return rowsAffected > 0;
         }
         catch (Exception ex)
         {
@@ -89,7 +88,10 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
 
         try
         {
-            int totalCount = await _dbConnection.QuerySingleAsync<int>(countSql);
+            int totalCount = await _dbConnection.QuerySingleAsync<int>(
+                countSql,
+                commandTimeout: null
+            );
             int offset = (pageNumber - 1) * pageSize;
 
             var logs = (
@@ -134,7 +136,8 @@ public class PermissionFailureLogRepository : IPermissionFailureLogRepository
         {
             int totalCount = await _dbConnection.QuerySingleAsync<int>(
                 countSql,
-                new { UserId = userId }
+                new { UserId = userId },
+                commandTimeout: null
             );
             int offset = (pageNumber - 1) * pageSize;
 
