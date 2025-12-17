@@ -144,7 +144,10 @@
 
 - [ ] T063 [US1] 實作 `CustomerController` `Controllers/CustomerController.cs` (SearchCustomers、CreateCustomer API 端點)
 - [ ] T064 [US1] 實作 `OcrController` `Controllers/OcrController.cs` (RecognizeIdCard API 端點,呼叫 IdCardOcrService)
-- [ ] T065 [US1] 實作 `ServiceOrderController` `Controllers/ServiceOrderController.cs` (CreateBuybackOrder、PreviewBuybackContractPdf、MergeSignature、ConfirmOrder API 端點)
+- [ ] T065 [US1] 實作 `ServiceOrderController` `Controllers/ServiceOrderController.cs` (CreateBuybackOrder API 端點,建立收購單基本流程)
+- [ ] T065a [US1] 在 `ServiceOrderController` 新增 `PreviewBuybackContractPdf` API 端點 (填充 PDF 模板產生預覽,呼叫 PdfGeneratorService)
+- [ ] T065b [US1] 在 `ServiceOrderController` 新增 `MergeSignature` API 端點 (合併 Base64 簽章到 PDF,呼叫 PdfGeneratorService)
+- [ ] T065c [US1] 在 `ServiceOrderController` 新增 `ConfirmOrder` API 端點 (確認後儲存最終 PDF 至 Blob Storage,建立簽名記錄)
 
 ### Unit Tests for User Story 1
 
