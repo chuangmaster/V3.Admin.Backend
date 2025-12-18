@@ -56,13 +56,25 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
                         SELECT 'permission.read', 'Permission Read', 'Read permissions', 'function', 1, false, NOW(), NOW()
                         WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE permission_code = 'permission.read' AND is_deleted = FALSE);
 
-                        -- link role and permission
+                        INSERT INTO permissions (permission_code, name, description, permission_type, version, is_deleted, created_at, updated_at)
+                        SELECT 'permission.create', 'Permission Create', 'Create permissions', 'function', 1, false, NOW(), NOW()
+                        WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE permission_code = 'permission.create' AND is_deleted = FALSE);
+
+                        INSERT INTO permissions (permission_code, name, description, permission_type, version, is_deleted, created_at, updated_at)
+                        SELECT 'permission.update', 'Permission Update', 'Update permissions', 'function', 1, false, NOW(), NOW()
+                        WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE permission_code = 'permission.update' AND is_deleted = FALSE);
+
+                        INSERT INTO permissions (permission_code, name, description, permission_type, version, is_deleted, created_at, updated_at)
+                        SELECT 'permission.delete', 'Permission Delete', 'Delete permissions', 'function', 1, false, NOW(), NOW()
+                        WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE permission_code = 'permission.delete' AND is_deleted = FALSE);
+
+                        -- link role and all permissions
                         INSERT INTO role_permissions (role_id, permission_id, assigned_by)
                         SELECT r.id, p.id, NULL
                         FROM roles r, permissions p
-                        WHERE r.role_name = 'test-role' AND p.permission_code = 'permission.read'
+                        WHERE r.role_name = 'test-role' AND p.permission_code IN ('permission.read', 'permission.create', 'permission.update', 'permission.delete')
                             AND NOT EXISTS (
-                                SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id AND rp.permission_id = p.id AND rp.is_deleted = FALSE
+                                SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id AND rp.permission_id = p.id
                             );
 
                         -- assign role to user
@@ -120,16 +132,14 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
             await permCommand.ExecuteNonQueryAsync();
         }
 
-        // Cleanup any user_roles that reference the test user to avoid FK constraint issues
-        var cleanupUserRoles = @"
+        // Cleanup in correct order to avoid FK constraints: audit_logs -> user_roles -> users
+        var cleanupSql = @"
+            DELETE FROM audit_logs WHERE operator_id IN (SELECT id FROM users WHERE username = 'permission_test_user');
             DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE username = 'permission_test_user');
+            DELETE FROM users WHERE username = 'permission_test_user';
         ";
-        await using var cleanupCmd = new Npgsql.NpgsqlCommand(cleanupUserRoles, connection);
+        await using var cleanupCmd = new Npgsql.NpgsqlCommand(cleanupSql, connection);
         await cleanupCmd.ExecuteNonQueryAsync();
-
-        var deleteUserSql = "DELETE FROM users WHERE username = 'permission_test_user';";
-        await using var command = new Npgsql.NpgsqlCommand(deleteUserSql, connection);
-        await command.ExecuteNonQueryAsync();
     }
 
     [Fact]

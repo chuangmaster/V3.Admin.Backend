@@ -27,8 +27,8 @@ public class UserRoleControllerIntegrationTests
     private Guid _testRoleId1 = Guid.Empty;
     private Guid _testRoleId2 = Guid.Empty;
     private string? _testToken;
-    private const string _testUsername = "user_role_test_user";
     private const string _testPassword = "TestPass@123";
+    private string _testUsername = string.Empty;
 
     public UserRoleControllerIntegrationTests(CustomWebApplicationFactory factory)
     {
@@ -42,6 +42,9 @@ public class UserRoleControllerIntegrationTests
     /// </summary>
     public async Task InitializeAsync()
     {
+        // 產生唯一 username (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
+        _testUsername = $"ur_{Guid.NewGuid().ToString()[..7]}_test_user";
+
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
 
@@ -139,22 +142,31 @@ public class UserRoleControllerIntegrationTests
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
 
-        // 刪除用戶角色關聯
         if (_testUserId != Guid.Empty)
         {
-            var deleteUserRolesSql = "DELETE FROM user_roles WHERE user_id = @user_id;";
-            await using var command = new NpgsqlCommand(deleteUserRolesSql, connection);
-            command.Parameters.AddWithValue("user_id", _testUserId);
-            await command.ExecuteNonQueryAsync();
-        }
+            // 先刪除 audit_logs 以避免 FK 約束錯誤
+            const string deleteAuditLogsSql = "DELETE FROM audit_logs WHERE operator_id = @id;";
+            await using (var cmd = new NpgsqlCommand(deleteAuditLogsSql, connection))
+            {
+                cmd.Parameters.AddWithValue("id", _testUserId);
+                await cmd.ExecuteNonQueryAsync();
+            }
 
-        // 刪除用戶
-        if (_testUserId != Guid.Empty)
-        {
-            var deleteUserSql = "DELETE FROM users WHERE id = @id;";
-            await using var command = new NpgsqlCommand(deleteUserSql, connection);
-            command.Parameters.AddWithValue("id", _testUserId);
-            await command.ExecuteNonQueryAsync();
+            // 刪除用戶角色關聯
+            const string deleteUserRolesSql = "DELETE FROM user_roles WHERE user_id = @user_id;";
+            await using (var cmd = new NpgsqlCommand(deleteUserRolesSql, connection))
+            {
+                cmd.Parameters.AddWithValue("user_id", _testUserId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // 刪除用戶
+            const string deleteUserSql = "DELETE FROM users WHERE id = @id;";
+            await using (var cmd = new NpgsqlCommand(deleteUserSql, connection))
+            {
+                cmd.Parameters.AddWithValue("id", _testUserId);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
         // 刪除角色

@@ -27,7 +27,7 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
     private Guid _testPermissionId1 = Guid.Empty;
     private Guid _testPermissionId2 = Guid.Empty;
     private string? _testToken;
-    private const string _testUsername = "perm_validation_test_user";
+    private string _testUsername = string.Empty;
     private const string _testPassword = "TestPass@123";
 
     public PermissionValidationIntegrationTests(CustomWebApplicationFactory factory)
@@ -44,7 +44,8 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
     /// 初始化測試環境：建立測試用戶、角色、權限
     /// </summary>
     public async Task InitializeAsync()
-    {
+    {        // 產生唯一 username (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
+        _testUsername = $"pv_{Guid.NewGuid().ToString()[..7]}_test_user";
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
 
@@ -77,10 +78,10 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
         await using (var command = new NpgsqlCommand(insertRoleSql, connection))
         {
             command.Parameters.AddWithValue("id1", _testRoleId1);
-            command.Parameters.AddWithValue("name1", "Tester_Role_1");
+            command.Parameters.AddWithValue("name1", $"Tester_Role_1_{Guid.NewGuid().ToString()[..8]}");
             command.Parameters.AddWithValue("desc1", "First role for permission tests");
             command.Parameters.AddWithValue("id2", _testRoleId2);
-            command.Parameters.AddWithValue("name2", "Tester_Role_2");
+            command.Parameters.AddWithValue("name2", $"Tester_Role_2_{Guid.NewGuid().ToString()[..8]}");
             command.Parameters.AddWithValue("desc2", "Second role for permission tests");
             await command.ExecuteNonQueryAsync();
         }
@@ -97,12 +98,12 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
         await using (var command = new NpgsqlCommand(insertPermSql, connection))
         {
             command.Parameters.AddWithValue("id1", _testPermissionId1);
-            command.Parameters.AddWithValue("code1", "permission.validation.test1");
+            command.Parameters.AddWithValue("code1", $"permission.validation.test1.{Guid.NewGuid().ToString()[..8]}");
             command.Parameters.AddWithValue("name1", "Test Permission 1");
             command.Parameters.AddWithValue("desc1", "First test permission");
             command.Parameters.AddWithValue("type1", "function");
             command.Parameters.AddWithValue("id2", _testPermissionId2);
-            command.Parameters.AddWithValue("code2", "permission.validation.test2");
+            command.Parameters.AddWithValue("code2", $"permission.validation.test2.{Guid.NewGuid().ToString()[..8]}");
             command.Parameters.AddWithValue("name2", "Test Permission 2");
             command.Parameters.AddWithValue("desc2", "Second test permission");
             command.Parameters.AddWithValue("type2", "function");
@@ -111,9 +112,9 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
 
         // 4. 指派權限到角色
         var assignPermSql = @"
-            INSERT INTO role_permissions (role_id, permission_id, assigned_at, assigned_by, version, is_deleted, created_at, updated_at)
-            VALUES (@roleId1, @permId1, NOW(), @adminId, 1, false, NOW(), NOW()),
-                   (@roleId2, @permId2, NOW(), @adminId, 1, false, NOW(), NOW());
+            INSERT INTO role_permissions (role_id, permission_id, assigned_at, assigned_by)
+            VALUES (@roleId1, @permId1, NOW(), NULL),
+                   (@roleId2, @permId2, NOW(), NULL);
         ";
 
         await using (var command = new NpgsqlCommand(assignPermSql, connection))
@@ -122,15 +123,14 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
             command.Parameters.AddWithValue("permId1", _testPermissionId1);
             command.Parameters.AddWithValue("roleId2", _testRoleId2);
             command.Parameters.AddWithValue("permId2", _testPermissionId2);
-            command.Parameters.AddWithValue("adminId", Guid.NewGuid());
             await command.ExecuteNonQueryAsync();
         }
 
         // 5. 指派角色到用戶（兩個角色）
         var assignRoleSql = @"
-            INSERT INTO user_roles (user_id, role_id, assigned_at, assigned_by, version, is_deleted, created_at, updated_at)
-            VALUES (@userId, @roleId1, NOW(), @adminId, 1, false, NOW(), NOW()),
-                   (@userId, @roleId2, NOW(), @adminId, 1, false, NOW(), NOW());
+            INSERT INTO user_roles (user_id, role_id, assigned_at, assigned_by, is_deleted)
+            VALUES (@userId, @roleId1, NOW(), NULL, false),
+                   (@userId, @roleId2, NOW(), NULL, false);
         ";
 
         await using (var command = new NpgsqlCommand(assignRoleSql, connection))
@@ -138,7 +138,6 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
             command.Parameters.AddWithValue("userId", _testUserId);
             command.Parameters.AddWithValue("roleId1", _testRoleId1);
             command.Parameters.AddWithValue("roleId2", _testRoleId2);
-            command.Parameters.AddWithValue("adminId", Guid.NewGuid());
             await command.ExecuteNonQueryAsync();
         }
 
@@ -173,6 +172,7 @@ public class PermissionValidationIntegrationTests : IClassFixture<CustomWebAppli
         await connection.OpenAsync();
 
         var cleanupSql = @"
+            DELETE FROM audit_logs WHERE operator_id = @userId;
             DELETE FROM user_roles WHERE user_id = @userId;
             DELETE FROM role_permissions WHERE role_id IN (@roleId1, @roleId2);
             DELETE FROM permission_failure_logs WHERE user_id = @userId;
