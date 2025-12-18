@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using System.Data;
+using V3.Admin.Backend.Services.Interfaces;
 using V3.Admin.Backend.Tests.Helpers;
 
 namespace V3.Admin.Backend.Tests.Integration;
@@ -35,7 +36,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             // 加入測試用的設定
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["DatabaseSettings:ConnectionString"] = ConnectionString,
+                ["ConnectionStrings:DefaultConnection"] = ConnectionString,
                 ["JwtSettings:SecretKey"] = "test-secret-key-for-integration-tests-minimum-32-characters",
                 ["JwtSettings:Issuer"] = "test-issuer",
                 ["JwtSettings:Audience"] = "test-audience",
@@ -54,7 +55,27 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
             // 註冊測試用的資料庫連線
             services.AddScoped<IDbConnection>(_ => new NpgsqlConnection(ConnectionString));
+
+            // 覆寫會因缺少環境變數而在建構時拋例外的外部服務
+            RemoveAll(services, typeof(IBlobStorageService));
+            RemoveAll(services, typeof(IDropboxSignService));
+            RemoveAll(services, typeof(IPdfGeneratorService));
+
+            services.AddSingleton<IBlobStorageService, FakeBlobStorageService>();
+            services.AddSingleton<IDropboxSignService, FakeDropboxSignService>();
+            services.AddSingleton<IPdfGeneratorService, FakePdfGeneratorService>();
         });
+    }
+
+    private static void RemoveAll(IServiceCollection services, Type serviceType)
+    {
+        for (int i = services.Count - 1; i >= 0; i--)
+        {
+            if (services[i].ServiceType == serviceType)
+            {
+                services.RemoveAt(i);
+            }
+        }
     }
 
     public async Task InitializeAsync()

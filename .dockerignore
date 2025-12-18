@@ -33,10 +33,23 @@ Tests/
 
 # 開發設定檔案（生產環境應使用環境變數或掛載設定）
 appsettings.Development.json
+.env
+.env.*
 *.http
+
+# 測試/覆蓋率輸出
+coverage/
+**/coverage/
+
+# 一般 log
+*.log
 
 # 其他
 README*.md
 LICENSE
 specs/
 *.md
+
+# OS 雜項
+.DS_Store
+Thumbs.db

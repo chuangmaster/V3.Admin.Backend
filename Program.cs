@@ -38,6 +38,11 @@ public partial class Program
             builder.Configuration.GetSection(JwtSettings.SectionName)
         );
 
+        builder.Services.Configure<AzureBlobStorageSettings>(builder.Configuration);
+        builder.Services.Configure<AzureVisionSettings>(builder.Configuration);
+        builder.Services.Configure<GoogleGeminiSettings>(builder.Configuration);
+        builder.Services.Configure<DropboxSignSettings>(builder.Configuration);
+
         // ===== Dapper 配置 =====
         // 設定 Dapper 的命名規則轉換 (snake_case <-> PascalCase)
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
@@ -58,6 +63,11 @@ public partial class Program
             PermissionFailureLogRepository
         >();
         builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+        builder.Services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
+        builder.Services.AddScoped<IProductItemRepository, ProductItemRepository>();
+        builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+        builder.Services.AddScoped<ISignatureRecordRepository, SignatureRecordRepository>();
 
         // ===== Services =====
         builder.Services.AddScoped<IJwtService, JwtService>();
@@ -68,6 +78,17 @@ public partial class Program
         builder.Services.AddScoped<IUserRoleService, UserRoleService>();
         builder.Services.AddScoped<IPermissionValidationService, PermissionValidationService>();
         builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+
+        builder.Services.AddScoped<ICustomerService, CustomerService>();
+        builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
+
+        builder.Services.AddMemoryCache();
+        builder.Services.AddHttpClient();
+
+        builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+        builder.Services.AddScoped<IIdCardOcrService, IdCardOcrService>();
+        builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+        builder.Services.AddScoped<IDropboxSignService, DropboxSignService>();
 
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -203,6 +224,9 @@ public partial class Program
 
         // TraceId 注入
         app.UseMiddleware<TraceIdMiddleware>();
+
+        // Dropbox Sign Webhook (啟用 body buffering/簽章驗證)
+        app.UseMiddleware<DropboxSignWebhookMiddleware>();
 
         // HTTPS 重定向
         app.UseHttpsRedirection();

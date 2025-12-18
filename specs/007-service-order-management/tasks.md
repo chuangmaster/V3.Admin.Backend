@@ -23,15 +23,16 @@
 
 **Purpose**: 建立專案基礎結構與必要依賴套件
 
-- [ ] T001 安裝 Azure Blob Storage SDK (`Azure.Storage.Blobs` 12.x)
-- [ ] T002 安裝 Azure Computer Vision SDK (`Azure.AI.Vision.ImageAnalysis` 1.x)
-- [ ] T003 安裝 Google Cloud AI Platform SDK (`Google.Cloud.AIPlatform.V1` 3.x)
-- [ ] T004 安裝 PDFsharp (`PDFsharp` 6.x)
-- [ ] T005 [P] 新增環境變數配置 (`appsettings.Development.json`): `AZURE_BLOB_CONNECTION_STRING`, `AZURE_VISION_ENDPOINT`, `AZURE_VISION_API_KEY`, `GOOGLE_GEMINI_API_KEY`, `DROPBOX_SIGN_API_KEY`
-- [ ] T006 [P] 建立 Azure Blob Storage 配置類別 `Configuration/AzureBlobStorageSettings.cs`
-- [ ] T007 [P] 建立 Azure Vision 配置類別 `Configuration/AzureVisionSettings.cs`
-- [ ] T008 [P] 建立 Google Gemini 配置類別 `Configuration/GoogleGeminiSettings.cs`
-- [ ] T009 [P] 建立 Dropbox Sign 配置類別 `Configuration/DropboxSignSettings.cs`
+- [X] T001 安裝 Azure Blob Storage SDK (`Azure.Storage.Blobs` 12.x)
+- [X] T002 安裝 Azure Computer Vision SDK (`Azure.AI.Vision.ImageAnalysis` 1.x)
+- [X] T003 安裝 Google Cloud AI Platform SDK (`Google.Cloud.AIPlatform.V1` 3.x)
+- [X] T004 安裝 PDFsharp (`PDFsharp` 6.x)
+- [X] T005 [P] 新增環境變數配置 (`appsettings.Development.json`): `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_CONTAINER_NAME`, `AZURE_VISION_ENDPOINT`, `AZURE_VISION_API_KEY`, `GOOGLE_GEMINI_API_KEY`, `DROPBOX_SIGN_API_KEY`, `DROPBOX_SIGN_WEBHOOK_SECRET`
+- [X] T006 [P] 建立 Azure Blob Storage 配置類別 `Configuration/AzureBlobStorageSettings.cs`
+- [X] T007 [P] 建立 Azure Vision 配置類別 `Configuration/AzureVisionSettings.cs`
+- [X] T008 [P] 建立 Google Gemini 配置類別 `Configuration/GoogleGeminiSettings.cs`
+- [X] T009 [P] 建立 Dropbox Sign 配置類別 `Configuration/DropboxSignSettings.cs`
+
 
 ---
 
@@ -43,38 +44,38 @@
 
 ### 資料庫 Schema
 
-- [ ] T010 建立資料庫遷移腳本 `Database/Migrations/007_CreateServiceOrderTables.sql` (建立 `customers`, `service_orders`, `product_items`, `attachments`, `signature_records`, `attachment_view_logs`, `dropbox_sign_webhook_events` 表)
-- [ ] T011 建立序號生成函數與觸發器腳本 `Database/Migrations/008_CreateTriggers.sql` (`generate_daily_service_order_number` 函數與 `trg_service_orders_sequence` 觸發器)
-- [ ] T012 建立測試資料種子腳本 `Database/Scripts/seed_service_order_test_data.sql`
-- [ ] T013 執行資料庫遷移腳本 (007, 008) 於本地 PostgreSQL
+- [X] T010 建立資料庫遷移腳本 `Database/Migrations/014_CreateServiceOrderTables.sql` (建立 `customers`, `service_orders`, `product_items`, `attachments`, `signature_records`, `attachment_view_logs`, `dropbox_sign_webhook_events` 表)
+- [X] T011 建立序號生成函數與觸發器腳本 `Database/Migrations/015_CreateServiceOrderTriggers.sql` (`generate_daily_service_order_number` 函數與 `trg_service_orders_sequence` 觸發器)
+- [X] T012 建立測試資料種子腳本 `Database/Scripts/seed_service_order_test_data.sql`
+- [ ] T013 執行資料庫遷移腳本 (014, 015) 於本地 PostgreSQL
 
 ### 實體模型 (Entities)
 
-- [ ] T014 [P] 建立 `Customer` 實體 `Models/Entities/Customer.cs`
-- [ ] T015 [P] 建立 `ServiceOrder` 實體 `Models/Entities/ServiceOrder.cs`
-- [ ] T016 [P] 建立 `ProductItem` 實體 `Models/Entities/ProductItem.cs`
-- [ ] T017 [P] 建立 `Attachment` 實體 `Models/Entities/Attachment.cs`
-- [ ] T018 [P] 建立 `SignatureRecord` 實體 `Models/Entities/SignatureRecord.cs`
-- [ ] T019 [P] 建立 `AttachmentViewLog` 實體 `Models/Entities/AttachmentViewLog.cs`
-- [ ] T020 [P] 建立 `DropboxSignWebhookEvent` 實體 `Models/Entities/DropboxSignWebhookEvent.cs`
+- [X] T014 [P] 建立 `Customer` 實體 `Models/Entities/Customer.cs`
+- [X] T015 [P] 建立 `ServiceOrder` 實體 `Models/Entities/ServiceOrder.cs`
+- [X] T016 [P] 建立 `ProductItem` 實體 `Models/Entities/ProductItem.cs`
+- [X] T017 [P] 建立 `Attachment` 實體 `Models/Entities/Attachment.cs`
+- [X] T018 [P] 建立 `SignatureRecord` 實體 `Models/Entities/SignatureRecord.cs`
+- [X] T019 [P] 建立 `AttachmentViewLog` 實體 `Models/Entities/AttachmentViewLog.cs`
+- [X] T020 [P] 建立 `DropboxSignWebhookEvent` 實體 `Models/Entities/DropboxSignWebhookEvent.cs`
 
 ### 基礎服務介面
 
-- [ ] T021 [P] 建立 `IBlobStorageService` 介面 `Services/Interfaces/IBlobStorageService.cs`
-- [ ] T022 [P] 建立 `IIdCardOcrService` 介面 `Services/Interfaces/IIdCardOcrService.cs`
-- [ ] T023 [P] 建立 `IPdfGeneratorService` 介面 `Services/Interfaces/IPdfGeneratorService.cs`
-- [ ] T024 [P] 建立 `IDropboxSignService` 介面 `Services/Interfaces/IDropboxSignService.cs`
+- [X] T021 [P] 建立 `IBlobStorageService` 介面 `Services/Interfaces/IBlobStorageService.cs`
+- [X] T022 [P] 建立 `IIdCardOcrService` 介面 `Services/Interfaces/IIdCardOcrService.cs`
+- [X] T023 [P] 建立 `IPdfGeneratorService` 介面 `Services/Interfaces/IPdfGeneratorService.cs`
+- [X] T024 [P] 建立 `IDropboxSignService` 介面 `Services/Interfaces/IDropboxSignService.cs`
 
 ### 基礎服務實作
 
-- [ ] T025 實作 `BlobStorageService` `Services/BlobStorageService.cs` (支援上傳檔案、產生 SAS Token、MemoryCache 快取機制)
-- [ ] T026 實作 `IdCardOcrService` `Services/IdCardOcrService.cs` (Azure Vision 文字擷取 + Google Gemini 結構化解析,信心度評分機制,降級策略)
-- [ ] T027 實作 `PdfGeneratorService` `Services/PdfGeneratorService.cs` (PDFsharp 填充模板、合併簽章、繁體中文字體支援)
-- [ ] T028 實作 `DropboxSignService` `Services/DropboxSignService.cs` (發送簽名邀請、查詢簽名狀態、重新發送邀請)
+- [X] T025 實作 `BlobStorageService` `Services/BlobStorageService.cs` (支援上傳檔案、產生 SAS Token、MemoryCache 快取機制)
+- [X] T026 實作 `IdCardOcrService` `Services/IdCardOcrService.cs` (Azure Vision 文字擷取 + Google Gemini 結構化解析,信心度評分機制,降級策略)
+- [X] T027 實作 `PdfGeneratorService` `Services/PdfGeneratorService.cs` (PDFsharp 填充模板、合併簽章、繁體中文字體支援)
+- [X] T028 實作 `DropboxSignService` `Services/DropboxSignService.cs` (發送簽名邀請、查詢簽名狀態、重新發送邀請)
 
 ### Webhook Middleware
 
-- [ ] T029 建立 Dropbox Sign Webhook 驗證 Middleware `Middleware/DropboxSignWebhookMiddleware.cs` (HMAC-SHA256 驗證、時間戳檢查、Event Hash 防重複)
+- [X] T029 建立 Dropbox Sign Webhook 驗證 Middleware `Middleware/DropboxSignWebhookMiddleware.cs` (HMAC-SHA256 驗證、時間戳檢查、Event Hash 防重複)
 
 **Checkpoint**: 基礎建設完成 - 使用者故事實作可以開始
 
@@ -88,84 +89,84 @@
 
 ### DTOs for User Story 1
 
-- [ ] T030 [P] [US1] 建立 `CustomerDto` `Models/Dtos/CustomerDto.cs`
-- [ ] T031 [P] [US1] 建立 `ServiceOrderDto` `Models/Dtos/ServiceOrderDto.cs`
-- [ ] T032 [P] [US1] 建立 `ProductItemDto` `Models/Dtos/ProductItemDto.cs`
-- [ ] T033 [P] [US1] 建立 `AttachmentDto` `Models/Dtos/AttachmentDto.cs`
-- [ ] T034 [P] [US1] 建立 `SignatureRecordDto` `Models/Dtos/SignatureRecordDto.cs`
-- [ ] T035 [P] [US1] 建立 `OcrResultDto` `Models/Dtos/OcrResultDto.cs`
+- [X] T030 [P] [US1] 建立 `CustomerDto` `Models/Dtos/CustomerDto.cs`
+- [X] T031 [P] [US1] 建立 `ServiceOrderDto` `Models/Dtos/ServiceOrderDto.cs`
+- [X] T032 [P] [US1] 建立 `ProductItemDto` `Models/Dtos/ProductItemDto.cs`
+- [X] T033 [P] [US1] 建立 `AttachmentDto` `Models/Dtos/AttachmentDto.cs`
+- [X] T034 [P] [US1] 建立 `SignatureRecordDto` `Models/Dtos/SignatureRecordDto.cs`
+- [X] T035 [P] [US1] 建立 `OcrResultDto` `Models/Dtos/OcrResultDto.cs`
 
 ### Request/Response Models for User Story 1
 
-- [ ] T036 [P] [US1] 建立 `CreateBuybackOrderRequest` `Models/Requests/CreateBuybackOrderRequest.cs`
-- [ ] T037 [P] [US1] 建立 `CreateCustomerRequest` `Models/Requests/CreateCustomerRequest.cs`
-- [ ] T038 [P] [US1] 建立 `SearchCustomerRequest` `Models/Requests/SearchCustomerRequest.cs`
-- [ ] T039 [P] [US1] 建立 `OcrIdCardRequest` `Models/Requests/OcrIdCardRequest.cs`
-- [ ] T040 [P] [US1] 建立 `MergeSignatureRequest` `Models/Requests/MergeSignatureRequest.cs`
-- [ ] T041 [P] [US1] 建立 `ServiceOrderResponse` `Models/Responses/ServiceOrderResponse.cs`
-- [ ] T042 [P] [US1] 建立 `CustomerResponse` `Models/Responses/CustomerResponse.cs`
-- [ ] T043 [P] [US1] 建立 `OcrResultResponse` `Models/Responses/OcrResultResponse.cs`
+- [X] T036 [P] [US1] 建立 `CreateBuybackOrderRequest` `Models/Requests/CreateBuybackOrderRequest.cs`
+- [X] T037 [P] [US1] 建立 `CreateCustomerRequest` `Models/Requests/CreateCustomerRequest.cs`
+- [X] T038 [P] [US1] 建立 `SearchCustomerRequest` `Models/Requests/SearchCustomerRequest.cs`
+- [X] T039 [P] [US1] 建立 `OcrIdCardRequest` `Models/Requests/OcrIdCardRequest.cs`
+- [X] T040 [P] [US1] 建立 `MergeSignatureRequest` `Models/Requests/MergeSignatureRequest.cs`
+- [X] T041 [P] [US1] 建立 `ServiceOrderResponse` `Models/Responses/ServiceOrderResponse.cs`
+- [X] T042 [P] [US1] 建立 `CustomerResponse` `Models/Responses/CustomerResponse.cs`
+- [X] T043 [P] [US1] 建立 `OcrResultResponse` `Models/Responses/OcrResultResponse.cs`
 
 ### Validators for User Story 1
 
-- [ ] T044 [P] [US1] 建立 `CreateBuybackOrderRequestValidator` `Validators/CreateBuybackOrderRequestValidator.cs`
-- [ ] T045 [P] [US1] 建立 `CreateCustomerRequestValidator` `Validators/CreateCustomerRequestValidator.cs`
-- [ ] T046 [P] [US1] 建立 `SearchCustomerRequestValidator` `Validators/SearchCustomerRequestValidator.cs`
-- [ ] T047 [P] [US1] 建立 `OcrIdCardRequestValidator` `Validators/OcrIdCardRequestValidator.cs`
-- [ ] T048 [P] [US1] 建立 `MergeSignatureRequestValidator` `Validators/MergeSignatureRequestValidator.cs`
+- [X] T044 [P] [US1] 建立 `CreateBuybackOrderRequestValidator` `Validators/CreateBuybackOrderRequestValidator.cs`
+- [X] T045 [P] [US1] 建立 `CreateCustomerRequestValidator` `Validators/CreateCustomerRequestValidator.cs`
+- [X] T046 [P] [US1] 建立 `SearchCustomerRequestValidator` `Validators/SearchCustomerRequestValidator.cs`
+- [X] T047 [P] [US1] 建立 `OcrIdCardRequestValidator` `Validators/OcrIdCardRequestValidator.cs`
+- [X] T048 [P] [US1] 建立 `MergeSignatureRequestValidator` `Validators/MergeSignatureRequestValidator.cs`
 
 ### Repository Interfaces for User Story 1
 
-- [ ] T049 [P] [US1] 建立 `ICustomerRepository` 介面 `Repositories/Interfaces/ICustomerRepository.cs`
-- [ ] T050 [P] [US1] 建立 `IServiceOrderRepository` 介面 `Repositories/Interfaces/IServiceOrderRepository.cs`
-- [ ] T051 [P] [US1] 建立 `IProductItemRepository` 介面 `Repositories/Interfaces/IProductItemRepository.cs`
-- [ ] T052 [P] [US1] 建立 `IAttachmentRepository` 介面 `Repositories/Interfaces/IAttachmentRepository.cs`
-- [ ] T053 [P] [US1] 建立 `ISignatureRecordRepository` 介面 `Repositories/Interfaces/ISignatureRecordRepository.cs`
+- [X] T049 [P] [US1] 建立 `ICustomerRepository` 介面 `Repositories/Interfaces/ICustomerRepository.cs`
+- [X] T050 [P] [US1] 建立 `IServiceOrderRepository` 介面 `Repositories/Interfaces/IServiceOrderRepository.cs`
+- [X] T051 [P] [US1] 建立 `IProductItemRepository` 介面 `Repositories/Interfaces/IProductItemRepository.cs`
+- [X] T052 [P] [US1] 建立 `IAttachmentRepository` 介面 `Repositories/Interfaces/IAttachmentRepository.cs`
+- [X] T053 [P] [US1] 建立 `ISignatureRecordRepository` 介面 `Repositories/Interfaces/ISignatureRecordRepository.cs`
 
 ### Repository Implementations for User Story 1
 
-- [ ] T054 [P] [US1] 實作 `CustomerRepository` `Repositories/CustomerRepository.cs` (SearchAsync、CreateAsync、GetByIdAsync、GetByIdNumberAsync)
-- [ ] T055 [P] [US1] 實作 `ServiceOrderRepository` `Repositories/ServiceOrderRepository.cs` (CreateAsync、GetByIdAsync、GetByOrderNumberAsync、UpdateStatusAsync、樂觀鎖機制)
-- [ ] T056 [P] [US1] 實作 `ProductItemRepository` `Repositories/ProductItemRepository.cs` (BatchCreateAsync、GetByServiceOrderIdAsync)
-- [ ] T057 [P] [US1] 實作 `AttachmentRepository` `Repositories/AttachmentRepository.cs` (CreateAsync、GetByServiceOrderIdAsync、SoftDeleteAsync)
-- [ ] T058 [P] [US1] 實作 `SignatureRecordRepository` `Repositories/SignatureRecordRepository.cs` (CreateAsync、GetByServiceOrderIdAsync)
+- [X] T054 [P] [US1] 實作 `CustomerRepository` `Repositories/CustomerRepository.cs` (SearchAsync、CreateAsync、GetByIdAsync、GetByIdNumberAsync)
+- [X] T055 [P] [US1] 實作 `ServiceOrderRepository` `Repositories/ServiceOrderRepository.cs` (CreateAsync、GetByIdAsync、GetByOrderNumberAsync、UpdateStatusAsync、樂觀鎖機制)
+- [X] T056 [P] [US1] 實作 `ProductItemRepository` `Repositories/ProductItemRepository.cs` (BatchCreateAsync、GetByServiceOrderIdAsync)
+- [X] T057 [P] [US1] 實作 `AttachmentRepository` `Repositories/AttachmentRepository.cs` (CreateAsync、GetByServiceOrderIdAsync、SoftDeleteAsync)
+- [X] T058 [P] [US1] 實作 `SignatureRecordRepository` `Repositories/SignatureRecordRepository.cs` (CreateAsync、GetByServiceOrderIdAsync)
 
 ### Service Interfaces for User Story 1
 
-- [ ] T059 [P] [US1] 建立 `ICustomerService` 介面 `Services/Interfaces/ICustomerService.cs`
-- [ ] T060 [P] [US1] 建立 `IServiceOrderService` 介面 `Services/Interfaces/IServiceOrderService.cs`
+- [X] T059 [P] [US1] 建立 `ICustomerService` 介面 `Services/Interfaces/ICustomerService.cs`
+- [X] T060 [P] [US1] 建立 `IServiceOrderService` 介面 `Services/Interfaces/IServiceOrderService.cs`
 
 ### Service Implementations for User Story 1
 
-- [ ] T061 [US1] 實作 `CustomerService` `Services/CustomerService.cs` (SearchCustomersAsync、CreateCustomerAsync、GetByIdNumberAsync,整合 AuditLogService 記錄操作)
-- [ ] T062 [US1] 實作 `ServiceOrderService` `Services/ServiceOrderService.cs` (CreateBuybackOrderAsync 方法,包含序號生成、附件儲存、簽名記錄、AuditLog 記錄、交易管理)
+- [X] T061 [US1] 實作 `CustomerService` `Services/CustomerService.cs` (SearchCustomersAsync、CreateCustomerAsync、GetByIdNumberAsync,整合 AuditLogService 記錄操作)
+- [X] T062 [US1] 實作 `ServiceOrderService` `Services/ServiceOrderService.cs` (CreateBuybackOrderAsync 方法,包含序號生成、附件儲存、簽名記錄、AuditLog 記錄、交易管理)
 
 ### Controller for User Story 1
 
-- [ ] T063 [US1] 實作 `CustomerController` `Controllers/CustomerController.cs` (SearchCustomers、CreateCustomer API 端點)
-- [ ] T064 [US1] 實作 `OcrController` `Controllers/OcrController.cs` (RecognizeIdCard API 端點,呼叫 IdCardOcrService)
-- [ ] T065 [US1] 實作 `ServiceOrderController` `Controllers/ServiceOrderController.cs` (CreateBuybackOrder API 端點,建立收購單基本流程)
-- [ ] T065a [US1] 在 `ServiceOrderController` 新增 `PreviewBuybackContractPdf` API 端點 (填充 PDF 模板產生預覽,呼叫 PdfGeneratorService)
-- [ ] T065b [US1] 在 `ServiceOrderController` 新增 `MergeSignature` API 端點 (合併 Base64 簽章到 PDF,呼叫 PdfGeneratorService)
-- [ ] T065c [US1] 在 `ServiceOrderController` 新增 `ConfirmOrder` API 端點 (確認後儲存最終 PDF 至 Blob Storage,建立簽名記錄)
+- [X] T063 [US1] 實作 `CustomerController` `Controllers/CustomerController.cs` (SearchCustomers、CreateCustomer API 端點)
+- [X] T064 [US1] 實作 `OcrController` `Controllers/OcrController.cs` (RecognizeIdCard API 端點,呼叫 IdCardOcrService)
+- [X] T065 [US1] 實作 `ServiceOrderController` `Controllers/ServiceOrderController.cs` (CreateBuybackOrder API 端點,建立收購單基本流程)
+- [X] T065a [US1] 在 `ServiceOrderController` 新增 `PreviewBuybackContractPdf` API 端點 (填充 PDF 模板產生預覽,呼叫 PdfGeneratorService)
+- [X] T065b [US1] 在 `ServiceOrderController` 新增 `MergeSignature` API 端點 (合併 Base64 簽章到 PDF,呼叫 PdfGeneratorService)
+- [X] T065c [US1] 在 `ServiceOrderController` 新增 `ConfirmOrder` API 端點 (確認後儲存最終 PDF 至 Blob Storage,建立簽名記錄)
 
 ### Unit Tests for User Story 1
 
-- [ ] T066 [P] [US1] 撰寫 `CreateBuybackOrderRequestValidatorTests` `Tests/Unit/Validators/CreateBuybackOrderRequestValidatorTests.cs`
-- [ ] T067 [P] [US1] 撰寫 `CreateCustomerRequestValidatorTests` `Tests/Unit/Validators/CreateCustomerRequestValidatorTests.cs`
-- [ ] T068 [P] [US1] 撰寫 `CustomerServiceTests` `Tests/Unit/Services/CustomerServiceTests.cs`
-- [ ] T069 [P] [US1] 撰寫 `ServiceOrderServiceTests` `Tests/Unit/Services/ServiceOrderServiceTests.cs`
-- [ ] T070 [P] [US1] 撰寫 `IdCardOcrServiceTests` `Tests/Unit/Services/IdCardOcrServiceTests.cs`
+- [X] T066 [P] [US1] 撰寫 `CreateBuybackOrderRequestValidatorTests` `Tests/Unit/Validators/CreateBuybackOrderRequestValidatorTests.cs`
+- [X] T067 [P] [US1] 撰寫 `CreateCustomerRequestValidatorTests` `Tests/Unit/Validators/CreateCustomerRequestValidatorTests.cs`
+- [X] T068 [P] [US1] 撰寫 `CustomerServiceTests` `Tests/Unit/Services/CustomerServiceTests.cs`
+- [X] T069 [P] [US1] 撰寫 `ServiceOrderServiceTests` `Tests/Unit/Services/ServiceOrderServiceTests.cs`
+- [X] T070 [P] [US1] 撰寫 `IdCardOcrServiceTests` `Tests/Unit/Services/IdCardOcrServiceTests.cs`
 
 ### Integration Tests for User Story 1
 
-- [ ] T071 [P] [US1] 撰寫 `CustomerControllerTests` `Tests/Integration/Controllers/CustomerControllerTests.cs` (使用 Testcontainers PostgreSQL)
-- [ ] T072 [P] [US1] 撰寫 `ServiceOrderControllerTests` `Tests/Integration/Controllers/ServiceOrderControllerTests.cs` (完整收購單建立流程測試)
-- [ ] T073 [US1] 撰寫並發序號生成測試 `Tests/Integration/ServiceOrderConcurrencyTests.cs` (模擬 100 筆同時建立)
+- [X] T071 [P] [US1] 撰寫 `CustomerControllerTests` `Tests/Integration/Controllers/CustomerControllerTests.cs` (使用 Testcontainers PostgreSQL)
+- [X] T072 [P] [US1] 撰寫 `ServiceOrderControllerTests` `Tests/Integration/Controllers/ServiceOrderControllerTests.cs` (完整收購單建立流程測試)
+- [X] T073 [US1] 撰寫並發序號生成測試 `Tests/Integration/ServiceOrderConcurrencyTests.cs` (模擬 100 筆同時建立)
 
 ### Dependency Injection Registration for User Story 1
 
-- [ ] T074 [US1] 在 `Program.cs` 註冊所有服務與 Repository (CustomerService, ServiceOrderService, CustomerRepository, ServiceOrderRepository, ProductItemRepository, AttachmentRepository, SignatureRecordRepository, BlobStorageService, IdCardOcrService, PdfGeneratorService)
+- [X] T074 [US1] 在 `Program.cs` 註冊所有服務與 Repository (CustomerService, ServiceOrderService, CustomerRepository, ServiceOrderRepository, ProductItemRepository, AttachmentRepository, SignatureRecordRepository, BlobStorageService, IdCardOcrService, PdfGeneratorService)
 
 **Checkpoint**: User Story 1 完成 - 可獨立測試收購單建立流程
 

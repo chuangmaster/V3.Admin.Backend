@@ -424,6 +424,6 @@ CONSTRAINT chk_operation_type CHECK (operation_type IN ('VIEW', 'DOWNLOAD'))
 ## 下一步: 資料庫遷移腳本
 
 完整的 PostgreSQL DDL 腳本請參考:
-- `Database/Migrations/007_CreateServiceOrderTables.sql` - 建立 7 個表 (service_orders, product_items, customers, attachments, signature_records, attachment_view_logs, dropbox_sign_webhook_events)
-- `Database/Migrations/008_CreateTriggers.sql` - 建立序號產生觸發器與 update_timestamp 觸發器
+- `Database/Migrations/014_CreateServiceOrderTables.sql` - 建立 7 個表 (customers, service_orders, product_items, attachments, signature_records, attachment_view_logs, dropbox_sign_webhook_events)
+- `Database/Migrations/015_CreateServiceOrderTriggers.sql` - 建立序號產生函數與觸發器 (每日重置序號)
 - `Database/Scripts/seed_service_order_test_data.sql` - 測試資料種子腳本

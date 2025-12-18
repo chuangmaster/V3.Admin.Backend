@@ -115,7 +115,7 @@ public class PermissionAuthorizationMiddleware
                     string? userAgent = context.Request.Headers.UserAgent.ToString();
                     string resource = $"{context.Request.Method} {context.Request.Path}";
 
-                    _ = permissionValidationService.LogPermissionFailureAsync(
+                    await permissionValidationService.LogPermissionFailureAsync(
                         userId,
                         usernameClaim ?? "Unknown",
                         resource,
