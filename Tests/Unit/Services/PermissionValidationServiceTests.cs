@@ -366,4 +366,194 @@ public class PermissionValidationServiceTests
                 l.TraceId == traceId), It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    /// <summary>
+    /// 測試：萬用字元權限匹配 - 用戶擁有 serviceOrder.buyback.read 可匹配 serviceOrder.*.read
+    /// </summary>
+    [Fact]
+    public async Task ValidatePermissionAsync_WildcardPattern_MatchesBuybackRead()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+
+        var userRoles = new List<UserRole>
+        {
+            new UserRole { UserId = userId, RoleId = roleId, AssignedAt = DateTime.UtcNow }
+        };
+
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            PermissionCode = "serviceOrder.buyback.read",
+            Name = "Buyback Read",
+            Description = "Read buyback orders",
+            PermissionType = "function",
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+
+        _mockUserRoleRepository
+            .Setup(r => r.GetUserRolesAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userRoles);
+
+        _mockRolePermissionRepository
+            .Setup(r => r.GetRolePermissionsAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Permission> { permission });
+
+        var result = await _service.ValidatePermissionAsync(userId, "serviceOrder.*.read");
+
+        result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// 測試：萬用字元權限匹配 - 用戶擁有 serviceOrder.consignment.read 可匹配 serviceOrder.*.read
+    /// </summary>
+    [Fact]
+    public async Task ValidatePermissionAsync_WildcardPattern_MatchesConsignmentRead()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+
+        var userRoles = new List<UserRole>
+        {
+            new UserRole { UserId = userId, RoleId = roleId, AssignedAt = DateTime.UtcNow }
+        };
+
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            PermissionCode = "serviceOrder.consignment.read",
+            Name = "Consignment Read",
+            Description = "Read consignment orders",
+            PermissionType = "function",
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+
+        _mockUserRoleRepository
+            .Setup(r => r.GetUserRolesAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userRoles);
+
+        _mockRolePermissionRepository
+            .Setup(r => r.GetRolePermissionsAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Permission> { permission });
+
+        var result = await _service.ValidatePermissionAsync(userId, "serviceOrder.*.read");
+
+        result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// 測試：萬用字元權限匹配 - 不同動作不匹配
+    /// </summary>
+    [Fact]
+    public async Task ValidatePermissionAsync_WildcardPattern_DoesNotMatchDifferentAction()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+
+        var userRoles = new List<UserRole>
+        {
+            new UserRole { UserId = userId, RoleId = roleId, AssignedAt = DateTime.UtcNow }
+        };
+
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            PermissionCode = "serviceOrder.buyback.create",
+            Name = "Buyback Create",
+            Description = "Create buyback orders",
+            PermissionType = "function",
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+
+        _mockUserRoleRepository
+            .Setup(r => r.GetUserRolesAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userRoles);
+
+        _mockRolePermissionRepository
+            .Setup(r => r.GetRolePermissionsAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Permission> { permission });
+
+        var result = await _service.ValidatePermissionAsync(userId, "serviceOrder.*.read");
+
+        result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// 測試：萬用字元權限匹配 - 區段數量不同時不匹配
+    /// </summary>
+    [Fact]
+    public async Task ValidatePermissionAsync_WildcardPattern_DoesNotMatchDifferentSegmentCount()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+
+        var userRoles = new List<UserRole>
+        {
+            new UserRole { UserId = userId, RoleId = roleId, AssignedAt = DateTime.UtcNow }
+        };
+
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            PermissionCode = "serviceOrder.buyback",
+            Name = "Buyback",
+            Description = "Buyback",
+            PermissionType = "function",
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+
+        _mockUserRoleRepository
+            .Setup(r => r.GetUserRolesAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userRoles);
+
+        _mockRolePermissionRepository
+            .Setup(r => r.GetRolePermissionsAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Permission> { permission });
+
+        var result = await _service.ValidatePermissionAsync(userId, "serviceOrder.*.read");
+
+        result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// 測試：萬用字元權限匹配 - 多個萬用字元
+    /// </summary>
+    [Fact]
+    public async Task ValidatePermissionAsync_MultipleWildcards_MatchesCorrectly()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+
+        var userRoles = new List<UserRole>
+        {
+            new UserRole { UserId = userId, RoleId = roleId, AssignedAt = DateTime.UtcNow }
+        };
+
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            PermissionCode = "module.resource.action",
+            Name = "Test Permission",
+            Description = "Test",
+            PermissionType = "function",
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+
+        _mockUserRoleRepository
+            .Setup(r => r.GetUserRolesAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userRoles);
+
+        _mockRolePermissionRepository
+            .Setup(r => r.GetRolePermissionsAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Permission> { permission });
+
+        var result = await _service.ValidatePermissionAsync(userId, "*.*.action");
+
+        result.Should().BeTrue();
+    }
 }
