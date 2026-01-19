@@ -1,3 +1,15 @@
+「請分析目前暫存 (staged) 的程式碼差異。遵循 Conventional Commits 1.0.0 規範。 規則：
+
+1. 邏輯優先： 不要只描述『更新了函數』，要描述『解決了什麼問題』或『增加了什麼功能』。
+
+2. 精簡摘要： 第一行不超過 50 個字元，剩餘的內容請於第二行列點說明
+
+3. 區分變更： 如果同時包含重構與新功能，請分別列出。
+
+4. 禁止幻覺： 如果不確定變更意圖，請在描述中使用占位符或提示我。」
+
+5. 慣用語言: 絕對務必使用 繁體中文 撰寫提交訊息。
+
 Conventional Commits 1.0.0
 Summary
 The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages.
