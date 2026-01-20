@@ -9,9 +9,9 @@ namespace V3.Admin.Backend.Models.Dtos;
 public class UserProfileDto
 {
     /// <summary>
-    /// 用戶名稱
+    /// 帳號名稱
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 顯示名稱（可為 null）

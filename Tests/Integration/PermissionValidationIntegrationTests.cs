@@ -159,7 +159,7 @@ public class PermissionValidationIntegrationTests
         }
 
         // 6. 登入取得 token
-        var loginRequest = new LoginRequest { Username = _testUsername, Password = _testPassword };
+        var loginRequest = new LoginRequest { Account = _testUsername, Password = _testPassword };
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         if (loginResponse.IsSuccessStatusCode)

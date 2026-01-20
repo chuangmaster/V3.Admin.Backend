@@ -6,9 +6,9 @@ namespace V3.Admin.Backend.Models.Responses;
 public class UserProfileResponse
 {
     /// <summary>
-    /// 用戶名稱
+    /// 帳號名稱
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 顯示名稱（可為 null）

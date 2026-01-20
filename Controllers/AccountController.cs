@@ -76,7 +76,7 @@ public class AccountController : BaseApiController
             // 轉換 DTO 為 Response 物件回傳給客戶端
             var response = new UserProfileResponse
             {
-                Username = profileDto.Username,
+                Account = profileDto.Account,
                 DisplayName = profileDto.DisplayName,
                 Roles = profileDto.Roles,
                 Permissions = profileDto.Permissions ?? new List<string>(),
@@ -97,13 +97,16 @@ public class AccountController : BaseApiController
     /// </summary>
     /// <param name="pageNumber">頁碼 (預設 1)</param>
     /// <param name="pageSize">每頁數量 (預設 10)</param>
-    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫，選填)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 account 和 display_name，不區分大小寫，選填)</param>
     /// <returns>帳號列表</returns>
     /// <response code="200">查詢成功</response>
     /// <response code="401">未授權</response>
+    /// <response code="403">禁止存取 - 無 account.read 權限</response>
     [HttpGet]
+    [RequirePermission("account.read")]
     [ProducesResponseType(typeof(ApiResponseModel<AccountListResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     public async Task<IActionResult> GetAccounts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -124,7 +127,7 @@ public class AccountController : BaseApiController
                     .Items.Select(dto => new AccountResponse
                     {
                         Id = dto.Id,
-                        Username = dto.Username,
+                        Account = dto.Account,
                         DisplayName = dto.DisplayName,
                         CreatedAt = dto.CreatedAt,
                         UpdatedAt = dto.UpdatedAt,
@@ -153,10 +156,13 @@ public class AccountController : BaseApiController
     /// <returns>帳號資訊</returns>
     /// <response code="200">查詢成功</response>
     /// <response code="401">未授權</response>
+    /// <response code="403">禁止存取 - 無 account.read 權限</response>
     /// <response code="404">帳號不存在</response>
     [HttpGet("{id}")]
+    [RequirePermission("account.read")]
     [ProducesResponseType(typeof(ApiResponseModel<AccountResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     public async Task<IActionResult> GetAccount(Guid id)
     {
@@ -167,7 +173,7 @@ public class AccountController : BaseApiController
             AccountResponse response = new AccountResponse
             {
                 Id = result.Id,
-                Username = result.Username,
+                Account = result.Account,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
                 UpdatedAt = result.UpdatedAt,
@@ -195,11 +201,14 @@ public class AccountController : BaseApiController
     /// <response code="201">帳號建立成功</response>
     /// <response code="400">輸入驗證錯誤</response>
     /// <response code="401">未授權</response>
+    /// <response code="403">禁止存取 - 無 account.create 權限</response>
     /// <response code="422">帳號已存在</response>
     [HttpPost]
+    [RequirePermission("account.create")]
     [ProducesResponseType(typeof(ApiResponseModel<AccountResponse>), 201)]
     [ProducesResponseType(typeof(ApiResponseModel), 400)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     [ProducesResponseType(typeof(ApiResponseModel), 422)]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountRequest request)
     {
@@ -208,7 +217,7 @@ public class AccountController : BaseApiController
             // 轉換為 DTO
             CreateAccountDto createDto = new CreateAccountDto
             {
-                Username = request.Username,
+                Account = request.Account,
                 Password = request.Password,
                 DisplayName = request.DisplayName,
             };
@@ -220,7 +229,7 @@ public class AccountController : BaseApiController
             AccountResponse response = new AccountResponse
             {
                 Id = result.Id,
-                Username = result.Username,
+                Account = result.Account,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
                 UpdatedAt = result.UpdatedAt,
@@ -231,7 +240,7 @@ public class AccountController : BaseApiController
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "新增帳號失敗: {Message}", ex.Message);
-            return BusinessError(ex.Message, ResponseCodes.USERNAME_EXISTS);
+            return BusinessError(ex.Message, ResponseCodes.ACCOUNT_EXISTS);
         }
         catch (Exception ex)
         {
@@ -249,12 +258,15 @@ public class AccountController : BaseApiController
     /// <response code="200">更新成功</response>
     /// <response code="400">輸入驗證錯誤</response>
     /// <response code="401">未授權</response>
+    /// <response code="403">禁止存取 - 無 account.update 權限</response>
     /// <response code="404">帳號不存在</response>
     /// <response code="409">並發更新衝突</response>
     [HttpPut("{id}")]
+    [RequirePermission("account.update")]
     [ProducesResponseType(typeof(ApiResponseModel<AccountResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 400)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 409)]
     public async Task<IActionResult> UpdateAccount(Guid id, [FromBody] UpdateAccountRequest request)
@@ -276,7 +288,7 @@ public class AccountController : BaseApiController
             AccountResponse response = new AccountResponse
             {
                 Id = result.Id,
-                Username = result.Username,
+                Account = result.Account,
                 DisplayName = result.DisplayName,
                 CreatedAt = result.CreatedAt,
                 UpdatedAt = result.UpdatedAt,
@@ -312,13 +324,16 @@ public class AccountController : BaseApiController
     /// <response code="200">變更成功</response>
     /// <response code="400">輸入驗證錯誤</response>
     /// <response code="401">未授權或舊密碼錯誤</response>
+    /// <response code="403">禁止存取 - 無 account.password.change 權限</response>
     /// <response code="404">帳號不存在</response>
     /// <response code="409">並發更新衝突</response>
     /// <response code="422">新密碼與舊密碼相同</response>
     [HttpPut("{id}/password")]
+    [RequirePermission("account.password.change")]
     [ProducesResponseType(typeof(ApiResponseModel), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 400)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 409)]
     [ProducesResponseType(typeof(ApiResponseModel), 422)]
@@ -381,12 +396,15 @@ public class AccountController : BaseApiController
     /// <response code="200">刪除成功</response>
     /// <response code="400">輸入驗證錯誤</response>
     /// <response code="401">未授權</response>
+    /// <response code="403">禁止存取 - 無 account.delete 權限</response>
     /// <response code="404">帳號不存在</response>
     /// <response code="422">無法刪除當前登入帳號或最後一個有效帳號</response>
     [HttpDelete("{id}")]
+    [RequirePermission("account.delete")]
     [ProducesResponseType(typeof(ApiResponseModel), 200)]
     [ProducesResponseType(typeof(ApiResponseModel), 400)]
     [ProducesResponseType(typeof(ApiResponseModel), 401)]
+    [ProducesResponseType(typeof(ApiResponseModel), 403)]
     [ProducesResponseType(typeof(ApiResponseModel), 404)]
     [ProducesResponseType(typeof(ApiResponseModel), 422)]
     public async Task<IActionResult> DeleteAccount(Guid id, [FromBody] DeleteAccountRequest request)

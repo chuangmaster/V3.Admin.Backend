@@ -116,7 +116,7 @@ public class UserRoleControllerIntegrationTests
         }
 
         // 4. 登入獲取令牌
-        var loginRequest = new LoginRequest { Username = _testUsername, Password = _testPassword };
+        var loginRequest = new LoginRequest { Account = _testUsername, Password = _testPassword };
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         if (loginResponse.IsSuccessStatusCode)

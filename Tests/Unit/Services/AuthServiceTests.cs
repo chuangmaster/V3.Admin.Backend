@@ -31,14 +31,14 @@ public class AuthServiceTests
         // Arrange
         var loginDto = new LoginDto
         {
-            Username = "admin",
+            Account = "admin",
             Password = "Admin@123"
         };
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = "admin",
+            Account = "admin",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123", 12),
             DisplayName = "管理員",
             Version = 1,
@@ -48,7 +48,7 @@ public class AuthServiceTests
         };
 
         _mockUserRepository
-            .Setup(x => x.GetByUsernameAsync(loginDto.Username))
+            .Setup(x => x.GetByUsernameAsync(loginDto.Account))
             .ReturnsAsync(user);
 
         _mockJwtService
@@ -66,10 +66,10 @@ public class AuthServiceTests
         result.Should().NotBeNull();
         result.Token.Should().Be("mock_jwt_token");
         result.User.Should().NotBeNull();
-        result.User.Username.Should().Be("admin");
+        result.User.Account.Should().Be("admin");
         result.User.DisplayName.Should().Be("管理員");
 
-        _mockUserRepository.Verify(x => x.GetByUsernameAsync(loginDto.Username), Times.Once);
+        _mockUserRepository.Verify(x => x.GetByUsernameAsync(loginDto.Account), Times.Once);
         _mockJwtService.Verify(x => x.GenerateToken(It.IsAny<User>()), Times.Once);
     }
 
@@ -79,12 +79,12 @@ public class AuthServiceTests
         // Arrange
         var loginDto = new LoginDto
         {
-            Username = "nonexistent",
+            Account = "nonexistent",
             Password = "Password123"
         };
 
         _mockUserRepository
-            .Setup(x => x.GetByUsernameAsync(loginDto.Username))
+            .Setup(x => x.GetByUsernameAsync(loginDto.Account))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -94,7 +94,7 @@ public class AuthServiceTests
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("帳號或密碼錯誤");
 
-        _mockUserRepository.Verify(x => x.GetByUsernameAsync(loginDto.Username), Times.Once);
+        _mockUserRepository.Verify(x => x.GetByUsernameAsync(loginDto.Account), Times.Once);
         _mockJwtService.Verify(x => x.GenerateToken(It.IsAny<User>()), Times.Never);
     }
 
@@ -104,14 +104,14 @@ public class AuthServiceTests
         // Arrange
         var loginDto = new LoginDto
         {
-            Username = "deleted_user",
+            Account = "deleted_user",
             Password = "Password123"
         };
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = "deleted_user",
+            Account = "deleted_user",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123", 12),
             DisplayName = "已刪除使用者",
             Version = 1,
@@ -122,7 +122,7 @@ public class AuthServiceTests
         };
 
         _mockUserRepository
-            .Setup(x => x.GetByUsernameAsync(loginDto.Username))
+            .Setup(x => x.GetByUsernameAsync(loginDto.Account))
             .ReturnsAsync(user);
 
         // Act
@@ -141,14 +141,14 @@ public class AuthServiceTests
         // Arrange
         var loginDto = new LoginDto
         {
-            Username = "admin",
+            Account = "admin",
             Password = "WrongPassword"
         };
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = "admin",
+            Account = "admin",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("CorrectPassword", 12),
             DisplayName = "管理員",
             Version = 1,
@@ -158,7 +158,7 @@ public class AuthServiceTests
         };
 
         _mockUserRepository
-            .Setup(x => x.GetByUsernameAsync(loginDto.Username))
+            .Setup(x => x.GetByUsernameAsync(loginDto.Account))
             .ReturnsAsync(user);
 
         // Act

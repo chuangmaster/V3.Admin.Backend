@@ -62,7 +62,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "Admin@123"
         };
 
@@ -81,17 +81,17 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         apiResponse.Data.Should().NotBeNull();
         apiResponse.Data!.Token.Should().NotBeNullOrEmpty();
         apiResponse.Data.User.Should().NotBeNull();
-        apiResponse.Data.User.Username.Should().Be("admin");
+        apiResponse.Data.User.Account.Should().Be("admin");
         apiResponse.Data.User.DisplayName.Should().Be("管理員");
     }
 
     [Fact]
-    public async Task Login_WithInvalidUsername_ReturnsUnauthorized()
+    public async Task Login_WithInvalidAccount_ReturnsUnauthorized()
     {
         // Arrange
         var request = new LoginRequest
         {
-            Username = "nonexistent",
+            Account = "nonexistent",
             Password = "Password123"
         };
 
@@ -116,7 +116,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "WrongPassword"
         };
 
@@ -140,7 +140,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "ad", // 太短,但會因為帳號不存在而返回 401
+            Account = "ad", // 太短,但會因為帳號不存在而返回 401
             Password = "123"  // 太短
         };
 

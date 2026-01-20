@@ -49,11 +49,11 @@ public class AccountService : IAccountService
     public async Task<AccountDto> CreateAccountAsync(CreateAccountDto dto)
     {
         // 檢查帳號是否已存在 (不區分大小寫)
-        var usernameExists = await _userRepository.ExistsAsync(dto.Username.ToLowerInvariant());
-        if (usernameExists)
+        var accountExists = await _userRepository.ExistsAsync(dto.Account.ToLowerInvariant());
+        if (accountExists)
         {
-            _logger.LogWarning("新增帳號失敗: 帳號 {Username} 已存在", dto.Username);
-            throw new InvalidOperationException($"帳號 {dto.Username} 已存在");
+            _logger.LogWarning("新增帳號失敗: 帳號 {Account} 已存在", dto.Account);
+            throw new InvalidOperationException($"帳號 {dto.Account} 已存在");
         }
 
         // 雜湊密碼
@@ -63,7 +63,7 @@ public class AccountService : IAccountService
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = dto.Username.ToLowerInvariant(),
+            Account = dto.Account.ToLowerInvariant(),
             PasswordHash = passwordHash,
             DisplayName = dto.DisplayName,
             CreatedAt = DateTime.UtcNow,
@@ -74,13 +74,13 @@ public class AccountService : IAccountService
         // 儲存至資料庫
         await _userRepository.CreateAsync(user);
 
-        _logger.LogInformation("成功建立帳號 {Username} (ID: {UserId})", user.Username, user.Id);
+        _logger.LogInformation("成功建立帳號 {Account} (ID: {UserId})", user.Account, user.Id);
 
         // 轉換為 DTO 回傳
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -129,13 +129,13 @@ public class AccountService : IAccountService
             throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
         }
 
-        _logger.LogInformation("成功更新帳號 {Username} (ID: {UserId})", user.Username, user.Id);
+        _logger.LogInformation("成功更新帳號 {Account} (ID: {UserId})", user.Account, user.Id);
 
         // 轉換為 DTO 回傳 (版本號已在資料庫自動遞增)
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -199,8 +199,8 @@ public class AccountService : IAccountService
         }
 
         _logger.LogInformation(
-            "成功變更帳號 {Username} (ID: {UserId}) 的密碼",
-            user.Username,
+            "成功變更帳號 {Account} (ID: {UserId}) 的密碼",
+            user.Account,
             user.Id
         );
     }
@@ -223,7 +223,7 @@ public class AccountService : IAccountService
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -236,7 +236,7 @@ public class AccountService : IAccountService
     /// /// </summary>
     /// <param name="pageNumber">頁碼 (從 1 開始)</param>
     /// <param name="pageSize">每頁數量</param>
-    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 account 和 display_name，不區分大小寫)</param>
     /// <returns>帳號列表</returns>
     public async Task<AccountListDto> GetAccountsAsync(
         int pageNumber,
@@ -273,7 +273,7 @@ public class AccountService : IAccountService
             .Select(user => new AccountDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Account = user.Account,
                 DisplayName = user.DisplayName,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
@@ -333,8 +333,8 @@ public class AccountService : IAccountService
         }
 
         _logger.LogInformation(
-            "成功刪除帳號 {Username} (ID: {UserId}),操作者: {OperatorId}",
-            user.Username,
+            "成功刪除帳號 {Account} (ID: {UserId}),操作者: {OperatorId}",
+            user.Account,
             user.Id,
             operatorId
         );
@@ -397,15 +397,15 @@ public class AccountService : IAccountService
             // 在 Service 層組合並回傳 DTO 物件（Permissions 為去重後的權限代碼）
             var profileDto = new UserProfileDto
             {
-                Username = user.Username,
+                Account = user.Account,
                 DisplayName = user.DisplayName,
                 Roles = roleNames ?? [],
                 Permissions = permissionSet.OrderBy(x => x).ToList(),
             };
 
             _logger.LogInformation(
-                "成功查詢用戶個人資料: {Username} (ID: {UserId}), 角色數: {RoleCount}, 權限數: {PermissionCount}",
-                user.Username,
+                "成功查詢用戶個人資料: {Account} (ID: {UserId}), 角色數: {RoleCount}, 權限數: {PermissionCount}",
+                user.Account,
                 user.Id,
                 roleNames?.Count ?? 0,
                 permissionSet.Count

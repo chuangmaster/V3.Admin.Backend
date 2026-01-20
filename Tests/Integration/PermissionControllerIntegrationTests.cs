@@ -93,7 +93,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         // Login to get token
         var loginRequest = new LoginRequest
         {
-            Username = "permission_test_user",
+            Account = "permission_test_user",
             Password = "TestPass@123"
         };
 

@@ -53,7 +53,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "testuser",
+            Account = "testuser",
             DisplayName = "Test User",
             IsDeleted = false,
         };
@@ -75,7 +75,7 @@ public class AccountServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Username.Should().Be("testuser");
+        result!.Account.Should().Be("testuser");
         result.DisplayName.Should().Be("Test User");
         result.Roles.Should().HaveCount(2);
         result.Roles.Should().Contain(new[] { "Admin", "User" });
@@ -92,7 +92,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "newuser",
+            Account = "newuser",
             DisplayName = "New User",
             IsDeleted = false,
         };
@@ -114,7 +114,7 @@ public class AccountServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Username.Should().Be("newuser");
+        result!.Account.Should().Be("newuser");
         result.DisplayName.Should().Be("New User");
         result.Roles.Should().BeEmpty();
     }
@@ -130,7 +130,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "testuser",
+            Account = "testuser",
             DisplayName = "",
             IsDeleted = false,
         };
@@ -152,7 +152,7 @@ public class AccountServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Username.Should().Be("testuser");
+        result!.Account.Should().Be("testuser");
         result.DisplayName.Should().BeEmpty();
         result.Roles.Should().HaveCount(1);
     }
@@ -186,7 +186,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "deleteduser",
+            Account = "deleteduser",
             DisplayName = "Deleted User",
             IsDeleted = true,
         };
@@ -211,7 +211,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "admin",
+            Account = "admin",
             DisplayName = "Administrator",
             IsDeleted = false,
         };
@@ -248,7 +248,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "john.doe",
+            Account = "john.doe",
             DisplayName = "John Doe",
             IsDeleted = false,
         };
@@ -270,7 +270,7 @@ public class AccountServiceTests
 
         // Assert
         result.Should().BeOfType<UserProfileDto>();
-        result!.Username.Should().Be(user.Username);
+        result!.Account.Should().Be(user.Account);
         result.DisplayName.Should().Be(user.DisplayName);
         result.Roles.Should().Equal(roles);
     }
@@ -289,7 +289,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "admin",
+            Account = "admin",
             DisplayName = "Administrator",
             IsDeleted = false,
         };
@@ -354,7 +354,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "moderator",
+            Account = "moderator",
             DisplayName = "Moderator",
             IsDeleted = false,
         };
@@ -422,7 +422,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "viewer",
+            Account = "viewer",
             DisplayName = "Viewer",
             IsDeleted = false,
         };
@@ -471,7 +471,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "testuser",
+            Account = "testuser",
             DisplayName = "Test User",
             IsDeleted = false,
         };
@@ -528,7 +528,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "testuser",
+            Account = "testuser",
             DisplayName = "Test User",
             IsDeleted = false,
         };
@@ -583,7 +583,7 @@ public class AccountServiceTests
         var user = new User
         {
             Id = userId,
-            Username = "testuser",
+            Account = "testuser",
             DisplayName = "Test User",
             IsDeleted = false,
         };

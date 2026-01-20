@@ -43,14 +43,14 @@ public class AuthService : IAuthService
     public async Task<LoginResultDto> LoginAsync(LoginDto loginDto)
     {
         // 查詢使用者 (不區分大小寫)
-        var user = await _userRepository.GetByUsernameAsync(loginDto.Username.ToLowerInvariant());
+        var user = await _userRepository.GetByUsernameAsync(loginDto.Account.ToLowerInvariant());
 
         // 帳號不存在或密碼錯誤
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
             _logger.LogWarning(
-                "登入失敗: 帳號 {Username} 的憑證無效",
-                loginDto.Username
+                "登入失敗: 帳號 {Account} 的憑證無效",
+                loginDto.Account
             );
             throw new UnauthorizedAccessException("帳號或密碼錯誤");
         }
@@ -59,8 +59,8 @@ public class AuthService : IAuthService
         if (user.IsDeleted)
         {
             _logger.LogWarning(
-                "登入失敗: 帳號 {Username} 已被刪除",
-                loginDto.Username
+                "登入失敗: 帳號 {Account} 已被刪除",
+                loginDto.Account
             );
             throw new UnauthorizedAccessException("帳號或密碼錯誤");
         }
@@ -70,8 +70,8 @@ public class AuthService : IAuthService
         DateTime expiresAt = _jwtService.GetTokenExpirationTime();
 
         _logger.LogInformation(
-            "使用者 {Username} (ID: {UserId}) 登入成功",
-            user.Username,
+            "使用者 {Account} (ID: {UserId}) 登入成功",
+            user.Account,
             user.Id
         );
 
@@ -83,7 +83,7 @@ public class AuthService : IAuthService
             User = new AccountDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Account = user.Account,
                 DisplayName = user.DisplayName,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,

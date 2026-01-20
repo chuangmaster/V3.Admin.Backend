@@ -14,7 +14,7 @@ public class CreateAccountRequest
     /// <remarks>
     /// 長度限制: 3-20 字元,僅允許英數字與底線
     /// </remarks>
-    public string Username { get; set; } = string.Empty;
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 密碼

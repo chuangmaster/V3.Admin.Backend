@@ -16,7 +16,7 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
     /// </summary>
     public LoginRequestValidator()
     {
-        RuleFor(x => x.Username)
+        RuleFor(x => x.Account)
             .NotEmpty().WithMessage("帳號不可為空")
             .Length(3, 20).WithMessage("帳號長度必須為 3-20 字元");
 
