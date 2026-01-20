@@ -72,6 +72,9 @@ public partial class Program
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+        // ===== Distributed Cache =====
+        builder.Services.AddDistributedMemoryCache();
+
         // ===== JWT Authentication =====
         builder
             .Services.AddAuthentication(options =>
