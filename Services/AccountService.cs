@@ -216,6 +216,58 @@ public class AccountService : IAccountService
     }
 
     /// <summary>
+    /// 管理員重設用戶密碼
+    /// </summary>
+    /// <param name="dto">重設密碼資訊</param>
+    /// <exception cref="KeyNotFoundException">目標用戶不存在</exception>
+    /// <exception cref="InvalidOperationException">並發更新衝突</exception>
+    public async Task ResetPasswordAsync(ResetPasswordDto dto)
+    {
+        // 查詢目標用戶
+        User? targetUser = await _userRepository.GetByIdAsync(dto.TargetUserId);
+        if (targetUser == null || targetUser.IsDeleted)
+        {
+            _logger.LogWarning("重設密碼失敗: 目標用戶 {UserId} 不存在", dto.TargetUserId);
+            throw new KeyNotFoundException($"找不到 ID 為 {dto.TargetUserId} 的用戶");
+        }
+
+        // 檢查版本號 (樂觀並發控制)
+        if (targetUser.Version != dto.Version)
+        {
+            _logger.LogWarning(
+                "重設密碼失敗: 用戶 {UserId} 版本衝突 (期望: {ExpectedVersion}, 實際: {ActualVersion})",
+                dto.TargetUserId,
+                dto.Version,
+                targetUser.Version
+            );
+            throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
+        }
+
+        // 雜湊新密碼
+        targetUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
+        targetUser.UpdatedAt = DateTime.UtcNow;
+
+        // 儲存至資料庫 (傳入期望的版本號)
+        bool success = await _userRepository.UpdateAsync(targetUser, dto.Version);
+        if (!success)
+        {
+            _logger.LogWarning("重設密碼失敗: 用戶 {UserId} 更新失敗", dto.TargetUserId);
+            throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
+        }
+
+        // 清除版本快取,使所有舊 Token 失效
+        var cacheKey = $"user_version:{dto.TargetUserId}";
+        await _cache.RemoveAsync(cacheKey);
+        _logger.LogInformation("已清除用戶 {UserId} 的版本快取", dto.TargetUserId);
+
+        _logger.LogInformation(
+            "操作者 {OperatorId} 成功重設用戶 {TargetUserId} 的密碼",
+            dto.OperatorId,
+            dto.TargetUserId
+        );
+    }
+
+    /// <summary>
     /// 查詢單一帳號
     /// </summary>
     /// <param name="id">帳號 ID</param>

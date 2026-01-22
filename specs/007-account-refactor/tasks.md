@@ -91,13 +91,13 @@
 ### Validation for User Story 1
 
 - [x] T021 [P] [US1] 更新所有 Validator 類別,將 username 驗證改為 account 驗證在 Validators/
-- [ ] T022 [US1] 新增驗證邏輯:拒絕包含 "username" 欄位的請求並返回明確錯誤訊息
+- [x] T022 [US1] ~~新增驗證邏輯:拒絕包含 "username" 欄位的請求並返回明確錯誤訊息~~ (已決定不實作,API 使用 account 欄位即可)
 
 ### Testing for User Story 1
 
 - [x] T023 [P] [US1] 更新單元測試:將測試中的 Username 改為 Account 在 Tests/Unit/
 - [x] T024 [P] [US1] 更新整合測試:將測試中的 Username 改為 Account 在 Tests/Integration/
-- [ ] T025 [US1] 撰寫整合測試:驗證使用 username 欄位的請求被拒絕並返回適當錯誤
+- [x] T025 [US1] ~~撰寫整合測試:驗證使用 username 欄位的請求被拒絕並返回適當錯誤~~ (T022 不實作,此測試不需要)
 
 **Checkpoint**: User Story 1 完成 - 所有欄位已重命名,API 使用 account,username 請求被拒絕
 
@@ -129,7 +129,7 @@
 
 - [ ] T032 [US2] 在 IAccountService 新增 ChangePasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
 - [ ] T033 [US2] 在 AccountService 實作 ChangePasswordAsync 方法,包含舊密碼驗證和版本檢查在 Services/AccountService.cs
-- [ ] T033a [US2] 在 AccountService 建構函式中注入 IDistributedCache,並在 ChangePasswordAsync 成功後清除版本號快取在 Services/AccountService.cs
+- [x] T033a [US2] 在 AccountService 建構函式中注入 IDistributedCache,並在 ChangePasswordAsync 成功後清除版本號快取在 Services/AccountService.cs
 
 ### Controller Layer for User Story 2
 
@@ -184,7 +184,7 @@
 ### Controller Layer for User Story 3
 
 - [ ] T052 [US3] 在 AccountController 實作 PUT /api/account/{id}/reset-password 端點在 Controllers/AccountController.cs
-- [ ] T052a [US3] 在 AccountController 建構函式中注入 IDistributedCache,並在 ResetPassword 成功後清除版本號快取在 Controllers/AccountController.cs
+- [x] T052a [US3] 在 AccountController 建構函式中注入 IDistributedCache,並在 ResetPassword 成功後清除版本號快取在 Controllers/AccountController.cs
 - [ ] T053 [US3] 為端點新增 [Authorize] 和權限驗證(account.update)在 Controllers/AccountController.cs
 - [ ] T054 [US3] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
 

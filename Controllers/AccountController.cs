@@ -1,14 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Dtos;
-using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Models.Requests;
 using V3.Admin.Backend.Models.Responses;
-using V3.Admin.Backend.Repositories.Interfaces;
 using V3.Admin.Backend.Services.Interfaces;
 
 namespace V3.Admin.Backend.Controllers;
@@ -24,31 +21,19 @@ namespace V3.Admin.Backend.Controllers;
 public class AccountController : BaseApiController
 {
     private readonly IAccountService _accountService;
-    private readonly IUserRepository _userRepository;
-    private readonly IAuditLogRepository _auditLogRepository;
-    private readonly IDistributedCache _cache;
     private readonly ILogger<AccountController> _logger;
 
     /// <summary>
     /// 建構函式
     /// </summary>
     /// <param name="accountService">帳號管理服務</param>
-    /// <param name="userRepository">用戶資料存取層</param>
-    /// <param name="auditLogRepository">審計日誌資料存取層</param>
-    /// <param name="cache">分散式快取</param>
     /// <param name="logger">日誌記錄器</param>
     public AccountController(
         IAccountService accountService,
-        IUserRepository userRepository,
-        IAuditLogRepository auditLogRepository,
-        IDistributedCache cache,
         ILogger<AccountController> logger
     )
     {
         _accountService = accountService;
-        _userRepository = userRepository;
-        _auditLogRepository = auditLogRepository;
-        _cache = cache;
         _logger = logger;
     }
 
@@ -476,76 +461,16 @@ public class AccountController : BaseApiController
                 return UnauthorizedResponse("未授權,請重新登入");
             }
 
-            // 查詢目標用戶
-            User? targetUser = await _userRepository.GetByIdAsync(id);
-            if (targetUser == null || targetUser.IsDeleted)
+            // 建立 DTO 並呼叫 Service 層
+            var resetDto = new ResetPasswordDto
             {
-                _logger.LogWarning("重設密碼失敗: 目標用戶 {UserId} 不存在", id);
-                return NotFound($"找不到 ID 為 {id} 的用戶", ResponseCodes.NOT_FOUND);
-            }
+                TargetUserId = id,
+                NewPassword = request.NewPassword,
+                Version = request.Version,
+                OperatorId = operatorId.Value
+            };
 
-            // 檢查版本號 (樂觀並發控制)
-            if (targetUser.Version != request.Version)
-            {
-                _logger.LogWarning(
-                    "重設密碼失敗: 用戶 {UserId} 版本衝突 (期望: {ExpectedVersion}, 實際: {ActualVersion})",
-                    id,
-                    request.Version,
-                    targetUser.Version
-                );
-                return Conflict(
-                    "密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試",
-                    ResponseCodes.CONCURRENT_UPDATE_CONFLICT
-                );
-            }
-
-            // 雜湊新密碼
-            targetUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(
-                request.NewPassword,
-                workFactor: 12
-            );
-            targetUser.UpdatedAt = DateTime.UtcNow;
-
-            // 儲存至資料庫 (傳入期望的版本號)
-            bool success = await _userRepository.UpdateAsync(targetUser, request.Version);
-            if (!success)
-            {
-                _logger.LogWarning("重設密碼失敗: 用戶 {UserId} 更新失敗", id);
-                return Conflict(
-                    "密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試",
-                    ResponseCodes.CONCURRENT_UPDATE_CONFLICT
-                );
-            }
-
-            // 清除版本快取,使所有舊 Token 失效
-            var cacheKey = $"user_version:{id}";
-            await _cache.RemoveAsync(cacheKey);
-            _logger.LogInformation("已清除用戶 {UserId} 的版本快取", id);
-
-            // 記錄審計日誌
-            await _auditLogRepository.LogAsync(
-                new AuditLog
-                {
-                    OperatorId = operatorId.Value,
-                    OperatorName = User.Identity?.Name ?? "Unknown",
-                    OperationTime = DateTime.UtcNow,
-                    OperationType = "update",
-                    TargetType = "user_password",
-                    TargetId = id,
-                    BeforeState = null,
-                    AfterState = System.Text.Json.JsonSerializer.Serialize(
-                        new
-                        {
-                            Action = "PasswordReset",
-                            ResetBy = operatorId.Value,
-                            Timestamp = DateTime.UtcNow,
-                        }
-                    ),
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
-                    TraceId = HttpContext.TraceIdentifier,
-                }
-            );
+            await _accountService.ResetPasswordAsync(resetDto);
 
             _logger.LogInformation(
                 "操作者 {OperatorId} 成功重設用戶 {TargetUserId} 的密碼",
@@ -553,6 +478,23 @@ public class AccountController : BaseApiController
                 id
             );
             return Success("密碼重設成功");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "重設密碼失敗: {Message}", ex.Message);
+            return NotFound($"找不到 ID 為 {id} 的用戶", ResponseCodes.NOT_FOUND);
+        }
+        catch (InvalidOperationException ex)
+            when (ex.Message.Contains("並發")
+                || ex.Message.Contains("衝突")
+                || ex.Message.Contains("更新")
+            )
+        {
+            _logger.LogWarning(ex, "重設密碼失敗: {Message}", ex.Message);
+            return Conflict(
+                "密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試",
+                ResponseCodes.CONCURRENT_UPDATE_CONFLICT
+            );
         }
         catch (Exception ex)
         {
