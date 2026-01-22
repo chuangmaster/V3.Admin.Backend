@@ -129,6 +129,7 @@
 
 - [ ] T032 [US2] 在 IAccountService 新增 ChangePasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
 - [ ] T033 [US2] 在 AccountService 實作 ChangePasswordAsync 方法,包含舊密碼驗證和版本檢查在 Services/AccountService.cs
+- [ ] T033a [US2] 在 AccountService 建構函式中注入 IDistributedCache,並在 ChangePasswordAsync 成功後清除版本號快取在 Services/AccountService.cs
 
 ### Controller Layer for User Story 2
 
@@ -183,6 +184,7 @@
 ### Controller Layer for User Story 3
 
 - [ ] T052 [US3] 在 AccountController 實作 PUT /api/account/{id}/reset-password 端點在 Controllers/AccountController.cs
+- [ ] T052a [US3] 在 AccountController 建構函式中注入 IDistributedCache,並在 ResetPassword 成功後清除版本號快取在 Controllers/AccountController.cs
 - [ ] T053 [US3] 為端點新增 [Authorize] 和權限驗證(account.update)在 Controllers/AccountController.cs
 - [ ] T054 [US3] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
 

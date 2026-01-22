@@ -103,6 +103,8 @@ if (jwtVersion != currentUser.Version)
 - 需要在 JwtService.GenerateToken 中加入 version claim
 - 需要在認證 middleware 或 service 中驗證 version
 - 任何 user 資料修改都會導致 token 失效,需重新登入
+- VersionValidationMiddleware 使用 IDistributedCache 快取用戶版本號(快取鍵: user_version:{userId}),快取時間 5 分鐘
+- 密碼修改/重設成功後,必須清除該用戶的版本號快取,確保下次請求時從資料庫讀取最新版本號
 
 **替代方案**:
 - 方案 A: Redis 黑名單 → 拒絕,引入額外依賴,違反 Simplicity First
@@ -251,6 +253,56 @@ await _auditLogRepository.CreateAsync(new AuditLog
 - ✅ 避免額外的 SELECT 查詢
 - ✅ PostgreSQL 原生支援 RETURNING
 - ⚠️ 如果未來遷移到其他資料庫,可能需要調整(unlikely,憲法指定 PostgreSQL)
+
+---
+
+### AD-003: 使用 RETURNING 子句驗證更新成功
+
+**Context**: 需要確認併發控制更新是否成功
+
+**Decision**: UPDATE 語句使用 RETURNING version,根據返回值判斷是否更新成功
+
+**Consequences**:
+- ✅ 單一 SQL 語句完成更新和驗證
+- ✅ 避免額外的 SELECT 查詢
+- ✅ PostgreSQL 原生支援 RETURNING
+- ⚠️ 如果未來遷移到其他資料庫,可能需要調整(unlikely,憲法指定 PostgreSQL)
+
+---
+
+### AD-004: 密碼修改後清除版本號快取
+
+**Context**: VersionValidationMiddleware 使用分散式快取(IDistributedCache)儲存用戶版本號以提升效能,快取時間為 5 分鐘。當用戶密碼修改或重設後,version 欄位會遞增,但快取中可能仍保留舊的版本號,導致舊 Token 在快取過期前仍能通過驗證。
+
+**Decision**: 在 AccountService.ChangePasswordAsync 和 AccountController.ResetPassword 方法中,密碼更新成功後立即清除該用戶的版本號快取(快取鍵: `user_version:{userId}`)
+
+**Implementation**:
+```csharp
+// 在 AccountService 建構函式中注入 IDistributedCache
+private readonly IDistributedCache _cache;
+
+// 密碼修改成功後清除快取
+bool success = await _userRepository.UpdateAsync(user, dto.Version);
+if (success)
+{
+    var cacheKey = $"user_version:{dto.Id}";
+    await _cache.RemoveAsync(cacheKey);
+    _logger.LogInformation("已清除用戶 {UserId} 的版本快取", dto.Id);
+}
+```
+
+**Consequences**:
+- ✅ 確保密碼修改後,舊 Token 在下次請求時立即失效
+- ✅ 不影響當前會話(當前請求已通過驗證)
+- ✅ 保持 VersionValidationMiddleware 的快取優化效能
+- ✅ 符合安全性要求(FR-009b, FR-014b)
+- ⚠️ AccountService 和 AccountController 需要注入 IDistributedCache
+- ⚠️ 需要在兩個地方(用戶自助修改和管理員重設)都實作快取清除
+
+**替代方案**:
+- 方案 A: 不使用快取,每次都查詢資料庫 → 拒絕,影響效能
+- 方案 B: 縮短快取時間至 30 秒 → 拒絕,仍有安全性風險視窗,且增加資料庫查詢頻率
+- 方案 C: 在 Repository 層自動清除快取 → 拒絕,違反單一職責原則,Repository 不應處理快取邏輯
 
 ---
 
