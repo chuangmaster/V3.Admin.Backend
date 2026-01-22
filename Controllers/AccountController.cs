@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Models;
 using V3.Admin.Backend.Models.Dtos;
@@ -25,6 +26,7 @@ public class AccountController : BaseApiController
     private readonly IAccountService _accountService;
     private readonly IUserRepository _userRepository;
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<AccountController> _logger;
 
     /// <summary>
@@ -33,17 +35,20 @@ public class AccountController : BaseApiController
     /// <param name="accountService">帳號管理服務</param>
     /// <param name="userRepository">用戶資料存取層</param>
     /// <param name="auditLogRepository">審計日誌資料存取層</param>
+    /// <param name="cache">分散式快取</param>
     /// <param name="logger">日誌記錄器</param>
     public AccountController(
         IAccountService accountService,
         IUserRepository userRepository,
         IAuditLogRepository auditLogRepository,
+        IDistributedCache cache,
         ILogger<AccountController> logger
     )
     {
         _accountService = accountService;
         _userRepository = userRepository;
         _auditLogRepository = auditLogRepository;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -89,10 +94,12 @@ public class AccountController : BaseApiController
             // 轉換 DTO 為 Response 物件回傳給客戶端
             var response = new UserProfileResponse
             {
+                Id = profileDto.Id,
                 Account = profileDto.Account,
                 DisplayName = profileDto.DisplayName,
                 Roles = profileDto.Roles,
                 Permissions = profileDto.Permissions ?? new List<string>(),
+                Version = profileDto.Version,
             };
 
             _logger.LogInformation("成功查詢用戶 {UserId} 的個人資料", userId);
@@ -402,8 +409,7 @@ public class AccountController : BaseApiController
             return BusinessError("新密碼不可與舊密碼相同", ResponseCodes.PASSWORD_SAME_AS_OLD);
         }
         catch (InvalidOperationException ex)
-            when (
-                ex.Message.Contains("並發")
+            when (ex.Message.Contains("並發")
                 || ex.Message.Contains("衝突")
                 || ex.Message.Contains("更新")
             )
@@ -487,7 +493,10 @@ public class AccountController : BaseApiController
                     request.Version,
                     targetUser.Version
                 );
-                return Conflict("密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試", ResponseCodes.CONCURRENT_UPDATE_CONFLICT);
+                return Conflict(
+                    "密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試",
+                    ResponseCodes.CONCURRENT_UPDATE_CONFLICT
+                );
             }
 
             // 雜湊新密碼
@@ -508,6 +517,11 @@ public class AccountController : BaseApiController
                 );
             }
 
+            // 清除版本快取,使所有舊 Token 失效
+            var cacheKey = $"user_version:{id}";
+            await _cache.RemoveAsync(cacheKey);
+            _logger.LogInformation("已清除用戶 {UserId} 的版本快取", id);
+
             // 記錄審計日誌
             await _auditLogRepository.LogAsync(
                 new AuditLog
@@ -519,16 +533,19 @@ public class AccountController : BaseApiController
                     TargetType = "user_password",
                     TargetId = id,
                     BeforeState = null,
-                    AfterState = System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        Action = "PasswordReset",
-                        ResetBy = operatorId.Value,
-                        Timestamp = DateTime.UtcNow
-                    }),
+                    AfterState = System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            Action = "PasswordReset",
+                            ResetBy = operatorId.Value,
+                            Timestamp = DateTime.UtcNow,
+                        }
+                    ),
                     IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
                     UserAgent = HttpContext.Request.Headers["User-Agent"].ToString(),
                     TraceId = HttpContext.TraceIdentifier,
-                });
+                }
+            );
 
             _logger.LogInformation(
                 "操作者 {OperatorId} 成功重設用戶 {TargetUserId} 的密碼",

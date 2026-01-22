@@ -9,6 +9,11 @@ namespace V3.Admin.Backend.Models.Dtos;
 public class UserProfileDto
 {
     /// <summary>
+    /// 用戶唯一識別碼
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
     /// 帳號名稱
     /// </summary>
     public string Account { get; set; } = string.Empty;
@@ -27,4 +32,9 @@ public class UserProfileDto
     /// 使用者擁有的權限代碼清單（聚合所有角色的權限，去重）
     /// </summary>
     public List<string> Permissions { get; set; } = new();
+
+    /// <summary>
+    /// Users併發控制版本號
+    /// </summary>
+    public int Version { get; set; }
 }

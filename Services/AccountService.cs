@@ -1,4 +1,5 @@
 using BCrypt.Net;
+using Microsoft.Extensions.Caching.Distributed;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Models.Responses;
@@ -18,6 +19,7 @@ public class AccountService : IAccountService
     private readonly IUserRepository _userRepository;
     private readonly IUserRoleRepository _userRoleRepository;
     private readonly IRolePermissionRepository _rolePermissionRepository;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<AccountService> _logger;
 
     /// <summary>
@@ -26,17 +28,20 @@ public class AccountService : IAccountService
     /// <param name="userRepository">使用者資料存取層</param>
     /// <param name="userRoleRepository">使用者角色資料存取層</param>
     /// <param name="rolePermissionRepository">角色權限資料存取層</param>
+    /// <param name="cache">分散式快取</param>
     /// <param name="logger">日誌記錄器</param>
     public AccountService(
         IUserRepository userRepository,
         IUserRoleRepository userRoleRepository,
         IRolePermissionRepository rolePermissionRepository,
+        IDistributedCache cache,
         ILogger<AccountService> logger
     )
     {
         _userRepository = userRepository;
         _userRoleRepository = userRoleRepository;
         _rolePermissionRepository = rolePermissionRepository;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -197,6 +202,11 @@ public class AccountService : IAccountService
             _logger.LogWarning("變更密碼失敗: 帳號 {UserId} 更新失敗", dto.Id);
             throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
         }
+
+        // 清除版本快取,使舊 Token 失效
+        var cacheKey = $"user_version:{dto.Id}";
+        await _cache.RemoveAsync(cacheKey);
+        _logger.LogInformation("已清除用戶 {UserId} 的版本快取", dto.Id);
 
         _logger.LogInformation(
             "成功變更帳號 {Account} (ID: {UserId}) 的密碼",
@@ -397,10 +407,12 @@ public class AccountService : IAccountService
             // 在 Service 層組合並回傳 DTO 物件（Permissions 為去重後的權限代碼）
             var profileDto = new UserProfileDto
             {
+                Id = user.Id,
                 Account = user.Account,
                 DisplayName = user.DisplayName,
                 Roles = roleNames ?? [],
                 Permissions = permissionSet.OrderBy(x => x).ToList(),
+                Version = user.Version,
             };
 
             _logger.LogInformation(
