@@ -194,7 +194,7 @@ public async Task<ApiResponseModel<object>> ChangePasswordAsync(int userId, Chan
     if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
     {
         _logger.LogWarning("User {UserId} provided incorrect old password", userId);
-        return ApiResponse.Error<object>(ResponseCodes.INVALID_OLD_PASSWORD, "舊密碼錯誤");
+        throw new UnauthorizedAccessException("舊密碼錯誤");
     }
 
     // 3. 驗證新密碼不同於舊密碼
@@ -650,11 +650,11 @@ public class AccountServiceTests
         };
 
         // Act
-        var result = await _service.ChangePasswordAsync(userId, request);
+        var act = async () => await _service.ChangePasswordAsync(userId, request);
 
         // Assert
-        result.Code.Should().Be(ResponseCodes.INVALID_OLD_PASSWORD);
-        result.Message.Should().Be("舊密碼錯誤");
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("舊密碼錯誤");
         _mockUserRepository.Verify(r => r.UpdatePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never);
     }
 

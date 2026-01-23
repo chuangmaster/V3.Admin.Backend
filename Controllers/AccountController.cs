@@ -386,7 +386,7 @@ public class AccountController : BaseApiController
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "修改密碼失敗: {Message}", ex.Message);
-            return UnauthorizedResponse("舊密碼錯誤", ResponseCodes.INVALID_CREDENTIALS);
+            return ValidationError("舊密碼錯誤");
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("相同"))
         {
