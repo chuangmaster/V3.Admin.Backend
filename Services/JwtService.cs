@@ -29,12 +29,20 @@ public class JwtService : IJwtService
     /// <summary>
     /// 產生 JWT Token
     /// </summary>
+    /// <remarks>
+    /// Token 包含 user_id、version、account 等 claims。
+    /// version claim 用於實作 Token 強制失效機制：
+    /// 當使用者密碼被修改時，version 會遞增，
+    /// 使得舊 Token 中的 version 與資料庫不匹配而被拒絕。
+    /// </remarks>
     public string GenerateToken(User user)
     {
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+            new Claim("user_id", user.Id.ToString()),
+            new Claim("version", user.Version.ToString()),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.Account),
             new Claim(JwtRegisteredClaimNames.Name, user.DisplayName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
@@ -55,8 +63,8 @@ public class JwtService : IJwtService
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
         _logger.LogInformation(
-            "JWT Token 已產生 | UserId: {UserId} | Username: {Username} | ExpiresAt: {ExpiresAt}",
-            user.Id, user.Username, GetTokenExpirationTime());
+            "JWT Token 已產生 | UserId: {UserId} | Account: {Account} | ExpiresAt: {ExpiresAt}",
+            user.Id, user.Account, GetTokenExpirationTime());
 
         return tokenString;
     }

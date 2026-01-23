@@ -16,7 +16,7 @@ public class CreateAccountRequestValidator : AbstractValidator<CreateAccountRequ
     /// </summary>
     public CreateAccountRequestValidator()
     {
-        RuleFor(x => x.Username)
+        RuleFor(x => x.Account)
             .NotEmpty().WithMessage("帳號不可為空")
             .Length(3, 20).WithMessage("帳號長度必須為 3-20 字元")
             .Matches("^[a-zA-Z0-9_]+$").WithMessage("帳號僅允許英數字與底線");

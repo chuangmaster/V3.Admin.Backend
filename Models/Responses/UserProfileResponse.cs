@@ -6,9 +6,14 @@ namespace V3.Admin.Backend.Models.Responses;
 public class UserProfileResponse
 {
     /// <summary>
-    /// 用戶名稱
+    /// 用戶唯一識別碼
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// 帳號名稱
+    /// </summary>
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 顯示名稱（可為 null）
@@ -25,4 +30,9 @@ public class UserProfileResponse
     /// 若無權限則回傳空陣列
     /// </summary>
     public List<string> Permissions { get; set; } = new();
+
+    /// <summary>
+    /// Users併發控制版本號
+    /// </summary>
+    public int Version { get; set; }
 }

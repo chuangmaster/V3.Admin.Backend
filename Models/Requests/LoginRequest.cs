@@ -14,7 +14,7 @@ public class LoginRequest
     /// <remarks>
     /// 長度限制: 3-20 字元
     /// </remarks>
-    public string Username { get; set; } = string.Empty;
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 密碼

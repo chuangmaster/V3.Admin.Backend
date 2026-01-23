@@ -62,7 +62,7 @@ public class UserRoleServiceTests
         // 模擬用戶存在
         _mockUserRepository
             .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "testuser" });
+            .ReturnsAsync(new User { Id = userId, Account = "testuser" });
 
         // 模擬角色存在
         _mockRoleRepository.Setup(r => r.ExistsAsync(roleId1, default)).ReturnsAsync(true);
@@ -117,7 +117,7 @@ public class UserRoleServiceTests
         // 模擬用戶存在
         _mockUserRepository
             .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "testuser" });
+            .ReturnsAsync(new User { Id = userId, Account = "testuser" });
 
         // 模擬角色不存在
         _mockRoleRepository.Setup(r => r.ExistsAsync(roleId, default)).ReturnsAsync(false);
@@ -142,7 +142,7 @@ public class UserRoleServiceTests
         // 模擬用戶存在
         _mockUserRepository
             .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "testuser" });
+            .ReturnsAsync(new User { Id = userId, Account = "testuser" });
 
         // 模擬角色存在
         _mockRoleRepository.Setup(r => r.ExistsAsync(roleId, default)).ReturnsAsync(true);
@@ -170,7 +170,7 @@ public class UserRoleServiceTests
         var userId = Guid.NewGuid();
         var roleId1 = Guid.NewGuid();
         var roleId2 = Guid.NewGuid();
-        var user = new User { Id = userId, Username = "testuser", IsDeleted = false };
+        var user = new User { Id = userId, Account = "testuser", IsDeleted = false };
         var role1 = new Role { Id = roleId1, RoleName = "Admin", IsDeleted = false };
         var role2 = new Role { Id = roleId2, RoleName = "User", IsDeleted = false };
 
@@ -221,7 +221,7 @@ public class UserRoleServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId, Username = "testuser", IsDeleted = false };
+        var user = new User { Id = userId, Account = "testuser", IsDeleted = false };
 
         _mockUserRepository
             .Setup(r => r.GetByIdAsync(userId))

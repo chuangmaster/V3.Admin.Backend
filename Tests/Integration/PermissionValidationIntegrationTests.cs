@@ -45,7 +45,7 @@ public class PermissionValidationIntegrationTests
     /// 初始化測試環境：建立測試用戶、角色、權限
     /// </summary>
     public async Task InitializeAsync()
-    { // 產生唯一 username (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
+    { // 產生唯一 account (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
         _testUsername = $"pv_{Guid.NewGuid().ToString()[..7]}_test_user";
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
@@ -54,15 +54,15 @@ public class PermissionValidationIntegrationTests
         _testUserId = Guid.NewGuid();
         var insertUserSql =
             @"
-            INSERT INTO users (id, username, password_hash, display_name, version, is_deleted, created_at, updated_at)
-            VALUES (@id, @username, @password_hash, @display_name, 1, false, NOW(), NOW())
-            ON CONFLICT (username) DO NOTHING;
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW())
+            ON CONFLICT (account) DO NOTHING;
         ";
 
         await using (var command = new NpgsqlCommand(insertUserSql, connection))
         {
             command.Parameters.AddWithValue("id", _testUserId);
-            command.Parameters.AddWithValue("username", _testUsername);
+            command.Parameters.AddWithValue("account", _testUsername);
             command.Parameters.AddWithValue(
                 "password_hash",
                 BCrypt.Net.BCrypt.HashPassword(_testPassword, 12)
@@ -159,7 +159,7 @@ public class PermissionValidationIntegrationTests
         }
 
         // 6. 登入取得 token
-        var loginRequest = new LoginRequest { Username = _testUsername, Password = _testPassword };
+        var loginRequest = new LoginRequest { Account = _testUsername, Password = _testPassword };
 
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
         if (loginResponse.IsSuccessStatusCode)

@@ -1,0 +1,421 @@
+openapi: 3.0.3
+info:
+  title: V3 Admin Backend - Account Module API
+  description: |
+    Account Module Refactoring 新增的 API 端點定義。
+    
+    此規格涵蓋:
+    - 用戶自助密碼修改 API
+    - 管理員密碼重設 API
+    
+    **安全性**:
+    - 所有端點都需要 JWT Bearer Token 認證
+    - 密碼修改需要 user.profile.update 權限
+    - 密碼重設需要 account.update 權限
+    
+    **併發控制**:
+    - 所有修改操作都需要提供 version 參數
+    - 如果 version 不匹配,返回 409 Conflict
+    
+  version: 1.0.0
+  contact:
+    name: V3 Admin Backend Team
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: https://dev-api.example.com
+    description: Development server
+  - url: http://localhost:5000
+    description: Local development
+
+paths:
+  /api/account/me/password:
+    put:
+      summary: 用戶修改自己的密碼
+      description: |
+        允許已登入的用戶修改自己的密碼。
+        
+        **要求**:
+        - 必須提供正確的舊密碼
+        - 必須提供符合強度要求的新密碼
+        - 必須提供當前的 version 號
+        
+        **行為**:
+        - 密碼修改成功後,保持當前會話有效
+        - 該用戶在其他設備的所有會話將失效
+        - version 欄位遞增 1
+        
+      operationId: changePassword
+      tags:
+        - Account
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            examples:
+              validRequest:
+                summary: 有效的密碼修改請求
+                value:
+                  oldPassword: "OldPassword123"
+                  newPassword: "NewPassword456"
+                  version: 5
+      responses:
+        '200':
+          description: 密碼修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              examples:
+                success:
+                  summary: 成功回應
+                  value:
+                    code: 200
+                    message: "密碼修改成功"
+                    data: null
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '400':
+          description: 請求驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidOldPassword:
+                  summary: 舊密碼錯誤
+                  value:
+                    code: 400
+                    message: "舊密碼錯誤"
+                    errors:
+                      - "提供的舊密碼與當前密碼不符"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                weakPassword:
+                  summary: 新密碼強度不足
+                  value:
+                    code: 400
+                    message: "密碼強度不足"
+                    errors:
+                      - "密碼長度至少 8 個字元"
+                      - "密碼必須包含至少一個大寫字母"
+                      - "密碼必須包含至少一個小寫字母"
+                      - "密碼必須包含至少一個數字"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                samePassword:
+                  summary: 新密碼與舊密碼相同
+                  value:
+                    code: 400
+                    message: "新密碼不可與舊密碼相同"
+                    errors:
+                      - "請使用不同的新密碼"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '401':
+          description: 未授權(未登入或 token 無效)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  summary: 未授權
+                  value:
+                    code: 401
+                    message: "未授權,請重新登入"
+                    errors: null
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '403':
+          description: 權限不足(缺少 user.profile.update 權限)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  summary: 權限不足
+                  value:
+                    code: 403
+                    message: "權限不足"
+                    errors:
+                      - "需要 user.profile.update 權限"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '409':
+          description: 併發衝突(version 不匹配)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  summary: 併發衝突
+                  value:
+                    code: 409
+                    message: "資料已被其他操作更新"
+                    errors:
+                      - "密碼修改失敗,資料已被其他操作更新,請重新獲取最新資料後再試"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '500':
+          description: 伺服器內部錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/account/{id}/reset-password:
+    put:
+      summary: 管理員重設用戶密碼
+      description: |
+        允許擁有 account.update 權限的管理員重設指定用戶的密碼。
+        
+        **要求**:
+        - 操作者必須擁有 account.update 權限
+        - 必須提供符合強度要求的新密碼
+        - 必須提供目標用戶的當前 version 號
+        
+        **行為**:
+        - 無需提供舊密碼
+        - 密碼重設成功後,目標用戶的所有會話失效
+        - version 欄位遞增 1
+        - 操作記錄到 audit_logs 表
+        - 不發送通知給目標用戶
+        
+      operationId: resetPassword
+      tags:
+        - Account
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 目標用戶的 ID
+          schema:
+            type: integer
+            example: 123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            examples:
+              validRequest:
+                summary: 有效的密碼重設請求
+                value:
+                  newPassword: "ResetPassword789"
+                  version: 3
+      responses:
+        '200':
+          description: 密碼重設成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              examples:
+                success:
+                  summary: 成功回應
+                  value:
+                    code: 200
+                    message: "密碼重設成功"
+                    data: null
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '400':
+          description: 請求驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                weakPassword:
+                  summary: 新密碼強度不足
+                  value:
+                    code: 400
+                    message: "密碼強度不足"
+                    errors:
+                      - "密碼長度至少 8 個字元"
+                      - "密碼必須包含至少一個大寫字母"
+                      - "密碼必須包含至少一個小寫字母"
+                      - "密碼必須包含至少一個數字"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '401':
+          description: 未授權(未登入或 token 無效)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 權限不足(缺少 account.update 權限)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  summary: 權限不足
+                  value:
+                    code: 403
+                    message: "權限不足"
+                    errors:
+                      - "需要 account.update 權限"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '404':
+          description: 目標用戶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: 用戶不存在
+                  value:
+                    code: 404
+                    message: "用戶不存在"
+                    errors:
+                      - "找不到 ID 為 123 的用戶"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '409':
+          description: 併發衝突(version 不匹配)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  summary: 併發衝突
+                  value:
+                    code: 409
+                    message: "資料已被其他操作更新"
+                    errors:
+                      - "密碼重設失敗,資料已被其他操作更新,請重新獲取最新資料後再試"
+                    traceId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        '500':
+          description: 伺服器內部錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer Token 認證。
+        
+        取得 token 後,在 Authorization header 中使用:
+        ```
+        Authorization: Bearer <your_jwt_token>
+        ```
+
+  schemas:
+    ChangePasswordRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+        - version
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          description: 當前密碼
+          example: "OldPassword123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 100
+          description: |
+            新密碼,必須符合以下要求:
+            - 長度 8-100 字元
+            - 至少一個大寫字母
+            - 至少一個小寫字母
+            - 至少一個數字
+          example: "NewPassword456"
+        version:
+          type: integer
+          description: 當前用戶資料的 version 號(用於併發控制)
+          example: 5
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - newPassword
+        - version
+      properties:
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 100
+          description: |
+            新密碼,必須符合以下要求:
+            - 長度 8-100 字元
+            - 至少一個大寫字母
+            - 至少一個小寫字母
+            - 至少一個數字
+          example: "ResetPassword789"
+        version:
+          type: integer
+          description: 目標用戶當前的 version 號(用於併發控制)
+          example: 3
+
+    SuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP 狀態碼
+          example: 200
+        message:
+          type: string
+          description: 成功訊息
+          example: "操作成功"
+        data:
+          type: object
+          nullable: true
+          description: 回應資料(密碼操作通常為 null)
+        traceId:
+          type: string
+          format: uuid
+          description: 請求追蹤 ID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP 狀態碼
+          example: 400
+        message:
+          type: string
+          description: 錯誤訊息
+          example: "請求驗證失敗"
+        errors:
+          type: array
+          nullable: true
+          description: 詳細錯誤列表
+          items:
+            type: string
+          example:
+            - "密碼長度至少 8 個字元"
+            - "密碼必須包含至少一個大寫字母"
+        traceId:
+          type: string
+          format: uuid
+          description: 請求追蹤 ID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+tags:
+  - name: Account
+    description: |
+      帳號管理相關 API,包含密碼修改和重設功能。
+      
+      **權限要求**:
+      - `user.profile.update`: 用戶修改自己的密碼
+      - `account.update`: 管理員重設他人密碼

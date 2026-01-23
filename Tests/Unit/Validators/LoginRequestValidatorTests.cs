@@ -15,7 +15,7 @@ public class LoginRequestValidatorTests
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "Password123"
         };
 
@@ -30,12 +30,12 @@ public class LoginRequestValidatorTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Validate_EmptyUsername_ShouldFail(string? username)
+    public void Validate_EmptyAccount_ShouldFail(string? account)
     {
         // Arrange
         var request = new LoginRequest
         {
-            Username = username!,
+            Account = account!,
             Password = "Password123"
         };
 
@@ -44,18 +44,18 @@ public class LoginRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Username" && e.ErrorMessage.Contains("不可為空"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Account" && e.ErrorMessage.Contains("不可為空"));
     }
 
     [Theory]
     [InlineData("ab")]  // 太短
     [InlineData("a")]   // 太短
-    public void Validate_UsernameTooShort_ShouldFail(string username)
+    public void Validate_AccountTooShort_ShouldFail(string account)
     {
         // Arrange
         var request = new LoginRequest
         {
-            Username = username,
+            Account = account,
             Password = "Password123"
         };
 
@@ -64,16 +64,16 @@ public class LoginRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Username" && e.ErrorMessage.Contains("長度"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Account" && e.ErrorMessage.Contains("長度"));
     }
 
     [Fact]
-    public void Validate_UsernameTooLong_ShouldFail()
+    public void Validate_AccountTooLong_ShouldFail()
     {
         // Arrange
         var request = new LoginRequest
         {
-            Username = new string('a', 21), // 超過 20 字元
+            Account = new string('a', 21), // 超過 20 字元
             Password = "Password123"
         };
 
@@ -82,7 +82,7 @@ public class LoginRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Username" && e.ErrorMessage.Contains("長度"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Account" && e.ErrorMessage.Contains("長度"));
     }
 
     [Theory]
@@ -94,7 +94,7 @@ public class LoginRequestValidatorTests
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = password!
         };
 
@@ -112,7 +112,7 @@ public class LoginRequestValidatorTests
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "Pass123" // 只有 7 字元
         };
 

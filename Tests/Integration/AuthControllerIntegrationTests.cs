@@ -33,13 +33,13 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         await connection.OpenAsync();
 
         var insertSql = @"
-            INSERT INTO users (username, password_hash, display_name, version, is_deleted, created_at, updated_at)
-            VALUES (@username, @password_hash, @display_name, 1, false, NOW(), NOW())
-            ON CONFLICT (username) DO NOTHING;
+            INSERT INTO users (account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@account, @password_hash, @display_name, 1, false, NOW(), NOW())
+            ON CONFLICT (account) DO NOTHING;
         ";
 
         await using var command = new Npgsql.NpgsqlCommand(insertSql, connection);
-        command.Parameters.AddWithValue("username", "admin");
+        command.Parameters.AddWithValue("account", "admin");
         command.Parameters.AddWithValue("password_hash", BCrypt.Net.BCrypt.HashPassword("Admin@123", 12));
         command.Parameters.AddWithValue("display_name", "管理員");
         await command.ExecuteNonQueryAsync();
@@ -51,7 +51,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
 
-        var deleteSql = "DELETE FROM users WHERE username = 'admin';";
+        var deleteSql = "DELETE FROM users WHERE account = 'admin';";
         await using var command = new Npgsql.NpgsqlCommand(deleteSql, connection);
         await command.ExecuteNonQueryAsync();
     }
@@ -62,7 +62,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "Admin@123"
         };
 
@@ -81,17 +81,17 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         apiResponse.Data.Should().NotBeNull();
         apiResponse.Data!.Token.Should().NotBeNullOrEmpty();
         apiResponse.Data.User.Should().NotBeNull();
-        apiResponse.Data.User.Username.Should().Be("admin");
+        apiResponse.Data.User.Account.Should().Be("admin");
         apiResponse.Data.User.DisplayName.Should().Be("管理員");
     }
 
     [Fact]
-    public async Task Login_WithInvalidUsername_ReturnsUnauthorized()
+    public async Task Login_WithInvalidAccount_ReturnsUnauthorized()
     {
         // Arrange
         var request = new LoginRequest
         {
-            Username = "nonexistent",
+            Account = "nonexistent",
             Password = "Password123"
         };
 
@@ -116,7 +116,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "admin",
+            Account = "admin",
             Password = "WrongPassword"
         };
 
@@ -140,7 +140,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         // Arrange
         var request = new LoginRequest
         {
-            Username = "ad", // 太短,但會因為帳號不存在而返回 401
+            Account = "ad", // 太短,但會因為帳號不存在而返回 401
             Password = "123"  // 太短
         };
 

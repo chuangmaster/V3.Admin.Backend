@@ -72,6 +72,9 @@ public partial class Program
         // ===== FluentValidation =====
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+        // ===== Distributed Cache =====
+        builder.Services.AddDistributedMemoryCache();
+
         // ===== JWT Authentication =====
         builder
             .Services.AddAuthentication(options =>
@@ -220,6 +223,10 @@ public partial class Program
 
         // 身份驗證與授權 (必須在權限驗證之前)
         app.UseAuthentication();
+
+        // JWT Token 版本驗證 (確保密碼修改後舊 Token 失效)
+        app.UseMiddleware<VersionValidationMiddleware>();
+
         app.UseAuthorization();
 
         // 權限授權驗證 (必須在 UseAuthentication 之後)

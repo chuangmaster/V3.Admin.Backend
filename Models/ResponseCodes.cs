@@ -53,7 +53,13 @@ public static class ResponseCodes
     /// <summary>
     /// 帳號已存在 (新增帳號時重複)
     /// </summary>
-    public const string USERNAME_EXISTS = "USERNAME_EXISTS";
+    public const string ACCOUNT_EXISTS = "ACCOUNT_EXISTS";
+
+    /// <summary>
+    /// 帳號已存在 (新增帳號時重複) - 已棄用，請使用 ACCOUNT_EXISTS
+    /// </summary>
+    [Obsolete("請使用 ACCOUNT_EXISTS")]
+    public const string USERNAME_EXISTS = "ACCOUNT_EXISTS";
 
     /// <summary>
     /// 新密碼與舊密碼相同

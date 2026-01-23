@@ -1,4 +1,5 @@
 using BCrypt.Net;
+using Microsoft.Extensions.Caching.Distributed;
 using V3.Admin.Backend.Models.Dtos;
 using V3.Admin.Backend.Models.Entities;
 using V3.Admin.Backend.Models.Responses;
@@ -18,6 +19,7 @@ public class AccountService : IAccountService
     private readonly IUserRepository _userRepository;
     private readonly IUserRoleRepository _userRoleRepository;
     private readonly IRolePermissionRepository _rolePermissionRepository;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<AccountService> _logger;
 
     /// <summary>
@@ -26,17 +28,20 @@ public class AccountService : IAccountService
     /// <param name="userRepository">使用者資料存取層</param>
     /// <param name="userRoleRepository">使用者角色資料存取層</param>
     /// <param name="rolePermissionRepository">角色權限資料存取層</param>
+    /// <param name="cache">分散式快取</param>
     /// <param name="logger">日誌記錄器</param>
     public AccountService(
         IUserRepository userRepository,
         IUserRoleRepository userRoleRepository,
         IRolePermissionRepository rolePermissionRepository,
+        IDistributedCache cache,
         ILogger<AccountService> logger
     )
     {
         _userRepository = userRepository;
         _userRoleRepository = userRoleRepository;
         _rolePermissionRepository = rolePermissionRepository;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -49,11 +54,11 @@ public class AccountService : IAccountService
     public async Task<AccountDto> CreateAccountAsync(CreateAccountDto dto)
     {
         // 檢查帳號是否已存在 (不區分大小寫)
-        var usernameExists = await _userRepository.ExistsAsync(dto.Username.ToLowerInvariant());
-        if (usernameExists)
+        var accountExists = await _userRepository.ExistsAsync(dto.Account.ToLowerInvariant());
+        if (accountExists)
         {
-            _logger.LogWarning("新增帳號失敗: 帳號 {Username} 已存在", dto.Username);
-            throw new InvalidOperationException($"帳號 {dto.Username} 已存在");
+            _logger.LogWarning("新增帳號失敗: 帳號 {Account} 已存在", dto.Account);
+            throw new InvalidOperationException($"帳號 {dto.Account} 已存在");
         }
 
         // 雜湊密碼
@@ -63,7 +68,7 @@ public class AccountService : IAccountService
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = dto.Username.ToLowerInvariant(),
+            Account = dto.Account.ToLowerInvariant(),
             PasswordHash = passwordHash,
             DisplayName = dto.DisplayName,
             CreatedAt = DateTime.UtcNow,
@@ -74,13 +79,13 @@ public class AccountService : IAccountService
         // 儲存至資料庫
         await _userRepository.CreateAsync(user);
 
-        _logger.LogInformation("成功建立帳號 {Username} (ID: {UserId})", user.Username, user.Id);
+        _logger.LogInformation("成功建立帳號 {Account} (ID: {UserId})", user.Account, user.Id);
 
         // 轉換為 DTO 回傳
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -129,13 +134,13 @@ public class AccountService : IAccountService
             throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
         }
 
-        _logger.LogInformation("成功更新帳號 {Username} (ID: {UserId})", user.Username, user.Id);
+        _logger.LogInformation("成功更新帳號 {Account} (ID: {UserId})", user.Account, user.Id);
 
         // 轉換為 DTO 回傳 (版本號已在資料庫自動遞增)
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -198,10 +203,67 @@ public class AccountService : IAccountService
             throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
         }
 
+        // 清除版本快取,使舊 Token 失效
+        var cacheKey = $"user_version:{dto.Id}";
+        await _cache.RemoveAsync(cacheKey);
+        _logger.LogInformation("已清除用戶 {UserId} 的版本快取", dto.Id);
+
         _logger.LogInformation(
-            "成功變更帳號 {Username} (ID: {UserId}) 的密碼",
-            user.Username,
+            "成功變更帳號 {Account} (ID: {UserId}) 的密碼",
+            user.Account,
             user.Id
+        );
+    }
+
+    /// <summary>
+    /// 管理員重設用戶密碼
+    /// </summary>
+    /// <param name="dto">重設密碼資訊</param>
+    /// <exception cref="KeyNotFoundException">目標用戶不存在</exception>
+    /// <exception cref="InvalidOperationException">並發更新衝突</exception>
+    public async Task ResetPasswordAsync(ResetPasswordDto dto)
+    {
+        // 查詢目標用戶
+        User? targetUser = await _userRepository.GetByIdAsync(dto.TargetUserId);
+        if (targetUser == null || targetUser.IsDeleted)
+        {
+            _logger.LogWarning("重設密碼失敗: 目標用戶 {UserId} 不存在", dto.TargetUserId);
+            throw new KeyNotFoundException($"找不到 ID 為 {dto.TargetUserId} 的用戶");
+        }
+
+        // 檢查版本號 (樂觀並發控制)
+        if (targetUser.Version != dto.Version)
+        {
+            _logger.LogWarning(
+                "重設密碼失敗: 用戶 {UserId} 版本衝突 (期望: {ExpectedVersion}, 實際: {ActualVersion})",
+                dto.TargetUserId,
+                dto.Version,
+                targetUser.Version
+            );
+            throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
+        }
+
+        // 雜湊新密碼
+        targetUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
+        targetUser.UpdatedAt = DateTime.UtcNow;
+
+        // 儲存至資料庫 (傳入期望的版本號)
+        bool success = await _userRepository.UpdateAsync(targetUser, dto.Version);
+        if (!success)
+        {
+            _logger.LogWarning("重設密碼失敗: 用戶 {UserId} 更新失敗", dto.TargetUserId);
+            throw new InvalidOperationException("資料已被其他使用者更新,請重新載入後再試");
+        }
+
+        // 清除版本快取,使所有舊 Token 失效
+        var cacheKey = $"user_version:{dto.TargetUserId}";
+        await _cache.RemoveAsync(cacheKey);
+        _logger.LogInformation("已清除用戶 {UserId} 的版本快取", dto.TargetUserId);
+
+        _logger.LogInformation(
+            "操作者 {OperatorId} 成功重設用戶 {TargetUserId} 的密碼",
+            dto.OperatorId,
+            dto.TargetUserId
         );
     }
 
@@ -223,7 +285,7 @@ public class AccountService : IAccountService
         return new AccountDto
         {
             Id = user.Id,
-            Username = user.Username,
+            Account = user.Account,
             DisplayName = user.DisplayName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
@@ -236,7 +298,7 @@ public class AccountService : IAccountService
     /// /// </summary>
     /// <param name="pageNumber">頁碼 (從 1 開始)</param>
     /// <param name="pageSize">每頁數量</param>
-    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 account 和 display_name，不區分大小寫)</param>
     /// <returns>帳號列表</returns>
     public async Task<AccountListDto> GetAccountsAsync(
         int pageNumber,
@@ -273,7 +335,7 @@ public class AccountService : IAccountService
             .Select(user => new AccountDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Account = user.Account,
                 DisplayName = user.DisplayName,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
@@ -333,8 +395,8 @@ public class AccountService : IAccountService
         }
 
         _logger.LogInformation(
-            "成功刪除帳號 {Username} (ID: {UserId}),操作者: {OperatorId}",
-            user.Username,
+            "成功刪除帳號 {Account} (ID: {UserId}),操作者: {OperatorId}",
+            user.Account,
             user.Id,
             operatorId
         );
@@ -397,15 +459,17 @@ public class AccountService : IAccountService
             // 在 Service 層組合並回傳 DTO 物件（Permissions 為去重後的權限代碼）
             var profileDto = new UserProfileDto
             {
-                Username = user.Username,
+                Id = user.Id,
+                Account = user.Account,
                 DisplayName = user.DisplayName,
                 Roles = roleNames ?? [],
                 Permissions = permissionSet.OrderBy(x => x).ToList(),
+                Version = user.Version,
             };
 
             _logger.LogInformation(
-                "成功查詢用戶個人資料: {Username} (ID: {UserId}), 角色數: {RoleCount}, 權限數: {PermissionCount}",
-                user.Username,
+                "成功查詢用戶個人資料: {Account} (ID: {UserId}), 角色數: {RoleCount}, 權限數: {PermissionCount}",
+                user.Account,
                 user.Id,
                 roleNames?.Count ?? 0,
                 permissionSet.Count

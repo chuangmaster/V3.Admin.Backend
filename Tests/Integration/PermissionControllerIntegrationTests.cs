@@ -35,13 +35,13 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         await connection.OpenAsync();
 
         var insertUserSql = @"
-            INSERT INTO users (username, password_hash, display_name, version, is_deleted, created_at, updated_at)
-            VALUES (@username, @password_hash, @display_name, 1, false, NOW(), NOW())
-            ON CONFLICT (username) DO NOTHING;
+            INSERT INTO users (account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@account, @password_hash, @display_name, 1, false, NOW(), NOW())
+            ON CONFLICT (account) DO NOTHING;
         ";
 
         await using var command = new Npgsql.NpgsqlCommand(insertUserSql, connection);
-        command.Parameters.AddWithValue("username", "permission_test_user");
+        command.Parameters.AddWithValue("account", "permission_test_user");
         command.Parameters.AddWithValue("password_hash", BCrypt.Net.BCrypt.HashPassword("TestPass@123", 12));
         command.Parameters.AddWithValue("display_name", "Permission Tester");
         await command.ExecuteNonQueryAsync();
@@ -81,7 +81,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
                         INSERT INTO user_roles (user_id, role_id, assigned_by)
                         SELECT u.id, r.id, NULL
                         FROM users u, roles r
-                        WHERE u.username = 'permission_test_user' AND r.role_name = 'test-role'
+                        WHERE u.account = 'permission_test_user' AND r.role_name = 'test-role'
                             AND NOT EXISTS (
                                 SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id AND ur.is_deleted = FALSE
                             );
@@ -93,7 +93,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
         // Login to get token
         var loginRequest = new LoginRequest
         {
-            Username = "permission_test_user",
+            Account = "permission_test_user",
             Password = "TestPass@123"
         };
 
@@ -107,7 +107,7 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
             if (!string.IsNullOrEmpty(_testToken))
             {
-                _client.DefaultRequestHeaders.Authorization = 
+                _client.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _testToken);
                 Console.WriteLine($"[TEST DEBUG] Authorization header set: {_client.DefaultRequestHeaders.Authorization}");
             }
@@ -134,9 +134,9 @@ public class PermissionControllerIntegrationTests : IClassFixture<CustomWebAppli
 
         // Cleanup in correct order to avoid FK constraints: audit_logs -> user_roles -> users
         var cleanupSql = @"
-            DELETE FROM audit_logs WHERE operator_id IN (SELECT id FROM users WHERE username = 'permission_test_user');
-            DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE username = 'permission_test_user');
-            DELETE FROM users WHERE username = 'permission_test_user';
+            DELETE FROM audit_logs WHERE operator_id IN (SELECT id FROM users WHERE account = 'permission_test_user');
+            DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE account = 'permission_test_user');
+            DELETE FROM users WHERE account = 'permission_test_user';
         ";
         await using var cleanupCmd = new Npgsql.NpgsqlCommand(cleanupSql, connection);
         await cleanupCmd.ExecuteNonQueryAsync();

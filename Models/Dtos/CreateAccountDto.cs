@@ -11,7 +11,7 @@ public class CreateAccountDto
     /// <summary>
     /// 帳號名稱
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string Account { get; set; } = string.Empty;
 
     /// <summary>
     /// 密碼

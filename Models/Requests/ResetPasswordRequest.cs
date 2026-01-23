@@ -3,22 +3,13 @@ using System.ComponentModel.DataAnnotations;
 namespace V3.Admin.Backend.Models.Requests;
 
 /// <summary>
-/// 用戶修改密碼請求模型
+/// 管理員重設密碼請求模型
 /// </summary>
 /// <remarks>
-/// 用於用戶修改自己的密碼,需要提供舊密碼驗證
+/// 管理員無需提供舊密碼即可重設用戶密碼
 /// </remarks>
-public class ChangePasswordRequest
+public class ResetPasswordRequest
 {
-    /// <summary>
-    /// 舊密碼
-    /// </summary>
-    /// <remarks>
-    /// 用於驗證使用者身份
-    /// </remarks>
-    [Required(ErrorMessage = "舊密碼為必填")]
-    public string OldPassword { get; set; } = string.Empty;
-
     /// <summary>
     /// 新密碼
     /// </summary>
@@ -28,7 +19,6 @@ public class ChangePasswordRequest
     /// - 至少一個大寫字母
     /// - 至少一個小寫字母
     /// - 至少一個數字
-    /// - 不可與舊密碼相同
     /// </remarks>
     [Required(ErrorMessage = "新密碼為必填")]
     [MinLength(8, ErrorMessage = "密碼長度至少 8 個字元")]
@@ -39,7 +29,7 @@ public class ChangePasswordRequest
     /// 併發控制版本號
     /// </summary>
     /// <remarks>
-    /// 用於樂觀並發控制,必須與當前用戶 version 一致
+    /// 用於樂觀並發控制,必須與目標用戶當前 version 一致
     /// </remarks>
     [Required(ErrorMessage = "版本號為必填")]
     public int Version { get; set; }

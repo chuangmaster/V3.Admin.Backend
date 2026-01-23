@@ -15,7 +15,7 @@ public class CreateAccountRequestValidatorTests
         // Arrange
         var request = new CreateAccountRequest
         {
-            Username = "new_user",
+            Account = "new_user",
             Password = "Password123",
             DisplayName = "新使用者"
         };
@@ -32,12 +32,12 @@ public class CreateAccountRequestValidatorTests
     [InlineData("user name")]  // 包含空格
     [InlineData("user-name")]  // 包含連字號
     [InlineData("使用者")]     // 包含中文
-    public void Validate_UsernameWithInvalidCharacters_ShouldFail(string username)
+    public void Validate_AccountWithInvalidCharacters_ShouldFail(string account)
     {
         // Arrange
         var request = new CreateAccountRequest
         {
-            Username = username,
+            Account = account,
             Password = "Password123",
             DisplayName = "測試使用者"
         };
@@ -47,16 +47,16 @@ public class CreateAccountRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Username" && e.ErrorMessage.Contains("僅允許英數字與底線"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Account" && e.ErrorMessage.Contains("僅允許英數字與底線"));
     }
 
     [Fact]
-    public void Validate_ValidUsernameWithUnderscore_ShouldPass()
+    public void Validate_ValidAccountWithUnderscore_ShouldPass()
     {
         // Arrange
         var request = new CreateAccountRequest
         {
-            Username = "user_name_123",
+            Account = "user_name_123",
             Password = "Password123",
             DisplayName = "測試使用者"
         };
@@ -77,7 +77,7 @@ public class CreateAccountRequestValidatorTests
         // Arrange
         var request = new CreateAccountRequest
         {
-            Username = "testuser",
+            Account = "testuser",
             Password = "Password123",
             DisplayName = displayName!
         };
@@ -96,7 +96,7 @@ public class CreateAccountRequestValidatorTests
         // Arrange
         var request = new CreateAccountRequest
         {
-            Username = "testuser",
+            Account = "testuser",
             Password = "Password123",
             DisplayName = new string('名', 101) // 超過 100 字元
         };
@@ -115,7 +115,7 @@ public class CreateAccountRequestValidatorTests
         // Arrange - 測試密碼支援所有 Unicode 字元
         var request = new CreateAccountRequest
         {
-            Username = "testuser",
+            Account = "testuser",
             Password = "密碼測試123😀",  // 包含中文和 emoji
             DisplayName = "測試使用者"
         };

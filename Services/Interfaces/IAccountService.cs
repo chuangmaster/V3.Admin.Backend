@@ -38,6 +38,14 @@ public interface IAccountService
     Task ChangePasswordAsync(ChangePasswordDto dto);
 
     /// <summary>
+    /// 管理員重設用戶密碼
+    /// </summary>
+    /// <param name="dto">重設密碼資訊</param>
+    /// <exception cref="KeyNotFoundException">目標用戶不存在</exception>
+    /// <exception cref="InvalidOperationException">並發更新衝突</exception>
+    Task ResetPasswordAsync(ResetPasswordDto dto);
+
+    /// <summary>
     /// 查詢單一帳號
     /// </summary>
     /// <param name="id">帳號 ID</param>

@@ -29,8 +29,8 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id)
     {
         const string sql = @"
-            SELECT id, username, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
             FROM users WHERE id = @Id AND is_deleted = false";
 
@@ -41,19 +41,19 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByUsernameAsync(string username)
     {
         const string sql = @"
-            SELECT id, username, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
-            FROM users WHERE LOWER(username) = LOWER(@Username) AND is_deleted = false";
+            FROM users WHERE LOWER(account) = LOWER(@Account) AND is_deleted = false";
 
-        return await _connection.QuerySingleOrDefaultAsync<User>(sql, new { Username = username });
+        return await _connection.QuerySingleOrDefaultAsync<User>(sql, new { Account = username });
     }
 
     /// <inheritdoc />
     public async Task<bool> ExistsAsync(string username)
     {
-        const string sql = "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(username) = LOWER(@Username) AND is_deleted = false)";
-        return await _connection.ExecuteScalarAsync<bool>(sql, new { Username = username });
+        const string sql = "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(account) = LOWER(@Account) AND is_deleted = false)";
+        return await _connection.ExecuteScalarAsync<bool>(sql, new { Account = username });
     }
 
     /// <inheritdoc />
@@ -67,17 +67,17 @@ public class UserRepository : IUserRepository
     /// </summary>
     /// <param name="pageNumber">頁碼 (從 1 開始)</param>
     /// <param name="pageSize">每頁數量</param>
-    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 account 和 display_name，不區分大小寫)</param>
     /// <returns>符合條件的帳號清單</returns>
     public async Task<IEnumerable<User>> SearchAsync(int pageNumber, int pageSize, string? searchKeyword)
     {
         const string sql = @"
-            SELECT id, username, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
-            FROM users 
+            FROM users
             WHERE is_deleted = false
-            AND (@SearchKeyword IS NULL OR LOWER(username) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))
+            AND (@SearchKeyword IS NULL OR LOWER(account) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))
             ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
 
         int offset = (pageNumber - 1) * pageSize;
@@ -89,8 +89,8 @@ public class UserRepository : IUserRepository
     public async Task<bool> CreateAsync(User user)
     {
         const string sql = @"
-            INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
-            VALUES (@Id, @Username, @PasswordHash, @DisplayName, @CreatedAt, @IsDeleted, @Version)";
+            INSERT INTO users (id, account, password_hash, display_name, created_at, is_deleted, version)
+            VALUES (@Id, @Account, @PasswordHash, @DisplayName, @CreatedAt, @IsDeleted, @Version)";
 
         try
         {
@@ -99,8 +99,8 @@ public class UserRepository : IUserRepository
         }
         catch (PostgresException ex) when (ex.SqlState == "23505")
         {
-            _logger.LogWarning(ex, "建立使用者失敗: 帳號 {Username} 已有重複鍵", user.Username);
-            throw new InvalidOperationException($"帳號 {user.Username} 已存在");
+            _logger.LogWarning(ex, "建立使用者失敗: 帳號 {Account} 已有重複鍵", user.Account);
+            throw new InvalidOperationException($"帳號 {user.Account} 已存在");
         }
     }
 
@@ -150,14 +150,14 @@ public class UserRepository : IUserRepository
     /// <summary>
     /// 搜尋符合 searchKeyword 的有效帳號總數
     /// </summary>
-    /// <param name="searchKeyword">搜尋關鍵字 (比對 username 和 display_name，不區分大小寫)</param>
+    /// <param name="searchKeyword">搜尋關鍵字 (比對 account 和 display_name，不區分大小寫)</param>
     /// <returns>符合條件的帳號總數</returns>
     public async Task<int> CountAsync(string? searchKeyword)
     {
         const string sql = @"
-            SELECT COUNT(*) FROM users 
+            SELECT COUNT(*) FROM users
             WHERE is_deleted = false
-            AND (@SearchKeyword IS NULL OR LOWER(username) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))";
+            AND (@SearchKeyword IS NULL OR LOWER(account) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))";
 
         var searchKeywordPattern = string.IsNullOrWhiteSpace(searchKeyword) ? null : $"%{searchKeyword}%";
         return await _connection.ExecuteScalarAsync<int>(sql, new { SearchKeyword = searchKeywordPattern });

@@ -24,9 +24,7 @@ public class AuthController : BaseApiController
     /// </summary>
     /// <param name="authService">身份驗證服務</param>
     /// <param name="logger">日誌記錄器</param>
-    public AuthController(
-        IAuthService authService,
-        ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
         _logger = logger;
@@ -49,11 +47,7 @@ public class AuthController : BaseApiController
         try
         {
             // 轉換為 DTO
-            var loginDto = new LoginDto
-            {
-                Username = request.Username,
-                Password = request.Password
-            };
+            var loginDto = new LoginDto { Account = request.Account, Password = request.Password };
 
             // 執行登入
             var result = await _authService.LoginAsync(loginDto);
@@ -66,11 +60,11 @@ public class AuthController : BaseApiController
                 User = new AccountResponse
                 {
                     Id = result.User.Id,
-                    Username = result.User.Username,
+                    Account = result.User.Account,
                     DisplayName = result.User.DisplayName,
                     CreatedAt = result.User.CreatedAt,
-                    UpdatedAt = result.User.UpdatedAt
-                }
+                    UpdatedAt = result.User.UpdatedAt,
+                },
             };
 
             return Success(response, "登入成功");
