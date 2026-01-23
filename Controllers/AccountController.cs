@@ -386,12 +386,12 @@ public class AccountController : BaseApiController
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "修改密碼失敗: {Message}", ex.Message);
-            return BusinessError("舊密碼錯誤", ResponseCodes.INVALID_CREDENTIALS);
+            return UnauthorizedResponse("舊密碼錯誤", ResponseCodes.INVALID_CREDENTIALS);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("相同"))
         {
             _logger.LogWarning(ex, "修改密碼失敗: {Message}", ex.Message);
-            return BusinessError("新密碼不可與舊密碼相同", ResponseCodes.PASSWORD_SAME_AS_OLD);
+            return ValidationError("新密碼不可與舊密碼相同");
         }
         catch (InvalidOperationException ex)
             when (ex.Message.Contains("並發")

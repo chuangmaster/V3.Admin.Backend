@@ -33,13 +33,13 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         await connection.OpenAsync();
 
         var insertSql = @"
-            INSERT INTO users (username, password_hash, display_name, version, is_deleted, created_at, updated_at)
-            VALUES (@username, @password_hash, @display_name, 1, false, NOW(), NOW())
-            ON CONFLICT (username) DO NOTHING;
+            INSERT INTO users (account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@account, @password_hash, @display_name, 1, false, NOW(), NOW())
+            ON CONFLICT (account) DO NOTHING;
         ";
 
         await using var command = new Npgsql.NpgsqlCommand(insertSql, connection);
-        command.Parameters.AddWithValue("username", "admin");
+        command.Parameters.AddWithValue("account", "admin");
         command.Parameters.AddWithValue("password_hash", BCrypt.Net.BCrypt.HashPassword("Admin@123", 12));
         command.Parameters.AddWithValue("display_name", "管理員");
         await command.ExecuteNonQueryAsync();
@@ -51,7 +51,7 @@ public class AuthControllerIntegrationTests : IClassFixture<CustomWebApplication
         await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync();
 
-        var deleteSql = "DELETE FROM users WHERE username = 'admin';";
+        var deleteSql = "DELETE FROM users WHERE account = 'admin';";
         await using var command = new Npgsql.NpgsqlCommand(deleteSql, connection);
         await command.ExecuteNonQueryAsync();
     }

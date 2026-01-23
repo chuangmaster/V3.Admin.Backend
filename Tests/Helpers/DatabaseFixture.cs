@@ -88,6 +88,12 @@ public class DatabaseFixture : IAsyncLifetime
                 ('role.remove', 'Role Remove', 'Remove roles from users'),
 
                 ('user.profile.read', 'User Profile Read', 'Read user profile'),
+                ('user.profile.update', 'User Profile Update', 'Update user profile'),
+
+                ('account.read', 'Account Read', 'Read account'),
+                ('account.create', 'Account Create', 'Create account'),
+                ('account.update', 'Account Update', 'Update account'),
+                ('account.delete', 'Account Delete', 'Delete account'),
 
                 ('customer.read', 'Customer Read', 'Read customers'),
                 ('customer.create', 'Customer Create', 'Create customers'),
@@ -110,13 +116,13 @@ public class DatabaseFixture : IAsyncLifetime
                     SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id AND rp.permission_id = p.id
                 );
 
-            -- 當插入使用者且 username 結尾為 '_test_user' 時，自動指派 integration-admin 角色
+            -- 當插入使用者且 account 為 'admin' 或 'testuser' 或結尾為 '_test_user' 時,自動指派 integration-admin 角色
             CREATE OR REPLACE FUNCTION assign_integration_admin_role()
             RETURNS trigger AS $func$
             DECLARE
                 v_role_id UUID;
             BEGIN
-                IF NEW.username LIKE '%_test_user' THEN
+                IF NEW.account IN ('admin', 'testuser') OR NEW.account LIKE '%_test_user' THEN
                     SELECT id INTO v_role_id FROM roles WHERE role_name = 'integration-admin' AND is_deleted = FALSE LIMIT 1;
                     IF v_role_id IS NOT NULL THEN
                         INSERT INTO user_roles (user_id, role_id, assigned_by, assigned_at)

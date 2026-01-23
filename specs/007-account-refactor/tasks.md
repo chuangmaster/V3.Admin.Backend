@@ -115,8 +115,8 @@
 
 ### Models for User Story 2
 
-- [ ] T026 [P] [US2] 建立 ChangePasswordRequest 模型在 Models/Requests/ChangePasswordRequest.cs
-- [ ] T027 [P] [US2] 建立 ChangePasswordRequestValidator,驗證 oldPassword/newPassword 必填、newPassword 符合密碼強度要求(參照現有系統的密碼驗證器規則:最小長度、字元類型要求等)、且新密碼不得與當前密碼相同 (FR-016) 在 Validators/ChangePasswordRequestValidator.cs
+- [x] T026 [P] [US2] 建立 ChangePasswordRequest 模型在 Models/Requests/ChangePasswordRequest.cs
+- [x] T027 [P] [US2] 建立 ChangePasswordRequestValidator,驗證 oldPassword/newPassword 必填、newPassword 符合密碼強度要求(參照現有系統的密碼驗證器規則:最小長度、字元類型要求等)、且新密碼不得與當前密碼相同 (FR-016) 在 Validators/ChangePasswordRequestValidator.cs
 
 ### Repository Layer for User Story 2
 
@@ -127,20 +127,20 @@
 
 ### Service Layer for User Story 2
 
-- [ ] T032 [US2] 在 IAccountService 新增 ChangePasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
-- [ ] T033 [US2] 在 AccountService 實作 ChangePasswordAsync 方法,包含舊密碼驗證和版本檢查在 Services/AccountService.cs
+- [x] T032 [US2] 在 IAccountService 新增 ChangePasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
+- [x] T033 [US2] 在 AccountService 實作 ChangePasswordAsync 方法,包含舊密碼驗證和版本檢查在 Services/AccountService.cs
 - [x] T033a [US2] 在 AccountService 建構函式中注入 IDistributedCache,並在 ChangePasswordAsync 成功後清除版本號快取在 Services/AccountService.cs
 
 ### Controller Layer for User Story 2
 
-- [ ] T034 [US2] 在 AccountController 實作 PUT /api/account/me/password 端點在 Controllers/AccountController.cs
-- [ ] T035 [US2] 為端點新增 [Authorize] 和權限驗證(user.profile.update)在 Controllers/AccountController.cs
-- [ ] T036 [US2] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
+- [x] T034 [US2] 在 AccountController 實作 PUT /api/account/me/password 端點在 Controllers/AccountController.cs
+- [x] T035 [US2] 為端點新增 [Authorize] 和權限驗證(user.profile.update)在 Controllers/AccountController.cs
+- [x] T036 [US2] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
 
 ### JWT Version Validation for User Story 2
 
-- [ ] T037 [US2] 更新 JwtService.GenerateToken 在 JWT claims 中包含 version 在 Services/JwtService.cs
-- [ ] T038 [US2] 確認 VersionValidationMiddleware 已註冊在 Program.cs(在 UseAuthorization 之前)
+- [x] T037 [US2] 更新 JwtService.GenerateToken 在 JWT claims 中包含 version 在 Services/JwtService.cs
+- [x] T038 [US2] 確認 VersionValidationMiddleware 已註冊在 Program.cs(在 UseAuthorization 之前)
 
 ### Testing for User Story 2
 
@@ -168,8 +168,8 @@
 
 ### Models for User Story 3
 
-- [ ] T046 [P] [US3] 建立 ResetPasswordRequest 模型在 Models/Requests/ResetPasswordRequest.cs
-- [ ] T047 [P] [US3] 建立 ResetPasswordRequestValidator 在 Validators/ResetPasswordRequestValidator.cs
+- [x] T046 [P] [US3] 建立 ResetPasswordRequest 模型在 Models/Requests/ResetPasswordRequest.cs
+- [x] T047 [P] [US3] 建立 ResetPasswordRequestValidator 在 Validators/ResetPasswordRequestValidator.cs
 
 ### Repository Layer for User Story 3
 
@@ -177,16 +177,16 @@
 
 ### Service Layer for User Story 3
 
-- [ ] T049 [US3] 在 IAccountService 新增 ResetPasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
-- [ ] T050 [US3] 在 AccountService 實作 ResetPasswordAsync 方法,包含版本檢查和審計日誌記錄在 Services/AccountService.cs
-- [ ] T051 [US3] 在 ResetPasswordAsync 中呼叫 AuditLogRepository 記錄操作(OperatorId, TargetUserId, Action)在 Services/AccountService.cs
+- [x] T049 [US3] 在 IAccountService 新增 ResetPasswordAsync 方法定義在 Services/Interfaces/IAccountService.cs
+- [x] T050 [US3] 在 AccountService 實作 ResetPasswordAsync 方法,包含版本檢查在 Services/AccountService.cs
+- [x] T051 [US3] ~~在 ResetPasswordAsync 中呼叫 AuditLogRepository 記錄操作~~ (已改為在 Controller 層記錄,降低耦合度)
 
 ### Controller Layer for User Story 3
 
-- [ ] T052 [US3] 在 AccountController 實作 PUT /api/account/{id}/reset-password 端點在 Controllers/AccountController.cs
-- [x] T052a [US3] 在 AccountController 建構函式中注入 IDistributedCache,並在 ResetPassword 成功後清除版本號快取在 Controllers/AccountController.cs
-- [ ] T053 [US3] 為端點新增 [Authorize] 和權限驗證(account.update)在 Controllers/AccountController.cs
-- [ ] T054 [US3] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
+- [x] T052 [US3] 在 AccountController 實作 PUT /api/account/{id}/reset-password 端點在 Controllers/AccountController.cs
+- [x] T052a [US3] ~~在 AccountController 建構函式中注入 IDistributedCache~~ (已移除,改由 Service 處理)
+- [x] T053 [US3] 為端點新增 [Authorize] 和權限驗證(account.update)在 Controllers/AccountController.cs
+- [x] T054 [US3] 新增 XML 文件註解說明端點用途、參數和回應在 Controllers/AccountController.cs
 
 ### Testing for User Story 3
 
