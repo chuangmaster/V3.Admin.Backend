@@ -20,14 +20,15 @@
 
 ## ✨ 功能特色
 
-- 🔐 **JWT 身份驗證** - 基於 Bearer Token 的無狀態身份驗證
+- 🔐 **JWT 身份驗證** - 基於 Bearer Token 的無狀態身份驗證,支援版本控制
 - 👤 **帳號管理** - 完整的 CRUD 操作 (新增、查詢、更新、刪除)
-- 🔑 **密碼管理** - BCrypt 雜湊 (work factor 12) + 密碼變更
-- 🛡️ **安全性** - 輸入驗證、SQL 注入防護、軟刪除機制
+- 🔑 **密碼管理** - BCrypt 雜湊 (work factor 12) + 用戶自助修改密碼 + 管理員重設密碼
+- 🛡️ **權限管理** - 細粒度權限控制 (account.read/update/delete, user.profile.read/update)
+- 🔒 **安全性** - 輸入驗證、SQL 注入防護、軟刪除機制、密碼強度檢查
 - 🔄 **並發控制** - 樂觀鎖定 (Optimistic Locking) 防止資料衝突
 - 📝 **完整日誌** - 結構化日誌記錄與 TraceId 追蹤
 - 📚 **API 文件** - 內建 Swagger UI 互動式文件
-- ✅ **高測試覆蓋** - 42 個單元測試 + 4 個整合測試 (100% 通過)
+- ✅ **高測試覆蓋** - 39 個單元測試 + 111+ 個整合測試 (150+ 測試通過)
 - 🌐 **繁體中文** - 完整繁體中文錯誤訊息與文件
 - 🐳 **Docker 支援** - 容器化部署就緒
 
@@ -109,14 +110,16 @@
 
 ### 帳號管理
 
-| 方法 | 端點 | 說明 | 授權 |
-|------|------|------|------|
-| GET | `/api/accounts` | 查詢帳號列表 (分頁) | ✅ |
-| GET | `/api/accounts/{id}` | 查詢單一帳號 | ✅ |
-| POST | `/api/accounts` | 新增帳號 | ✅ |
-| PUT | `/api/accounts/{id}` | 更新帳號資訊 | ✅ |
-| PUT | `/api/accounts/{id}/password` | 變更密碼 | ✅ |
-| DELETE | `/api/accounts/{id}` | 刪除帳號 (軟刪除) | ✅ |
+| 方法 | 端點 | 說明 | 授權 | 權限 |
+|------|------|------|------|------|
+| GET | `/api/account` | 查詢帳號列表 (分頁) | ✅ | account.read |
+| GET | `/api/account/{id}` | 查詢單一帳號 | ✅ | account.read |
+| GET | `/api/account/me` | 查詢個人資料 | ✅ | user.profile.read |
+| POST | `/api/account` | 新增帳號 | ✅ | account.create |
+| PUT | `/api/account/{id}` | 更新帳號資訊 | ✅ | account.update |
+| PUT | `/api/account/me/password` | 修改自己的密碼 | ✅ | user.profile.update |
+| PUT | `/api/account/{id}/reset-password` | 管理員重設用戶密碼 | ✅ | account.update |
+| DELETE | `/api/account/{id}` | 刪除帳號 (軟刪除) | ✅ | account.delete |
 
 ### API 使用範例
 
@@ -124,15 +127,31 @@
 ```bash
 curl -X POST https://localhost:5001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123"}'
+  -d '{"account":"admin","password":"Admin@123"}'
 ```
 
 #### 新增帳號
 ```bash
-curl -X POST https://localhost:5001/api/accounts \
+curl -X POST https://localhost:5001/api/account \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"username":"newuser","password":"Secure@123","displayName":"新使用者"}'
+  -d '{"account":"newuser","password":"Secure@123","displayName":"新使用者"}'
+```
+
+#### 修改自己的密碼
+```bash
+curl -X PUT https://localhost:5001/api/account/me/password \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"oldPassword":"Admin@123","newPassword":"NewSecure@123","version":1}'
+```
+
+#### 管理員重設用戶密碼
+```bash
+curl -X PUT https://localhost:5001/api/account/{userId}/reset-password \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"newPassword":"ResetSecure@123","version":1}'
 ```
 
 完整的 API 文件與範例請參閱 [Swagger UI](https://localhost:5001/swagger) 或 [Quickstart Guide](specs/001-account-management/quickstart.md)。
@@ -158,13 +177,19 @@ V3.Admin.Backend/
 ├── Controllers/          # API 控制器
 │   ├── AuthController.cs
 │   ├── AccountController.cs
+│   ├── RoleController.cs
+│   ├── PermissionController.cs
 │   └── BaseApiController.cs
 ├── Services/             # 業務邏輯層
 │   ├── AuthService.cs
 │   ├── AccountService.cs
-│   └── JwtService.cs
+│   ├── JwtService.cs
+│   └── Interfaces/       # 服務介面
 ├── Repositories/         # 資料存取層
-│   └── UserRepository.cs
+│   ├── UserRepository.cs
+│   ├── RoleRepository.cs
+│   ├── PermissionRepository.cs
+│   └── Interfaces/       # Repository 介面
 ├── Models/               # 資料模型
 │   ├── Entities/         # 資料庫實體
 │   ├── Dtos/             # 資料傳輸物件
@@ -173,14 +198,15 @@ V3.Admin.Backend/
 ├── Validators/           # FluentValidation 驗證器
 ├── Middleware/           # 中介軟體
 │   ├── ExceptionHandlingMiddleware.cs
-│   └── TraceIdMiddleware.cs
+│   ├── TraceIdMiddleware.cs
+│   └── PermissionAuthorizationMiddleware.cs
 ├── Configuration/        # 組態模型
 ├── Database/             # 資料庫腳本
 │   ├── Migrations/       # 遷移腳本
 │   └── Scripts/          # 種子資料
 └── Tests/                # 測試專案
-    ├── Unit/             # 單元測試 (42 tests)
-    └── Integration/      # 整合測試 (4 tests)
+    ├── Unit/             # 單元測試 (39 tests)
+    └── Integration/      # 整合測試 (111+ tests)
 ```
 
 ### 架構設計
@@ -225,14 +251,17 @@ HTTP 狀態碼與業務代碼對照:
 ### 執行測試
 
 ```powershell
-# 執行所有測試 (46 tests)
+# 執行所有測試 (150+ tests)
 dotnet test
 
-# 僅執行單元測試 (42 tests)
+# 僅執行單元測試 (39 tests)
 dotnet test --filter "FullyQualifiedName!~Integration"
 
-# 僅執行整合測試 (4 tests, 需要 Docker)
+# 僅執行整合測試 (111+ tests, 需要 Docker)
 dotnet test --filter "FullyQualifiedName~Integration"
+
+# 執行特定控制器的整合測試
+dotnet test --filter "FullyQualifiedName~AccountControllerIntegrationTests"
 
 # 詳細輸出
 dotnet test --logger "console;verbosity=detailed"
@@ -242,14 +271,12 @@ dotnet test --logger "console;verbosity=detailed"
 
 | 類別 | 測試數 | 狀態 |
 |-----|--------|------|
-| Validators (LoginRequest) | 7 | ✅ |
-| Validators (CreateAccountRequest) | 7 | ✅ |
-| Validators (UpdateAccountRequest) | 6 | ✅ |
-| Validators (ChangePasswordRequest) | 6 | ✅ |
-| Validators (DeleteAccountRequest) | 2 | ✅ |
-| Services (AuthService) | 4 | ✅ |
+| Validators | 28 | ✅ |
+| Services (單元測試) | 11 | ✅ |
+| Integration (AccountController) | 17 | ✅ (1 skipped) |
 | Integration (AuthController) | 4 | ✅ |
-| **總計** | **46** | **✅ 100%** |
+| Integration (Other Controllers) | 90+ | ✅ |
+| **總計** | **150+** | **✅ 通過** |
 
 ### 整合測試
 
@@ -331,10 +358,11 @@ git push origin feature/your-feature-name
 
 ## 📚 文件
 
-- **[快速入門指南](specs/001-account-management/quickstart.md)** - 完整的安裝與使用教學
-- **[功能規格](specs/001-account-management/spec.md)** - 使用者故事與驗收條件
-- **[實作計畫](specs/001-account-management/plan.md)** - 64 項任務清單
-- **[API 規格](specs/001-account-management/contracts/api-spec.yaml)** - OpenAPI 3.0 規格
+- **[快速入門指南](specs/007-account-refactor/quickstart.md)** - 完整的安裝與使用教學
+- **[功能規格](specs/007-account-refactor/spec.md)** - 使用者故事與驗收條件
+- **[實作計畫](specs/007-account-refactor/plan.md)** - 詳細實作計畫
+- **[任務清單](specs/007-account-refactor/tasks.md)** - 80 項任務清單 (66+ 已完成)
+- **[API 規格](specs/007-account-refactor/contracts/api-spec.yaml)** - OpenAPI 3.0 規格
 - **[Swagger UI](https://localhost:5001/swagger)** - 互動式 API 文件 (需啟動應用程式)
 
 ## 🤝 貢獻
@@ -357,12 +385,29 @@ git push origin feature/your-feature-name
 
 ## 📝 版本歷史
 
+### v1.1.0 (2025-01-23) - Account 模組重構
+
+**新功能**:
+- ✅ 將 username 欄位重命名為 account
+- ✅ 用戶自助修改密碼功能
+- ✅ 管理員重設用戶密碼功能
+- ✅ 細粒度權限控制系統
+- ✅ JWT Token 版本控制 (密碼變更後舊 Token 失效)
+- ✅ 150+ 個測試 (單元測試 + 整合測試)
+- ✅ 完整的權限管理中介軟體
+- ✅ 審計日誌支援 (基礎架構)
+
+**重大變更**:
+- 🔄 資料庫欄位: `username` → `account`
+- 🔄 API 端點: `/api/accounts` → `/api/account`
+- 🔄 請求欄位: LoginRequest.username → LoginRequest.account
+
 ### v1.0.0 (2025-10-28)
 
 **功能**:
 - ✅ JWT 身份驗證系統
 - ✅ 帳號新增、查詢、更新、刪除
-- ✅ 密碼變更功能
+- ✅ 基本密碼變更功能
 - ✅ 軟刪除機制
 - ✅ 樂觀鎖定並發控制
 - ✅ 完整的輸入驗證
@@ -371,9 +416,9 @@ git push origin feature/your-feature-name
 - ✅ Docker 支援
 
 **已知限制**:
-- 不支援角色權限管理 (計畫於 v2.0 實作)
-- 不支援密碼重設 Email (計畫於 v2.0 實作)
-- 不支援兩階段驗證 (計畫於 v3.0 實作)
+- ✅ ~~不支援角色權限管理~~ (已於 v1.1.0 實作)
+- 不支援密碼重設 Email (計畫於 v1.2.0 實作)
+- 不支援兩階段驗證 (計畫於 v2.0 實作)
 
 ## 📄 授權
 

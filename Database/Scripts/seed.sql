@@ -9,7 +9,7 @@
 -- 帳號: admin
 -- 密碼: Admin@123
 -- BCrypt Hash (work factor 12): $2a$12$XHvy84E7twXPVs0WwzqWBuxj1Sp2yb46QW2xsLN3lrHUlibMg.a1G
-INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
+INSERT INTO users (id, account, password_hash, display_name, created_at, is_deleted, version)
 VALUES (
     '00000000-0000-0000-0000-000000000001'::UUID,
     'admin',
@@ -25,7 +25,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 帳號: testuser
 -- 密碼: Test@123
 -- BCrypt Hash (work factor 12): $2a$12$v/27awEJ7xYNetSX0YshdOkkLS9EUwLpmj3rNLqp6JSPOG2R.r5k.
-INSERT INTO users (id, username, password_hash, display_name, created_at, is_deleted, version)
+INSERT INTO users (id, account, password_hash, display_name, created_at, is_deleted, version)
 VALUES (
     '00000000-0000-0000-0000-000000000002'::UUID,
     'testuser',
@@ -43,7 +43,7 @@ DECLARE
     user_count INT;
 BEGIN
     SELECT COUNT(*) INTO user_count FROM users WHERE is_deleted = false;
-    
+
     IF user_count >= 2 THEN
         RAISE NOTICE '✓ 初始資料插入成功: % 個帳號', user_count;
     ELSE
@@ -52,9 +52,9 @@ BEGIN
 END $$;
 
 -- 顯示插入的帳號資訊 (不含密碼雜湊)
-SELECT 
+SELECT
     id,
-    username,
+    account,
     display_name,
     created_at,
     is_deleted

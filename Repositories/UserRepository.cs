@@ -29,8 +29,8 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id)
     {
         const string sql = @"
-            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
             FROM users WHERE id = @Id AND is_deleted = false";
 
@@ -41,8 +41,8 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByUsernameAsync(string username)
     {
         const string sql = @"
-            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
             FROM users WHERE LOWER(account) = LOWER(@Account) AND is_deleted = false";
 
@@ -72,10 +72,10 @@ public class UserRepository : IUserRepository
     public async Task<IEnumerable<User>> SearchAsync(int pageNumber, int pageSize, string? searchKeyword)
     {
         const string sql = @"
-            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName, 
-                   created_at AS CreatedAt, updated_at AS UpdatedAt, 
+            SELECT id, account, password_hash AS PasswordHash, display_name AS DisplayName,
+                   created_at AS CreatedAt, updated_at AS UpdatedAt,
                    is_deleted AS IsDeleted, deleted_at AS DeletedAt, deleted_by AS DeletedBy, version
-            FROM users 
+            FROM users
             WHERE is_deleted = false
             AND (@SearchKeyword IS NULL OR LOWER(account) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))
             ORDER BY created_at DESC LIMIT @PageSize OFFSET @Offset";
@@ -155,7 +155,7 @@ public class UserRepository : IUserRepository
     public async Task<int> CountAsync(string? searchKeyword)
     {
         const string sql = @"
-            SELECT COUNT(*) FROM users 
+            SELECT COUNT(*) FROM users
             WHERE is_deleted = false
             AND (@SearchKeyword IS NULL OR LOWER(account) LIKE LOWER(@SearchKeyword) OR LOWER(display_name) LIKE LOWER(@SearchKeyword))";
 

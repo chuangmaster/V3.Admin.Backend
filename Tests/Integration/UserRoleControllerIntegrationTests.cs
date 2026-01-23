@@ -42,7 +42,7 @@ public class UserRoleControllerIntegrationTests
     /// </summary>
     public async Task InitializeAsync()
     {
-        // 產生唯一 username (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
+        // 產生唯一 account (符合 VARCHAR(20) 且保留 _test_user 後綴以觸發角色自動指派)
         _testUsername = $"ur_{Guid.NewGuid().ToString()[..7]}_test_user";
 
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
@@ -51,14 +51,14 @@ public class UserRoleControllerIntegrationTests
         // 1. 建立測試用戶
         var insertUserSql =
             @"
-            INSERT INTO users (username, password_hash, display_name, version, is_deleted, created_at, updated_at)
-            VALUES (@username, @password_hash, @display_name, 1, false, NOW(), NOW())
+            INSERT INTO users (account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@account, @password_hash, @display_name, 1, false, NOW(), NOW())
             RETURNING id;
         ";
 
         await using (var command = new NpgsqlCommand(insertUserSql, connection))
         {
-            command.Parameters.AddWithValue("username", _testUsername);
+            command.Parameters.AddWithValue("account", _testUsername);
             command.Parameters.AddWithValue(
                 "password_hash",
                 BCrypt.Net.BCrypt.HashPassword(_testPassword, 12)

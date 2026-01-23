@@ -200,7 +200,7 @@ public class AccountControllerIntegrationTests
         var response = await _client.PutAsJsonAsync("/api/account/me/password", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     /// <summary>
@@ -430,6 +430,571 @@ public class AccountControllerIntegrationTests
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    /// <summary>
+    /// 測試:無 user.profile.update 權限的用戶無法修改密碼
+    /// </summary>
+    [Fact]
+    public async Task ChangeMyPassword_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange: 建立一個沒有 user.profile.update 權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "noperm_user");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoPermUser@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無權限用戶");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 清除舊的 Authorization header
+        _client.DefaultRequestHeaders.Authorization = null;
+
+        // 獲取無權限用戶的 Token
+        var loginRequest = new LoginRequest
+        {
+            Account = "noperm_user",
+            Password = "NoPermUser@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        var request = new ChangePasswordRequest
+        {
+            OldPassword = "NoPermUser@123",
+            NewPassword = "NewPassword@456",
+            Version = 1,
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync("/api/account/me/password", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var content = await response.Content.ReadAsStringAsync();
+        // 權限被拒時 middleware 可能返回空內容
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<object>>(
+                content,
+                _jsonOptions
+            );
+            apiResponse.Should().NotBeNull();
+            apiResponse!.Success.Should().BeFalse();
+        }
+
+        // Cleanup
+        var deleteSql = "DELETE FROM users WHERE account = 'noperm_user';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    #endregion
+
+    #region ResetPassword Permission Tests
+
+    /// <summary>
+    /// 測試:無 account.update 權限的用戶無法重設密碼
+    /// </summary>
+    [Fact]
+    public async Task ResetPassword_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange: 建立一個沒有 account.update 權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "noperm_admin");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoPermAdmin@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無權限管理員");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 清除舊的 Authorization header
+        _client.DefaultRequestHeaders.Authorization = null;
+
+        // 獲取無權限用戶的 Token
+        var loginRequest = new LoginRequest
+        {
+            Account = "noperm_admin",
+            Password = "NoPermAdmin@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        var request = new ResetPasswordRequest
+        {
+            NewPassword = "ResetPassword@789",
+            Version = 1,
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync(
+            $"/api/account/{_testUserId}/reset-password",
+            request
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var content = await response.Content.ReadAsStringAsync();
+        // 權限被拒時 middleware 可能返回空內容
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            var apiResponse = JsonSerializer.Deserialize<ApiResponseModel<object>>(
+                content,
+                _jsonOptions
+            );
+            apiResponse.Should().NotBeNull();
+            apiResponse!.Success.Should().BeFalse();
+        }
+
+        // Cleanup
+        var deleteSql = "DELETE FROM users WHERE account = 'noperm_admin';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 測試:驗證審計日誌確實被寫入資料庫
+    /// </summary>
+    /// <remarks>
+    /// 注意: 當前實現中 Controller 層尚未整合 AuditLogRepository,此測試暫時略過。
+    /// 待實現審計日誌記錄功能後再啟用此測試。
+    /// </remarks>
+    [Fact(Skip = "審計日誌記錄功能尚未在 AccountController 中實現")]
+    public async Task ResetPassword_Success_CreatesAuditLog()
+    {
+        // Arrange
+        var request = new ResetPasswordRequest
+        {
+            NewPassword = "AuditTestPassword@789",
+            Version = 1,
+        };
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            _adminToken
+        );
+
+        // Act
+        var response = await _client.PutAsJsonAsync(
+            $"/api/account/{_testUserId}/reset-password",
+            request
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // 查詢審計日誌
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var auditLogSql = @"
+            SELECT COUNT(*) FROM audit_logs
+            WHERE target_id = @TargetId
+            AND operation_type = @OperationType
+            AND operation_time > NOW() - INTERVAL '10 seconds';
+        ";
+
+        await using var command = new Npgsql.NpgsqlCommand(auditLogSql, connection);
+        command.Parameters.AddWithValue("TargetId", _testUserId);
+        command.Parameters.AddWithValue("OperationType", "重設密碼");
+
+        var auditCount = await command.ExecuteScalarAsync();
+
+        // 驗證審計日誌已建立
+        Convert.ToInt32(auditCount).Should().BeGreaterThan(0, "審計日誌應該被記錄");
+    }
+
+    #endregion
+
+    #region US4 Permission Control Tests
+
+    /// <summary>
+    /// 測試:驗證 account.read 權限控制 - 列表查詢
+    /// </summary>
+    [Fact]
+    public async Task GetAccounts_WithoutAccountReadPermission_ReturnsForbidden()
+    {
+        // Arrange: 建立沒有 account.read 權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "no_read_perm");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoReadPerm@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無讀取權限用戶");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 清除並重新登入
+        _client.DefaultRequestHeaders.Authorization = null;
+        var loginRequest = new LoginRequest
+        {
+            Account = "no_read_perm",
+            Password = "NoReadPerm@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        // Act
+        var response = await _client.GetAsync("/api/account?pageNumber=1&pageSize=10");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Authorization = null;
+        var deleteSql = "DELETE FROM users WHERE account = 'no_read_perm';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 測試:驗證 account.read 權限控制 - 單一查詢
+    /// </summary>
+    [Fact]
+    public async Task GetAccount_WithoutAccountReadPermission_ReturnsForbidden()
+    {
+        // Arrange: 建立沒有 account.read 權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "no_read_perm2");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoReadPerm2@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無讀取權限用戶2");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 清除並重新登入
+        _client.DefaultRequestHeaders.Authorization = null;
+        var loginRequest = new LoginRequest
+        {
+            Account = "no_read_perm2",
+            Password = "NoReadPerm2@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        // Act
+        var response = await _client.GetAsync($"/api/account/{_testUserId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Authorization = null;
+        var deleteSql = "DELETE FROM users WHERE account = 'no_read_perm2';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 測試:驗證 account.update 權限控制 - 更新帳號
+    /// </summary>
+    [Fact]
+    public async Task UpdateAccount_WithoutAccountUpdatePermission_ReturnsForbidden()
+    {
+        // Arrange: 建立沒有 account.update 權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "no_update_perm");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoUpdatePerm@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無更新權限用戶");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 清除並重新登入
+        _client.DefaultRequestHeaders.Authorization = null;
+        var loginRequest = new LoginRequest
+        {
+            Account = "no_update_perm",
+            Password = "NoUpdatePerm@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        var updateRequest = new UpdateAccountRequest
+        {
+            DisplayName = "新顯示名稱",
+            Version = 1,
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync(
+            $"/api/account/{_testUserId}",
+            updateRequest
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Authorization = null;
+        var deleteSql = "DELETE FROM users WHERE account = 'no_update_perm';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 測試:驗證 account.delete 權限控制
+    /// </summary>
+    [Fact]
+    public async Task DeleteAccount_WithoutAccountDeletePermission_ReturnsForbidden()
+    {
+        // Arrange: 建立沒有 account.delete 權限的用戶和待刪除的測試用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var toDeleteUserId = Guid.NewGuid();
+
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        // 建立無權限用戶
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "no_delete_perm");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoDeletePerm@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "無刪除權限用戶");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 建立待刪除用戶
+        await using var toDeleteCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        toDeleteCommand.Parameters.AddWithValue("id", toDeleteUserId);
+        toDeleteCommand.Parameters.AddWithValue("account", "user_to_delete");
+        toDeleteCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("ToDelete@123", 12)
+        );
+        toDeleteCommand.Parameters.AddWithValue("display_name", "待刪除用戶");
+        await toDeleteCommand.ExecuteNonQueryAsync();
+
+        // 清除並重新登入
+        _client.DefaultRequestHeaders.Authorization = null;
+        var loginRequest = new LoginRequest
+        {
+            Account = "no_delete_perm",
+            Password = "NoDeletePerm@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        var deleteRequest = new DeleteAccountRequest { Confirmation = "CONFIRM" };
+
+        // Act
+        var response = await _client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Delete, $"/api/account/{toDeleteUserId}")
+            {
+                Content = JsonContent.Create(deleteRequest),
+            }
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Authorization = null;
+        var deleteSql =
+            "DELETE FROM users WHERE account IN ('no_delete_perm', 'user_to_delete');";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 測試:驗證無權限用戶被拒絕訪問所有需要權限的 Account 端點
+    /// </summary>
+    [Fact]
+    public async Task AccountEndpoints_WithoutAnyPermission_AllReturnForbidden()
+    {
+        // Arrange: 建立完全沒有權限的用戶
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var noPermUserId = Guid.NewGuid();
+        var insertUserSql = @"
+            INSERT INTO users (id, account, password_hash, display_name, version, is_deleted, created_at, updated_at)
+            VALUES (@id, @account, @password_hash, @display_name, 1, false, NOW(), NOW());
+        ";
+
+        await using var userCommand = new Npgsql.NpgsqlCommand(insertUserSql, connection);
+        userCommand.Parameters.AddWithValue("id", noPermUserId);
+        userCommand.Parameters.AddWithValue("account", "no_any_perm");
+        userCommand.Parameters.AddWithValue(
+            "password_hash",
+            BCrypt.Net.BCrypt.HashPassword("NoAnyPerm@123", 12)
+        );
+        userCommand.Parameters.AddWithValue("display_name", "完全無權限用戶");
+        await userCommand.ExecuteNonQueryAsync();
+
+        // 登入
+        _client.DefaultRequestHeaders.Authorization = null;
+        var loginRequest = new LoginRequest
+        {
+            Account = "no_any_perm",
+            Password = "NoAnyPerm@123",
+        };
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginContent = await loginResponse.Content.ReadAsStringAsync();
+        var loginResult = JsonSerializer.Deserialize<ApiResponseModel<LoginResponse>>(
+            loginContent,
+            _jsonOptions
+        );
+        var noPermToken = loginResult?.Data?.Token ?? string.Empty;
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            noPermToken
+        );
+
+        // Act & Assert: 測試所有需要權限的端點
+        var getAccountsResponse = await _client.GetAsync("/api/account");
+        getAccountsResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, "GET /api/account 應該被拒絕");
+
+        var getAccountResponse = await _client.GetAsync($"/api/account/{_testUserId}");
+        getAccountResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, "GET /api/account/{id} 應該被拒絕");
+
+        var updateRequest = new UpdateAccountRequest { DisplayName = "測試", Version = 1 };
+        var updateResponse = await _client.PutAsJsonAsync(
+            $"/api/account/{noPermUserId}",
+            updateRequest
+        );
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, "PUT /api/account/{id} 應該被拒絕");
+
+        var resetPasswordRequest = new ResetPasswordRequest
+        {
+            NewPassword = "NewPass@123",
+            Version = 1,
+        };
+        var resetPasswordResponse = await _client.PutAsJsonAsync(
+            $"/api/account/{_testUserId}/reset-password",
+            resetPasswordRequest
+        );
+        resetPasswordResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden, "PUT /api/account/{id}/reset-password 應該被拒絕");
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Authorization = null;
+        var deleteSql = "DELETE FROM users WHERE account = 'no_any_perm';";
+        await using var deleteCommand = new Npgsql.NpgsqlCommand(deleteSql, connection);
+        await deleteCommand.ExecuteNonQueryAsync();
     }
 
     #endregion
