@@ -297,41 +297,82 @@ namespace V3.Admin.Backend.Models.Requests
 
 ## Database Migration Scripts
 
-### Migration 001: Rename username to account
+### Migration 014: Rename username to account
 
-**檔案**: `Database/Migrations/XXX_RenameUsernameToAccount.sql`
+**檔案**: `Database/Migrations/014_RenameUsernameToAccount.sql`
 
 ```sql
--- Migration: Rename username field to account
--- Purpose: Improve module identification and semantic clarity
+-- 將 username 欄位重命名為 account
+-- Migration: 014
 -- Date: 2026-01-20
+-- Description: Rename username field to account for better semantic clarity
+-- Feature: 007-account-refactor
 
 BEGIN;
 
--- Step 1: Rename column
+-- Step 1: 重命名欄位
 ALTER TABLE users RENAME COLUMN username TO account;
 
--- Step 2: Rename index (if exists)
+-- Step 2: 更新索引名稱
 ALTER INDEX IF EXISTS idx_users_username RENAME TO idx_users_account;
 
--- Step 3: Data integrity check
+-- Step 3: 更新約束名稱
+ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_username_length;
+ALTER TABLE users ADD CONSTRAINT chk_account_length 
+    CHECK (length(account) >= 3 AND length(account) <= 50);
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS uq_users_username;
+ALTER TABLE users ADD CONSTRAINT uq_users_account UNIQUE (account);
+
+-- Step 4: 資料完整性檢查
 DO $$
 DECLARE
     total_count INT;
     null_account_count INT;
 BEGIN
     SELECT COUNT(*) INTO total_count FROM users;
-    SELECT COUNT(*) INTO null_account_count FROM users WHERE account IS NULL OR account = '';
+    SELECT COUNT(*) INTO null_account_count 
+    FROM users 
+    WHERE account IS NULL OR account = '';
     
     IF null_account_count > 0 THEN
-        RAISE EXCEPTION 'Data integrity check failed: % users have NULL or empty account', null_account_count;
+        RAISE EXCEPTION '資料完整性檢查失敗: % 個用戶的 account 為 NULL 或空字串', null_account_count;
     END IF;
     
-    RAISE NOTICE 'Migration successful: % users migrated', total_count;
+    RAISE NOTICE '✓ 遷移成功: % 個用戶已遷移', total_count;
 END $$;
 
 COMMIT;
 ```
+
+### Migration 015: Add account module permissions
+
+**檔案**: `Database/Migrations/015_AddAccountModulePermissions.sql`
+
+此遷移新增帳號模組所需的功能權限。
+
+```sql
+-- 新增帳號模組相關權限
+-- Migration: 015
+-- Date: 2026-01-24
+-- Description: Add account module permissions for account management and password operations
+-- Feature: 007-account-refactor
+```
+
+**新增的權限**:
+
+| 權限代碼 | 名稱 | 說明 | 對應端點 |
+|---------|------|------|---------|
+| user.profile.update | 修改個人資料 | 允許用戶修改自己的個人資料，包括密碼變更 | PUT /api/account/me/password |
+| account.read | 查詢帳號 | 允許查詢帳號列表和單一帳號詳情 | GET /api/account, GET /api/account/{id} |
+| account.create | 新增帳號 | 允許建立新的使用者帳號 | POST /api/account |
+| account.update | 更新帳號 | 允許更新帳號資訊和重設使用者密碼 | PUT /api/account/{id}, PUT /api/account/{id}/reset-password |
+| account.delete | 刪除帳號 | 允許刪除使用者帳號（軟刪除） | DELETE /api/account/{id} |
+
+**自動行為**:
+- 所有權限自動指派給 Admin 角色
+- 使用 `ON CONFLICT (permission_code) DO NOTHING` 確保冪等性
+- 包含驗證邏輯，確認權限建立成功並正確指派
 
 ---
 
