@@ -250,7 +250,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpDelete("{id}")]
     [RequirePermission("role.delete")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteRole(Guid id, [FromBody] DeleteRoleRequest request)
     {
         try
@@ -263,7 +263,7 @@ public class RoleController : BaseApiController
             if (!success)
                 return NotFound("角色不存在", ResponseCodes.ROLE_NOT_FOUND);
 
-            return NoContent();
+            return Success("角色刪除成功");
         }
         catch (KeyNotFoundException ex)
         {
@@ -335,7 +335,7 @@ public class RoleController : BaseApiController
     /// </summary>
     [HttpDelete("{roleId}/permissions/{permissionId}")]
     [RequirePermission("permission.remove")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponseModel), StatusCodes.Status200OK)]
     public async Task<IActionResult> RemovePermission(Guid roleId, Guid permissionId)
     {
         try
@@ -352,7 +352,7 @@ public class RoleController : BaseApiController
             if (!success)
                 return NotFound("角色或權限不存在");
 
-            return Success();
+            return Success("角色權限移除成功");
         }
         catch (KeyNotFoundException ex)
         {
