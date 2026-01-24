@@ -13,6 +13,16 @@ public class QueryAuditLogRequestValidator : AbstractValidator<QueryAuditLogRequ
     /// </summary>
     public QueryAuditLogRequestValidator()
     {
+        // 起始時間 UTC0 驗證
+        RuleFor(x => x.StartTime)
+            .MustBeUtc0()
+            .When(x => x.StartTime.HasValue);
+
+        // 結束時間 UTC0 驗證
+        RuleFor(x => x.EndTime)
+            .MustBeUtc0()
+            .When(x => x.EndTime.HasValue);
+
         // 起始時間不能晚於結束時間
         RuleFor(x => x.StartTime)
             .Must(

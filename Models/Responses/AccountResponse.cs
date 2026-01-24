@@ -26,12 +26,12 @@ public class AccountResponse
     /// <summary>
     /// 建立時間 (UTC)
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
     /// 最後更新時間 (UTC)
     /// </summary>
-    public DateTime? UpdatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>
     /// 資料版本號

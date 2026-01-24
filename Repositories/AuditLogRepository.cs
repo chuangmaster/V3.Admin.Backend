@@ -84,8 +84,8 @@ public class AuditLogRepository : IAuditLogRepository
     /// 查詢稽核日誌列表（支援分頁和多條件篩選）
     /// </summary>
     public async Task<(List<AuditLog> Logs, long TotalCount)> GetLogsAsync(
-        DateTime? startTime = null,
-        DateTime? endTime = null,
+        DateTimeOffset? startTime = null,
+        DateTimeOffset? endTime = null,
         Guid? operatorId = null,
         string? operationType = null,
         string? targetType = null,

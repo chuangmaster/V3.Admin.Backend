@@ -6,14 +6,14 @@ namespace V3.Admin.Backend.Models.Requests;
 public class QueryAuditLogRequest
 {
     /// <summary>
-    /// 起始時間（UTC）
+    /// 起始時間（UTC0 格式）
     /// </summary>
-    public DateTime? StartTime { get; set; }
+    public DateTimeOffset? StartTime { get; set; }
 
     /// <summary>
-    /// 結束時間（UTC）
+    /// 結束時間（UTC0 格式）
     /// </summary>
-    public DateTime? EndTime { get; set; }
+    public DateTimeOffset? EndTime { get; set; }
 
     /// <summary>
     /// 操作者 ID（可選篩選）

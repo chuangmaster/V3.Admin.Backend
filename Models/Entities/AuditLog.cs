@@ -28,7 +28,7 @@ public class AuditLog
     /// <summary>
     /// 操作發生的時間 (UTC)
     /// </summary>
-    public DateTime OperationTime { get; set; }
+    public DateTimeOffset OperationTime { get; set; }
 
     /// <summary>
     /// 操作類型（create, update, delete）

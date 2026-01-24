@@ -56,7 +56,7 @@ public class JwtService : IJwtService
             audience: _jwtSettings.Audience,
             claims: claims,
             notBefore: DateTime.UtcNow,
-            expires: GetTokenExpirationTime(),
+            expires: GetTokenExpirationTime().UtcDateTime,
             signingCredentials: credentials
         );
 
@@ -72,8 +72,8 @@ public class JwtService : IJwtService
     /// <summary>
     /// 取得 Token 過期時間
     /// </summary>
-    public DateTime GetTokenExpirationTime()
+    public DateTimeOffset GetTokenExpirationTime()
     {
-        return DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+        return DateTimeOffset.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
     }
 }

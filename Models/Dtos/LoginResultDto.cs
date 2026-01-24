@@ -16,7 +16,7 @@ public class LoginResultDto
     /// <summary>
     /// Token 過期時間 (UTC)
     /// </summary>
-    public DateTime ExpiresAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
 
     /// <summary>
     /// 使用者資訊

@@ -71,7 +71,7 @@ public class AccountService : IAccountService
             Account = dto.Account.ToLowerInvariant(),
             PasswordHash = passwordHash,
             DisplayName = dto.DisplayName,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
             IsDeleted = false,
             Version = 1,
         };
@@ -124,7 +124,7 @@ public class AccountService : IAccountService
 
         // 更新資料
         user.DisplayName = dto.DisplayName;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
 
         // 儲存至資料庫 (傳入期望的版本號)
         bool success = await _userRepository.UpdateAsync(user, dto.Version);
@@ -193,7 +193,7 @@ public class AccountService : IAccountService
 
         // 雜湊新密碼
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
 
         // 儲存至資料庫 (傳入期望的版本號)
         bool success = await _userRepository.UpdateAsync(user, dto.Version);
@@ -245,7 +245,7 @@ public class AccountService : IAccountService
 
         // 雜湊新密碼
         targetUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
-        targetUser.UpdatedAt = DateTime.UtcNow;
+        targetUser.UpdatedAt = DateTimeOffset.UtcNow;
 
         // 儲存至資料庫 (傳入期望的版本號)
         bool success = await _userRepository.UpdateAsync(targetUser, dto.Version);

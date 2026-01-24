@@ -34,7 +34,7 @@ public class PermissionFailureLog
     /// <summary>
     /// 嘗試時間（UTC）
     /// </summary>
-    public DateTime AttemptedAt { get; set; }
+    public DateTimeOffset AttemptedAt { get; set; }
 
     /// <summary>
     /// 客戶端 IP 位址

@@ -39,8 +39,12 @@ public class ApiResponseModel<T>
     /// </summary>
     public string? TraceId { get; set; }
 
-    /// <summary>
-    /// 建立成功響應
+    /// <summary>    /// 驗證錯誤詳情 (僅在驗證失敗時使用)
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, object>? Errors { get; set; }
+
+    /// <summary>    /// 建立成功響應
     /// </summary>
     public static ApiResponseModel<T> CreateSuccess(
         T? data = default,

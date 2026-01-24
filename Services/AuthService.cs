@@ -67,7 +67,7 @@ public class AuthService : IAuthService
 
         // 產生 JWT Token
         string token = _jwtService.GenerateToken(user);
-        DateTime expiresAt = _jwtService.GetTokenExpirationTime();
+        DateTimeOffset expiresAt = _jwtService.GetTokenExpirationTime();
 
         _logger.LogInformation(
             "使用者 {Account} (ID: {UserId}) 登入成功",

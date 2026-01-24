@@ -29,7 +29,7 @@ public class UserRole
     /// <summary>
     /// 指派時間（UTC）
     /// </summary>
-    public DateTime AssignedAt { get; set; }
+    public DateTimeOffset AssignedAt { get; set; }
 
     /// <summary>
     /// 軟刪除標記
@@ -39,7 +39,7 @@ public class UserRole
     /// <summary>
     /// 刪除時間（UTC）
     /// </summary>
-    public DateTime? DeletedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
 
     /// <summary>
     /// 刪除者用戶 ID

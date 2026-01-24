@@ -188,7 +188,7 @@ public class PermissionValidationService : IPermissionValidationService
 
             // 驗證權限類型
             bool typeMatches = string.Equals(permission.PermissionType, permissionType, StringComparison.OrdinalIgnoreCase);
-            
+
             _logger.LogInformation(
                 "權限類型檢查: UserId={UserId}, PermissionCode={PermissionCode}, ExpectedType={ExpectedType}, ActualType={ActualType}, Matches={Matches}",
                 userId,
@@ -235,7 +235,7 @@ public class PermissionValidationService : IPermissionValidationService
         // 開頭和結尾不能是點號或下劃線
         // 支援單字元或 3-100 字元的格式
         var regex = new System.Text.RegularExpressions.Regex(@"^[a-zA-Z0-9][a-zA-Z0-9._]{1,98}[a-zA-Z0-9]$|^[a-zA-Z0-9]$");
-        
+
         return regex.IsMatch(permissionCode);
     }
 
@@ -260,7 +260,7 @@ public class PermissionValidationService : IPermissionValidationService
             Username = username,
             AttemptedResource = attemptedResource,
             FailureReason = failureReason,
-            AttemptedAt = DateTime.UtcNow,
+            AttemptedAt = DateTimeOffset.UtcNow,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             TraceId = traceId,
