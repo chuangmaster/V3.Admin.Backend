@@ -50,7 +50,7 @@ public class AuditLogService : IAuditLogService
                 Id = Guid.NewGuid(),
                 OperatorId = operatorId,
                 OperatorName = operatorName,
-                OperationTime = DateTimeOffset.UtcNow.DateTime,
+                OperationTime = DateTimeOffset.UtcNow,
                 OperationType = operationType,
                 TargetType = targetType,
                 TargetId = targetId,

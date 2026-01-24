@@ -46,7 +46,7 @@ public class PermissionService : IPermissionService
             Name = request.Name,
             Description = request.Description,
             PermissionType = request.PermissionType,
-            CreatedAt = DateTimeOffset.UtcNow.DateTime,
+            CreatedAt = DateTimeOffset.UtcNow,
             CreatedBy = createdBy,
             Version = 1,
         };
@@ -140,7 +140,7 @@ public class PermissionService : IPermissionService
 
         permission.Name = request.Name;
         permission.Description = request.Description;
-        permission.UpdatedAt = DateTimeOffset.UtcNow.DateTime;
+        permission.UpdatedAt = DateTimeOffset.UtcNow;
         permission.UpdatedBy = updatedBy;
         permission.Version = request.Version;
 

@@ -260,7 +260,7 @@ public class PermissionValidationService : IPermissionValidationService
             Username = username,
             AttemptedResource = attemptedResource,
             FailureReason = failureReason,
-            AttemptedAt = DateTimeOffset.UtcNow.DateTime,
+            AttemptedAt = DateTimeOffset.UtcNow,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             TraceId = traceId,
