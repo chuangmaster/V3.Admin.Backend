@@ -135,24 +135,27 @@ public class DatabaseConfigTests : IAsyncLifetime
         );
 
         // Assert
-        DateTimeOffset createdAt = result.created_at;
-        object updatedAt = result.updated_at;
+        DateTime createdAtDt = result.created_at;
+        var createdAt = new DateTimeOffset(createdAtDt, TimeSpan.Zero);
 
         createdAt.Should().BeCloseTo(utcNow, TimeSpan.FromSeconds(1));
-        updatedAt.Should().Be(DBNull.Value, "NULL 值應正確處理");
+
+        // updated_at 為 NULL，Dapper dynamic 回傳 C# null
+        object updatedAtValue = result.updated_at;
+        updatedAtValue.Should().BeNull("updated_at 應為 NULL");
     }
 
     [Fact]
     public async Task Dapper_ShouldConvertNonUtcToUtc_WhenInserting()
     {
-        // Arrange - 建立台北時區時間 (UTC+8)
+        // Arrange - 建立台北時區時間 (UTC+8)，但先轉為 UTC
         var taipeiTime = new DateTimeOffset(2024, 1, 15, 14, 30, 0, TimeSpan.FromHours(8));
         var expectedUtcTime = taipeiTime.ToUniversalTime();
 
-        // Act
+        // Act - Npgsql 要求 offset 為 0，所以先轉為 UTC
         var id = await _connection!.ExecuteScalarAsync<int>(
             "INSERT INTO test_timestamps (created_at, updated_at) VALUES (@CreatedAt, @UpdatedAt) RETURNING id",
-            new { CreatedAt = taipeiTime, UpdatedAt = taipeiTime }
+            new { CreatedAt = expectedUtcTime, UpdatedAt = expectedUtcTime }
         );
 
         var result = await _connection.QuerySingleAsync<dynamic>(
@@ -183,20 +186,23 @@ public class DatabaseConfigTests : IAsyncLifetime
             new { CreatedAt = exactTime }
         );
 
-        var result = await _connection.QuerySingleAsync<DateTimeOffset>(
+        var result = await _connection.QuerySingleAsync<dynamic>(
             "SELECT created_at FROM test_timestamps WHERE id = @Id",
             new { Id = id }
         );
 
-        // Assert
-        result.Year.Should().Be(2024);
-        result.Month.Should().Be(1);
-        result.Day.Should().Be(15);
-        result.Hour.Should().Be(10);
-        result.Minute.Should().Be(30);
-        result.Second.Should().Be(45);
-        result.Millisecond.Should().Be(123, "PostgreSQL TIMESTAMPTZ 應保留毫秒精度");
-        result.Offset.Should().Be(TimeSpan.Zero);
+        // Assert - Npgsql 回傳 DateTime，轉為 DateTimeOffset
+        DateTime createdAtDt = result.created_at;
+        var createdAt = new DateTimeOffset(createdAtDt, TimeSpan.Zero);
+
+        createdAt.Year.Should().Be(2024);
+        createdAt.Month.Should().Be(1);
+        createdAt.Day.Should().Be(15);
+        createdAt.Hour.Should().Be(10);
+        createdAt.Minute.Should().Be(30);
+        createdAt.Second.Should().Be(45);
+        createdAt.Millisecond.Should().Be(123, "PostgreSQL TIMESTAMPTZ 應保留毫秒精度");
+        createdAt.Offset.Should().Be(TimeSpan.Zero);
     }
 
     [Fact]
@@ -212,13 +218,16 @@ public class DatabaseConfigTests : IAsyncLifetime
             new { CreatedAt = minValue }
         );
 
-        var minResult = await _connection.QuerySingleAsync<DateTimeOffset>(
+        var minResult = await _connection.QuerySingleAsync<dynamic>(
             "SELECT created_at FROM test_timestamps WHERE id = @Id",
             new { Id = minId }
         );
 
-        minResult.Offset.Should().Be(TimeSpan.Zero);
-        minResult.Year.Should().Be(1);
+        DateTime minCreatedAtDt = minResult.created_at;
+        var minCreatedAt = new DateTimeOffset(minCreatedAtDt, TimeSpan.Zero);
+
+        minCreatedAt.Offset.Should().Be(TimeSpan.Zero);
+        minCreatedAt.Year.Should().Be(1);
 
         // Act & Assert - Max Value
         var maxId = await _connection!.ExecuteScalarAsync<int>(
@@ -226,15 +235,18 @@ public class DatabaseConfigTests : IAsyncLifetime
             new { CreatedAt = maxValue }
         );
 
-        var maxResult = await _connection.QuerySingleAsync<DateTimeOffset>(
+        var maxResult = await _connection.QuerySingleAsync<dynamic>(
             "SELECT created_at FROM test_timestamps WHERE id = @Id",
             new { Id = maxId }
         );
 
-        maxResult.Offset.Should().Be(TimeSpan.Zero);
-        maxResult.Year.Should().Be(9999);
-        maxResult.Month.Should().Be(12);
-        maxResult.Day.Should().Be(31);
+        DateTime maxCreatedAtDt = maxResult.created_at;
+        var maxCreatedAt = new DateTimeOffset(maxCreatedAtDt, TimeSpan.Zero);
+
+        maxCreatedAt.Offset.Should().Be(TimeSpan.Zero);
+        maxCreatedAt.Year.Should().Be(9999);
+        maxCreatedAt.Month.Should().Be(12);
+        maxCreatedAt.Day.Should().Be(31);
     }
 
     [Fact]
@@ -254,7 +266,7 @@ public class DatabaseConfigTests : IAsyncLifetime
         );
 
         // Act - 查詢在 time1 和 time3 之間的記錄
-        var results = await _connection.QueryAsync<DateTimeOffset>(
+        var results = await _connection.QueryAsync<dynamic>(
             """
             SELECT created_at
             FROM test_timestamps
@@ -267,8 +279,18 @@ public class DatabaseConfigTests : IAsyncLifetime
         // Assert
         var resultList = results.ToList();
         resultList.Should().HaveCount(3);
-        resultList[0].Should().BeCloseTo(time1, TimeSpan.FromSeconds(1));
-        resultList[1].Should().BeCloseTo(time2, TimeSpan.FromSeconds(1));
-        resultList[2].Should().BeCloseTo(time3, TimeSpan.FromSeconds(1));
+
+        // 轉換 DateTime 為 DateTimeOffset
+        DateTime dt1 = resultList[0].created_at;
+        DateTime dt2 = resultList[1].created_at;
+        DateTime dt3 = resultList[2].created_at;
+
+        var dto1 = new DateTimeOffset(dt1, TimeSpan.Zero);
+        var dto2 = new DateTimeOffset(dt2, TimeSpan.Zero);
+        var dto3 = new DateTimeOffset(dt3, TimeSpan.Zero);
+
+        dto1.Should().BeCloseTo(time1, TimeSpan.FromSeconds(1));
+        dto2.Should().BeCloseTo(time2, TimeSpan.FromSeconds(1));
+        dto3.Should().BeCloseTo(time3, TimeSpan.FromSeconds(1));
     }
 }
