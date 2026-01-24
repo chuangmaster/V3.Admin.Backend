@@ -1,5 +1,7 @@
 using System.Data;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -8,6 +10,7 @@ using Npgsql;
 using Serilog;
 using Serilog.Context;
 using V3.Admin.Backend.Configuration;
+using V3.Admin.Backend.Converters;
 using V3.Admin.Backend.Middleware;
 using V3.Admin.Backend.Repositories;
 using V3.Admin.Backend.Repositories.Interfaces;
@@ -22,7 +25,7 @@ public partial class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-        // ===== Serilog 日誌配置 =====
+        // ===== Serilog 日誌配置 (使用 UTC 時間戳記) =====
         builder.Host.UseSerilog(
             (context, services, logger) =>
                 logger
@@ -31,6 +34,12 @@ public partial class Program
                     .Enrich.FromLogContext()
                     .Enrich.WithProperty("Application", "V3.Admin.Backend")
                     .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+                    .WriteTo.Console(
+                        outputTemplate: "[{UtcDateTime:yyyy-MM-ddTHH:mm:ss.fffZ}] [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    .WriteTo.File(
+                        "logs/v3-admin-backend-.txt",
+                        rollingInterval: RollingInterval.Day,
+                        outputTemplate: "[{UtcDateTime:yyyy-MM-ddTHH:mm:ss.fffZ}] [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
         );
 
         // ===== 組態設定 =====
@@ -42,10 +51,19 @@ public partial class Program
         // 設定 Dapper 的命名規則轉換 (snake_case <-> PascalCase)
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-        // ===== 資料庫連接 =====
-        builder.Services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        ));
+        // ===== 資料庫連接 (設定 UTC 時區) =====
+        builder.Services.AddScoped<IDbConnection>(sp =>
+        {
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            
+            // 確保連線字串包含 Timezone=UTC 參數
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Timezone = "UTC"
+            };
+            
+            return new NpgsqlConnection(connectionStringBuilder.ConnectionString);
+        });
 
         // ===== Repositories =====
         builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -140,8 +158,18 @@ public partial class Program
 
         builder.Services.AddAuthorization();
 
-        // ===== Controllers =====
-        builder.Services.AddControllers();
+        // ===== Controllers (配置 JSON 序列化) =====
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                // 註冊 UTC0 時間轉換器
+                options.JsonSerializerOptions.Converters.Add(new Utc0DateTimeJsonConverter());
+                
+                // 其他 JSON 設定
+                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.WriteIndented = false;
+            });
 
         // ===== Swagger/OpenAPI =====
         builder.Services.AddEndpointsApiExplorer();
