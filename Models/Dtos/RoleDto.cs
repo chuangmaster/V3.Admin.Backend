@@ -26,7 +26,7 @@ public class RoleDto
     /// <summary>
     /// 建立時間 (UTC)
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
     /// 版本號（用於樂觀並發控制）

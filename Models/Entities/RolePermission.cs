@@ -26,7 +26,7 @@ public class RolePermission
     /// <summary>
     /// 分配時間 (UTC)
     /// </summary>
-    public DateTime AssignedAt { get; set; }
+    public DateTimeOffset AssignedAt { get; set; }
 
     /// <summary>
     /// 分配者 ID

@@ -79,7 +79,7 @@ public class RoleService : IRoleService
             Id = Guid.NewGuid(),
             RoleName = request.RoleName,
             Description = request.Description,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow.DateTime,
             CreatedBy = operatorId,
             IsDeleted = false,
             Version = 1,

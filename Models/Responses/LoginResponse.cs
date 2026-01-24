@@ -24,7 +24,7 @@ public class LoginResponse
     /// Token 過期後需要重新登入
     /// 預設有效期為 1 小時
     /// </remarks>
-    public DateTime ExpiresAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
 
     /// <summary>
     /// 使用者資訊

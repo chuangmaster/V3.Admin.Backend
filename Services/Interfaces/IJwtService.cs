@@ -21,5 +21,5 @@ public interface IJwtService
     /// 取得 Token 過期時間
     /// </summary>
     /// <returns>過期時間 (UTC)</returns>
-    DateTime GetTokenExpirationTime();
+    DateTimeOffset GetTokenExpirationTime();
 }

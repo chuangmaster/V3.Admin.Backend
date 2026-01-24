@@ -36,7 +36,7 @@ public class PermissionResponse
     /// <summary>
     /// 建立時間
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
     /// 版本號

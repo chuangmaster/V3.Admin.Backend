@@ -29,5 +29,5 @@ public class UserRoleDto
     /// <summary>
     /// 指派時間（UTC）
     /// </summary>
-    public DateTime AssignedAt { get; set; }
+    public DateTimeOffset AssignedAt { get; set; }
 }
