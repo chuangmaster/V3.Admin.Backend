@@ -37,8 +37,8 @@ public interface IAuditLogRepository
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>包含稽核日誌列表和總筆數的元組</returns>
     Task<(List<AuditLog> Logs, long TotalCount)> GetLogsAsync(
-        DateTime? startTime = null,
-        DateTime? endTime = null,
+        DateTimeOffset? startTime = null,
+        DateTimeOffset? endTime = null,
         Guid? operatorId = null,
         string? operationType = null,
         string? targetType = null,
