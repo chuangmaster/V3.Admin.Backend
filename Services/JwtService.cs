@@ -55,8 +55,8 @@ public class JwtService : IJwtService
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            notBefore: DateTimeOffset.UtcNow.DateTime,
-            expires: GetTokenExpirationTime().DateTime,
+            notBefore: DateTime.UtcNow,
+            expires: GetTokenExpirationTime().UtcDateTime,
             signingCredentials: credentials
         );
 
