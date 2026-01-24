@@ -43,7 +43,7 @@ public static partial class Utc0DateTimeValidator
         this IRuleBuilder<T, string> ruleBuilder)
     {
         return ruleBuilder
-            .Must(dateString => 
+            .Must(dateString =>
             {
                 if (string.IsNullOrWhiteSpace(dateString))
                     return false;
@@ -66,8 +66,8 @@ public static partial class Utc0DateTimeValidator
     /// 驗證 DateTimeOffset 是否在合理的範圍內 (例如: 1900-01-01 到 2100-12-31)
     /// </summary>
     public static IRuleBuilderOptions<T, DateTimeOffset> MustBeInReasonableRange<T>(
-        this IRuleBuilder<T, DateTimeOffset> ruleBuilder, 
-        DateTimeOffset? minDate = null, 
+        this IRuleBuilder<T, DateTimeOffset> ruleBuilder,
+        DateTimeOffset? minDate = null,
         DateTimeOffset? maxDate = null)
     {
         var min = minDate ?? new DateTimeOffset(1900, 1, 1, 0, 0, 0, TimeSpan.Zero);

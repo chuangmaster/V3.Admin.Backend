@@ -17,7 +17,7 @@ public class Utc0DateTimeJsonConverter : JsonConverter<DateTimeOffset>
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         string? dateString = reader.GetString();
-        
+
         if (string.IsNullOrWhiteSpace(dateString))
         {
             throw new JsonException("日期時間值不能為空");

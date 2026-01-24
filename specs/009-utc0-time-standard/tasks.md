@@ -134,8 +134,8 @@ Phase 1 (Setup) → Phase 2 (Foundational)
 - [X] T017 [US1] 更新 ExceptionHandlingMiddleware 處理 ValidationException 和 JsonException,回傳標準化錯誤訊息
 
 #### 整合測試
-- [ ] T018 [US1] 建立 TimeFormatIntegrationTests.cs 於 V3.Admin.Backend/Tests/Integration/Controllers/ (測試場景: 正確 UTC0 格式、錯誤格式、缺少時區識別符)
-- [ ] T019 [US1] 執行整合測試驗證所有時間輸入端點
+- [X] T018 [US1] 建立 TimeFormatIntegrationTests.cs 於 V3.Admin.Backend/Tests/Integration/Controllers/ (測試場景: 正確 UTC0 格式、錯誤格式、缺少時區識別符)
+- [ ] T019 [US1] 執行整合測試驗證所有時間輸入端點 (需要 Docker 環境)
 
 ---
 

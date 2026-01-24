@@ -200,9 +200,9 @@ public class Utc0DateTimeJsonConverterTests
     public void RoundTrip_SerializeAndDeserialize_PreservesValue()
     {
         // Arrange
-        var original = new TestModel 
-        { 
-            CreatedAt = new DateTimeOffset(2026, 1, 24, 8, 30, 15, 789, TimeSpan.Zero) 
+        var original = new TestModel
+        {
+            CreatedAt = new DateTimeOffset(2026, 1, 24, 8, 30, 15, 789, TimeSpan.Zero)
         };
 
         // Act

@@ -55,13 +55,13 @@ public partial class Program
         builder.Services.AddScoped<IDbConnection>(sp =>
         {
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            
+
             // 確保連線字串包含 Timezone=UTC 參數
             var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString)
             {
                 Timezone = "UTC"
             };
-            
+
             return new NpgsqlConnection(connectionStringBuilder.ConnectionString);
         });
 
@@ -164,7 +164,7 @@ public partial class Program
             {
                 // 註冊 UTC0 時間轉換器
                 options.JsonSerializerOptions.Converters.Add(new Utc0DateTimeJsonConverter());
-                
+
                 // 其他 JSON 設定
                 options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;

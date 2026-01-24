@@ -35,7 +35,7 @@ public class DatabaseConfigTests : IAsyncLifetime
         {
             Timezone = "UTC"
         };
-        
+
         _connection = new NpgsqlConnection(connectionStringBuilder.ConnectionString);
         _connection.Open();
 
@@ -57,7 +57,7 @@ public class DatabaseConfigTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         _connection?.Dispose();
-        
+
         if (_postgres is not null)
         {
             await _postgres.DisposeAsync();
@@ -104,13 +104,13 @@ public class DatabaseConfigTests : IAsyncLifetime
 
         // Assert
         id.Should().BeGreaterThan(0);
-        
+
         DateTimeOffset createdAt = result.created_at;
         DateTimeOffset updatedAt = result.updated_at;
-        
+
         createdAt.Offset.Should().Be(TimeSpan.Zero, "從資料庫讀取的時間應為 UTC+0 偏移");
         updatedAt.Offset.Should().Be(TimeSpan.Zero, "從資料庫讀取的時間應為 UTC+0 偏移");
-        
+
         // 允許 1 秒誤差 (資料庫精度)
         createdAt.Should().BeCloseTo(utcNow, TimeSpan.FromSeconds(1));
         updatedAt.Should().BeCloseTo(utcNow, TimeSpan.FromSeconds(1));
@@ -137,7 +137,7 @@ public class DatabaseConfigTests : IAsyncLifetime
         // Assert
         DateTimeOffset createdAt = result.created_at;
         object updatedAt = result.updated_at;
-        
+
         createdAt.Should().BeCloseTo(utcNow, TimeSpan.FromSeconds(1));
         updatedAt.Should().Be(DBNull.Value, "NULL 值應正確處理");
     }
@@ -163,10 +163,10 @@ public class DatabaseConfigTests : IAsyncLifetime
         // Assert
         DateTimeOffset createdAt = result.created_at;
         DateTimeOffset updatedAt = result.updated_at;
-        
+
         createdAt.Offset.Should().Be(TimeSpan.Zero, "資料庫應將時間轉換為 UTC+0");
         updatedAt.Offset.Should().Be(TimeSpan.Zero, "資料庫應將時間轉換為 UTC+0");
-        
+
         createdAt.Should().BeCloseTo(expectedUtcTime, TimeSpan.FromSeconds(1));
         updatedAt.Should().BeCloseTo(expectedUtcTime, TimeSpan.FromSeconds(1));
     }
@@ -247,7 +247,7 @@ public class DatabaseConfigTests : IAsyncLifetime
 
         await _connection!.ExecuteAsync(
             """
-            INSERT INTO test_timestamps (created_at, updated_at) 
+            INSERT INTO test_timestamps (created_at, updated_at)
             VALUES (@Time1, NULL), (@Time2, NULL), (@Time3, NULL)
             """,
             new { Time1 = time1, Time2 = time2, Time3 = time3 }
@@ -256,8 +256,8 @@ public class DatabaseConfigTests : IAsyncLifetime
         // Act - 查詢在 time1 和 time3 之間的記錄
         var results = await _connection.QueryAsync<DateTimeOffset>(
             """
-            SELECT created_at 
-            FROM test_timestamps 
+            SELECT created_at
+            FROM test_timestamps
             WHERE created_at >= @StartTime AND created_at <= @EndTime
             ORDER BY created_at
             """,

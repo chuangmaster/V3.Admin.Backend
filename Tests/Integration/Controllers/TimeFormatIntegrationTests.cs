@@ -53,7 +53,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/auditlog/query", request);
+        var response = await _client.PostAsJsonAsync("/api/audit-log/query", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -72,7 +72,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/auditlog/query", content);
+        var response = await _client.PostAsync("/api/audit-log/query", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -100,7 +100,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/auditlog/query", content);
+        var response = await _client.PostAsync("/api/audit-log/query", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -120,12 +120,15 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
     [Fact]
     public async Task QueryServiceOrders_WithValidUtc0Format_ReturnsSuccess()
     {
-        // Arrange - 使用 GET 請求查詢參數
-        var startDate = DateTimeOffset.Parse("2026-01-01T00:00:00.000Z");
-        var endDate = DateTimeOffset.Parse("2026-01-31T23:59:59.999Z");
+        // Arrange
+        var request = new QueryServiceOrdersRequest
+        {
+            ServiceDateStart = DateTimeOffset.Parse("2026-01-01T00:00:00.000Z"),
+            ServiceDateEnd = DateTimeOffset.Parse("2026-01-31T23:59:59.999Z")
+        };
 
         // Act
-        var response = await _client.GetAsync($"/api/service-orders?serviceDateStart={startDate:O}&serviceDateEnd={endDate:O}");
+        var response = await _client.PostAsJsonAsync("/api/service-order/query", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -134,12 +137,17 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
     [Fact]
     public async Task QueryServiceOrders_WithNonUtc0Timezone_ReturnsBadRequest()
     {
-        // Arrange - 使用非 UTC0 時區 (使用 GET 請求)
-        var startDate = "2026-01-01T00:00:00+09:00";
-        var endDate = "2026-01-31T23:59:59+09:00";
+        // Arrange - 使用非 UTC0 時區
+        var json = """
+        {
+            "serviceDateStart": "2026-01-01T00:00:00+09:00",
+            "serviceDateEnd": "2026-01-31T23:59:59+09:00"
+        }
+        """;
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.GetAsync($"/api/service-orders?serviceDateStart={Uri.EscapeDataString(startDate)}&serviceDateEnd={Uri.EscapeDataString(endDate)}");
+        var response = await _client.PostAsync("/api/service-order/query", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -156,11 +164,16 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
     public async Task QueryServiceOrders_WithMissingTimezone_ReturnsBadRequest()
     {
         // Arrange - 缺少時區識別符 Z
-        var startDate = "2026-01-01T00:00:00";
-        var endDate = "2026-01-31T23:59:59";
+        var json = """
+        {
+            "serviceDateStart": "2026-01-01T00:00:00",
+            "serviceDateEnd": "2026-01-31T23:59:59"
+        }
+        """;
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.GetAsync($"/api/service-orders?serviceDateStart={Uri.EscapeDataString(startDate)}&serviceDateEnd={Uri.EscapeDataString(endDate)}");
+        var response = await _client.PostAsync("/api/service-order/query", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -184,7 +197,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         };
 
         // Act - 此測試可能因為缺少其他必要欄位或權限而失敗,但時間格式應該被接受
-        var response = await _client.PostAsJsonAsync("/api/service-orders/consignment", request);
+        var response = await _client.PostAsJsonAsync("/api/service-order/consignment", request);
 
         // Assert - 時間格式正確,不應該因為時間格式而回傳 400
         // 注意: 可能因為其他驗證失敗 (如缺少必要欄位) 而回傳 400,需要檢查錯誤訊息
@@ -217,7 +230,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/service-orders/consignment", content);
+        var response = await _client.PostAsync("/api/service-order/consignment", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -248,7 +261,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/service-orders/consignment", content);
+        var response = await _client.PostAsync("/api/service-order/consignment", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -281,7 +294,7 @@ public class TimeFormatIntegrationTests : IClassFixture<CustomWebApplicationFact
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/auditlog/query", content);
+        var response = await _client.PostAsync("/api/audit-log/query", content);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
